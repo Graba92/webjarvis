@@ -9,7 +9,8 @@ import {
   MCPServerConfig,
   PersonalityConfig,
   BrainExportResult,
-  BrainImportResult
+  BrainImportResult,
+  CalendarEvent
 } from "./types";
 
 type Listener<T> = (data: T) => void;
@@ -36,11 +37,15 @@ class JarvisSocketManager {
   private brainExportListeners: Set<Listener<BrainExportResult>> = new Set();
   private brainImportListeners: Set<Listener<BrainImportResult>> = new Set();
   private personalityListeners: Set<Listener<PersonalityConfig>> = new Set();
+  private calendarListeners: Set<Listener<CalendarEvent[]>> = new Set();
+  private autoBriefingListeners: Set<Listener<boolean>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public isMuted: boolean = false;
   public isParanoiaMuted: boolean = false;
   public isFocusMode: boolean = false;
+  public isAutoBriefing: boolean = true;
+  public currentCalendarEvents: CalendarEvent[] = [];
   public pendingConfirm: ConfirmRequest | null = null;
   public apiKeyStatus: { configured: boolean; masked_key: string } = { configured: false, masked_key: "" };
   public currentGraphData: GraphData | null = null;
@@ -142,6 +147,14 @@ class JarvisSocketManager {
         if (msg.personality) {
           this.currentPersonality = msg.personality;
           this.personalityListeners.forEach((fn) => fn(this.currentPersonality!));
+        }
+        if (msg.calendar_events && Array.isArray(msg.calendar_events)) {
+          this.currentCalendarEvents = msg.calendar_events;
+          this.calendarListeners.forEach((fn) => fn(this.currentCalendarEvents));
+        }
+        if (msg.auto_briefing !== undefined) {
+          this.isAutoBriefing = !!msg.auto_briefing;
+          this.autoBriefingListeners.forEach((fn) => fn(this.isAutoBriefing));
         }
         break;
 
@@ -252,6 +265,20 @@ class JarvisSocketManager {
         if (msg.personality) {
           this.currentPersonality = msg.personality;
           this.personalityListeners.forEach((fn) => fn(this.currentPersonality!));
+        }
+        break;
+
+      case "calendar_events_data":
+        if (msg.events && Array.isArray(msg.events)) {
+          this.currentCalendarEvents = msg.events;
+          this.calendarListeners.forEach((fn) => fn(this.currentCalendarEvents));
+        }
+        break;
+
+      case "auto_briefing_state":
+        if (msg.enabled !== undefined) {
+          this.isAutoBriefing = !!msg.enabled;
+          this.autoBriefingListeners.forEach((fn) => fn(this.isAutoBriefing));
         }
         break;
     }
@@ -548,6 +575,70 @@ class JarvisSocketManager {
   public requestPersonality() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "get_personality" }));
+    }
+  }
+
+  // --- Calendar & Briefing Management ---
+  public onCalendarEvents(fn: Listener<CalendarEvent[]>) {
+    this.calendarListeners.add(fn);
+    if (this.currentCalendarEvents.length > 0) fn(this.currentCalendarEvents);
+    return () => {
+      this.calendarListeners.delete(fn);
+    };
+  }
+
+  public requestCalendarEvents() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "get_calendar_events" }));
+    }
+  }
+
+  public addCalendarEvent(event: {
+    title: string;
+    start_time: string;
+    description?: string;
+    category?: string;
+    reminder?: string;
+  }) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: "add_calendar_event",
+        ...event
+      }));
+    }
+  }
+
+  public deleteCalendarEvent(eventId: number) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: "delete_calendar_event",
+        event_id: eventId
+      }));
+    }
+  }
+
+  public onAutoBriefing(fn: Listener<boolean>) {
+    this.autoBriefingListeners.add(fn);
+    fn(this.isAutoBriefing);
+    return () => {
+      this.autoBriefingListeners.delete(fn);
+    };
+  }
+
+  public setAutoBriefing(enabled: boolean) {
+    this.isAutoBriefing = enabled;
+    this.autoBriefingListeners.forEach((fn) => fn(this.isAutoBriefing));
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: "set_auto_briefing",
+        enabled
+      }));
+    }
+  }
+
+  public triggerBriefingNow() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "trigger_briefing" }));
     }
   }
 }

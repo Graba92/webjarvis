@@ -36,6 +36,7 @@ from actions.graph_manager import (
     get_full_graph_data, find_node_by_id, add_node_internal, delete_node_internal
 )
 from actions.open_app import open_app
+from actions.calendar_manager import get_events_list, add_event_entry, delete_event_entry
 
 CONNECTED_CLIENTS: set[websockets.WebSocketServerProtocol] = set()
 MAIN_LOOP: Optional[asyncio.AbstractEventLoop] = None
@@ -208,7 +209,9 @@ class JarvisServer:
             "mcp_servers": mcp_servers,
             "focus_mode": getattr(self.cron_engine, "focus_mode", False),
             "paranoia_muted": self.audio.is_paranoia_muted(),
-            "personality": get_personality_dict()
+            "personality": get_personality_dict(),
+            "calendar_events": get_events_list(),
+            "auto_briefing": getattr(self.cron_engine, "auto_briefing", True)
         }
         await websocket.send(json.dumps(welcome_payload))
 
@@ -545,6 +548,44 @@ class JarvisServer:
                     res = import_brain(path_val, passphrase=pwd)
                     self.log(res, "SYS")
                     broadcast({"type": "brain_import_result", "result": res})
+
+                elif msg_type == "get_calendar_events":
+                    await websocket.send(json.dumps({
+                        "type": "calendar_events_data",
+                        "events": get_events_list()
+                    }))
+
+                elif msg_type == "add_calendar_event":
+                    title = str(data.get("title", "")).strip()
+                    start_time = str(data.get("start_time", "")).strip()
+                    description = str(data.get("description", "")).strip()
+                    category = str(data.get("category", "Termin")).strip()
+                    reminder = str(data.get("reminder", "15 Minuten vorher")).strip()
+                    if title:
+                        ev = add_event_entry(title, start_time, description, category, reminder)
+                        self.log(f"Termin '{title}' angelegt ({ev.get('start_time')}).", "SYS")
+                        broadcast({
+                            "type": "calendar_events_data",
+                            "events": get_events_list()
+                        })
+
+                elif msg_type == "delete_calendar_event":
+                    eid = data.get("event_id")
+                    if eid is not None:
+                        ok = delete_event_entry(eid)
+                        if ok:
+                            self.log(f"Termin #{eid} aus Kalender gelöscht.", "SYS")
+                        broadcast({
+                            "type": "calendar_events_data",
+                            "events": get_events_list()
+                        })
+
+                elif msg_type == "set_auto_briefing":
+                    enabled = bool(data.get("enabled", True))
+                    self.cron_engine.set_auto_briefing(enabled)
+
+                elif msg_type == "trigger_briefing":
+                    await self.cron_engine.trigger_briefing_now()
 
         except websockets.exceptions.ConnectionClosed:
             pass

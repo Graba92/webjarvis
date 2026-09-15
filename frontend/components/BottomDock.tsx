@@ -5,7 +5,8 @@ import { LogMessage } from "@/lib/types";
 import { socketManager } from "@/lib/websocket";
 import { 
   Send, Ear, Feather, Folder, Bell, Lightbulb, RefreshCw, 
-  ChevronUp, ChevronDown, Terminal, Sparkles, Puzzle, Archive, UserCheck, ShieldCheck
+  ChevronUp, ChevronDown, Terminal, Sparkles, Puzzle, Archive, UserCheck, ShieldCheck,
+  Calendar
 } from "lucide-react";
 
 interface BottomDockProps {
@@ -14,6 +15,7 @@ interface BottomDockProps {
   onOpenSkillsModal?: () => void;
   onOpenDevConsole?: () => void;
   onOpenPersonalityWizard?: () => void;
+  onOpenCalendarModal?: () => void;
 }
 
 export const BottomDock: React.FC<BottomDockProps> = ({
@@ -231,6 +233,18 @@ export const BottomDock: React.FC<BottomDockProps> = ({
               title="Personality Wizard: SOUL.md, Rolle, Tonfall & Humor konfigurieren"
             >
               <UserCheck className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Terminkalender & Tagesbriefing */}
+          {onOpenCalendarModal && (
+            <button
+              type="button"
+              onClick={onOpenCalendarModal}
+              className="p-2 rounded-full text-gray-400 hover:text-[#00d4ff] hover:bg-white/5 transition-colors cursor-pointer"
+              title="Terminkalender & Tagesbriefing verwalten"
+            >
+              <Calendar className="w-4 h-4" />
             </button>
           )}
         </div>

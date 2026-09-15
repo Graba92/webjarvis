@@ -15,6 +15,7 @@ import { ApiKeyModal } from "@/components/ApiKeyModal";
 import { SkillsModal } from "@/components/SkillsModal";
 import { DevConsole } from "@/components/DevConsole";
 import { PersonalityWizardModal } from "@/components/PersonalityWizardModal";
+import { CalendarModal } from "@/components/CalendarModal";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -44,6 +45,7 @@ export default function Home() {
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState<boolean>(false);
   const [isDevConsoleOpen, setIsDevConsoleOpen] = useState<boolean>(false);
   const [isPersonalityWizardOpen, setIsPersonalityWizardOpen] = useState<boolean>(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
 
@@ -138,6 +140,7 @@ export default function Home() {
         onToggleFilter={handleToggleFilter}
         categoryCounts={categoryCounts}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        onOpenCalendarModal={() => setIsCalendarOpen(true)}
       />
 
       {/* 4. Untere Steuerungsleiste: Terminal-Bubble, Prompt-Input & Tool-Dock */}
@@ -147,6 +150,7 @@ export default function Home() {
         onOpenSkillsModal={() => setIsSkillsModalOpen(true)}
         onOpenDevConsole={() => setIsDevConsoleOpen((prev) => !prev)}
         onOpenPersonalityWizard={() => setIsPersonalityWizardOpen(true)}
+        onOpenCalendarModal={() => setIsCalendarOpen(true)}
       />
 
       {/* 5. Live Dev-Console Floating Drawer */}
@@ -161,10 +165,16 @@ export default function Home() {
         onClose={() => setIsPersonalityWizardOpen(false)}
       />
 
-      {/* 7. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}
+      {/* 7. Terminkalender & Tagesbriefing Modal */}
+      <CalendarModal
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+      />
+
+      {/* 8. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}
       <ConfirmBanner />
 
-      {/* 8. Modals */}
+      {/* 9. Modals */}
       <DeviceControlPanel
         isOpen={isDevicePanelOpen}
         onClose={() => setIsDevicePanelOpen(false)}

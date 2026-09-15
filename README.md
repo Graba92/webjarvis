@@ -4,6 +4,8 @@
 
 <p align="center">
   <img src="preview_hud.png" alt="J.A.R.V.I.S. WebGL HUD Preview" width="900">
+  <br><br>
+  <img src="preview_devconsole.png" alt="J.A.R.V.I.S. Live Dev-Console & Stream Engine Preview" width="900">
 </p>
 
 [![GitHub](https://img.shields.io/badge/GitHub-Graba92%2Fwebjarvis-blue?logo=github)](https://github.com/Graba92/webjarvis)

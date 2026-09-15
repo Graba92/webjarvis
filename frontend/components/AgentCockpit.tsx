@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { AssistantState, NodeCategory } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/graphData";
 import { socketManager } from "@/lib/websocket";
-import { Eye, Radio, Grid, Crosshair, KeyRound, Mic, MicOff, ShieldAlert } from "lucide-react";
+import { Eye, Radio, Grid, Crosshair, KeyRound, Mic, MicOff, ShieldAlert, Sunrise, Calendar } from "lucide-react";
 
 interface AgentCockpitProps {
   state: AssistantState;
@@ -13,6 +13,7 @@ interface AgentCockpitProps {
   onToggleFilter: (cat: NodeCategory) => void;
   categoryCounts: Record<NodeCategory, number>;
   onOpenApiKeyModal: () => void;
+  onOpenCalendarModal?: () => void;
 }
 
 export const AgentCockpit: React.FC<AgentCockpitProps> = ({
@@ -22,11 +23,13 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
   onToggleFilter,
   categoryCounts,
   onOpenApiKeyModal,
+  onOpenCalendarModal,
 }) => {
   const [sensorEyes, setSensorEyes] = useState(false);
   const [sensorWatch, setSensorWatch] = useState(false);
   const [sensorHolo, setSensorHolo] = useState(true);
   const [focusMode, setFocusMode] = useState(false);
+  const [autoBriefing, setAutoBriefing] = useState(true);
   const [paranoiaMuted, setParanoiaMuted] = useState(false);
   const [angle, setAngle] = useState(0);
 
@@ -48,9 +51,13 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
     const unsubFocus = socketManager.onFocusMode((enabled) => {
       setFocusMode(enabled);
     });
+    const unsubBriefing = socketManager.onAutoBriefing((enabled) => {
+      setAutoBriefing(enabled);
+    });
     return () => {
       unsubParanoia();
       unsubFocus();
+      unsubBriefing();
     };
   }, []);
 
@@ -68,6 +75,12 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
     const nextState = !focusMode;
     setFocusMode(nextState);
     socketManager.setFocusMode(nextState);
+  };
+
+  const handleToggleBriefing = () => {
+    const nextState = !autoBriefing;
+    setAutoBriefing(nextState);
+    socketManager.setAutoBriefing(nextState);
   };
 
   const pulseScale = 1 + (audioLevel || 0) * 0.25;
@@ -277,6 +290,28 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
             <span className="flex items-center gap-1.5"><Crosshair className="w-3.5 h-3.5" /> FOCUS</span>
             <span className={`text-[10px] font-bold ${focusMode ? "text-[#eab308]" : "text-gray-500"}`}>{focusMode ? "on" : "off"}</span>
           </button>
+
+          <button
+            onClick={handleToggleBriefing}
+            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
+              autoBriefing ? "bg-amber-500/15 border-amber-500/40 text-white shadow-sm shadow-amber-500/20" : "bg-[#080a0f]/60 border-[#1f242d] text-gray-400 hover:text-white"
+            }`}
+            title="Startup-Briefing: Liest beim Hochfahren Status, Wetter & Termine vor"
+          >
+            <span className="flex items-center gap-1.5"><Sunrise className="w-3.5 h-3.5 text-amber-400" /> BRIEFING</span>
+            <span className={`text-[10px] font-bold ${autoBriefing ? "text-amber-400" : "text-gray-500"}`}>{autoBriefing ? "on" : "off"}</span>
+          </button>
+
+          {onOpenCalendarModal && (
+            <button
+              onClick={onOpenCalendarModal}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-[#00d4ff]/30 bg-[#00d4ff]/10 text-white hover:bg-[#00d4ff]/20 text-xs transition-colors cursor-pointer"
+              title="Terminkalender & Tagesplan öffnen"
+            >
+              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-[#00d4ff]" /> TERMINE</span>
+              <span className="text-[10px] text-[#00d4ff] font-mono">open</span>
+            </button>
+          )}
         </div>
 
         {/* Paranoia Quick Action */}

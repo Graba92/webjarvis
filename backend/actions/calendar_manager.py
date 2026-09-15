@@ -228,6 +228,51 @@ def calendar_manager(
 
     return f"Unbekannte Aktion '{action}'. Gültige Aktionen: 'create', 'list', 'delete', 'complete'."
 
+def get_events_list(limit: int = 100) -> List[Dict[str, Any]]:
+    """Gibt alle aktiven und anstehenden Termine als Dict-Liste für das HUD zurück."""
+    with _get_connection() as conn:
+        cursor = conn.execute(
+            "SELECT * FROM events WHERE is_completed = 0 ORDER BY start_time ASC LIMIT ?",
+            (limit,)
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+def add_event_entry(
+    title: str,
+    start_time: str,
+    description: str = "",
+    category: str = "Termin",
+    reminder: str = "15 Minuten vorher"
+) -> Dict[str, Any]:
+    """Erstellt einen Termin direkt über das Frontend-Modal."""
+    dt = parse_natural_datetime(start_time)
+    if not dt:
+        dt = datetime.now() + timedelta(hours=1)
+    offset_mins = parse_reminder_offset(reminder)
+    start_iso = dt.strftime("%Y-%m-%d %H:%M")
+
+    with _get_connection() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO events (title, description, start_time, category, reminder_offset_minutes, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (title.strip(), description.strip(), start_iso, category.strip(), offset_mins, datetime.now().isoformat())
+        )
+        eid = cursor.lastrowid
+        row = conn.execute("SELECT * FROM events WHERE id = ?", (eid,)).fetchone()
+        return dict(row)
+
+def delete_event_entry(event_id: int | str) -> bool:
+    """Löscht einen Termin anhand seiner ID."""
+    try:
+        eid = int(event_id)
+        with _get_connection() as conn:
+            cur = conn.execute("DELETE FROM events WHERE id = ?", (eid,))
+            return cur.rowcount > 0
+    except Exception:
+        return False
+
 TOOL = {
     "name": "calendar_manager",
     "description": (

@@ -57,6 +57,8 @@ def matches_cron(dt: datetime, cron_expr: str) -> bool:
         (_matches_cron_field(cron_dow, dow_exp) or _matches_cron_field(dt.weekday(), dow_exp))
     )
 
+SETTINGS_FILE = BASE_DIR / "config" / "cron_settings.json"
+
 class CronJob:
     def __init__(self, name: str, schedule: str, action: str, enabled: bool = True, description: str = ""):
         self.name = name
@@ -87,6 +89,32 @@ class CronEngine:
         self._task: Optional[asyncio.Task] = None
         self.controller = None
         self.focus_mode = False
+        self.settings_file = SETTINGS_FILE
+        self.auto_briefing = self._load_auto_briefing()
+
+    def _load_auto_briefing(self) -> bool:
+        try:
+            if self.settings_file.exists():
+                cfg = json.loads(self.settings_file.read_text(encoding="utf-8"))
+                return bool(cfg.get("auto_briefing", True))
+        except Exception:
+            pass
+        return True
+
+    def set_auto_briefing(self, enabled: bool) -> None:
+        """Aktiviert oder deaktiviert das automatische Morning-Briefing beim Systemstart."""
+        self.auto_briefing = bool(enabled)
+        try:
+            self.settings_file.parent.mkdir(parents=True, exist_ok=True)
+            self.settings_file.write_text(
+                json.dumps({"auto_briefing": self.auto_briefing}, indent=2),
+                encoding="utf-8"
+            )
+        except Exception as e:
+            self.logger(f"[CronEngine] Fehler beim Speichern von cron_settings.json: {e}")
+        state_str = "AKTIVIERT" if self.auto_briefing else "DEAKTIVIERT"
+        self.logger(f"[CronEngine] Auto-Briefing bei Start {state_str}.")
+        self.broadcast({"type": "auto_briefing_state", "enabled": self.auto_briefing})
 
     def set_focus_mode(self, enabled: bool) -> None:
         """Aktiviert oder pausiert den Performance-Fokusmodus (friert Hintergrund-Jobs ein)."""
@@ -283,11 +311,46 @@ class CronEngine:
                 self.logger(f"[CronEngine] Schleifenfehler: {e}")
                 await asyncio.sleep(30)
 
+    async def _startup_briefing(self) -> None:
+        """Führt nach Systemstart ein automatisches kurzes Morning/Startup-Briefing durch (falls aktiviert)."""
+        await asyncio.sleep(5)
+        if self.auto_briefing and not self.focus_mode:
+            text, _ = self._run_morning_briefing()
+            if self.controller and hasattr(self.controller, "send_text_prompt"):
+                try:
+                    await self.controller.send_text_prompt(
+                        f"[SYSTEM STARTUP BRIEFING]: Das System ist hochgefahren. Fasse das folgende Morgen-Briefing kurz und prägnant für den Operator zusammen und lies es vor:\n{text}"
+                    )
+                except Exception:
+                    pass
+
+    async def trigger_briefing_now(self) -> str:
+        """Manuell ausgelöstes Morning Briefing über das HUD."""
+        text, _ = self._run_morning_briefing()
+        self.broadcast({
+            "type": "cron_event",
+            "job": "manual_morning_briefing",
+            "action": "morning_briefing",
+            "result": text,
+            "is_critical": False,
+            "timestamp": datetime.now().strftime("%H:%M:%S")
+        })
+        if self.controller and hasattr(self.controller, "send_text_prompt"):
+            try:
+                await self.controller.send_text_prompt(
+                    f"[MANUELLES BRIEFING]: Der Operator hat das Morgen-Briefing angefordert. Lies es vor:\n{text}"
+                )
+            except Exception:
+                pass
+        return text
+
     def start(self, controller: Any = None) -> asyncio.Task:
         self.controller = controller
         self.load_jobs()
         if self._task is None or self._task.done():
             self._task = asyncio.create_task(self.run_loop())
+        if self.auto_briefing:
+            asyncio.create_task(self._startup_briefing())
         return self._task
 
     def stop(self) -> None:

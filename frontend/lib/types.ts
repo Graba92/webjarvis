@@ -111,3 +111,15 @@ export interface BrainImportResult {
   success: boolean;
   error?: string;
 }
+
+export interface CalendarEvent {
+  id: number;
+  title: string;
+  description: string;
+  start_time: string;
+  end_time?: string;
+  category: string;
+  reminder_offset_minutes: number;
+  is_completed: number;
+  created_at: string;
+}
