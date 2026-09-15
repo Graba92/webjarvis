@@ -444,6 +444,8 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     const pearls: DataPearl[] = [];
     const pearlGeo = new THREE.SphereGeometry(1.6, 12, 12);
     const flowColorHexes = [0x00d4ff, 0x00ff88, 0xa855f7, 0x38bdf8, 0x4ade80];
+    const pearlMaterials: THREE.MeshBasicMaterial[] = [];
+    const pearlHaloMaterials: THREE.SpriteMaterial[] = [];
 
     for (let p = 0; p < pearlPoolSize; p++) {
       const pColorHex = flowColorHexes[p % flowColorHexes.length];
@@ -454,6 +456,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         opacity: 0.95,
         blending: THREE.AdditiveBlending
       });
+      pearlMaterials.push(pMeshMat);
       const pMesh = new THREE.Mesh(pearlGeo, pMeshMat);
       const pHaloMat = new THREE.SpriteMaterial({
         map: glowTexture,
@@ -463,6 +466,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
+      pearlHaloMaterials.push(pHaloMat);
       const pHalo = new THREE.Sprite(pHaloMat);
       pHalo.scale.set(7, 7, 1);
       pMesh.add(pHalo);
@@ -710,7 +714,8 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       lineGeo.dispose();
       lineMat.dispose();
       pearlGeo.dispose();
-      pearlMat.dispose();
+      pearlMaterials.forEach((m) => m.dispose());
+      pearlHaloMaterials.forEach((m) => m.dispose());
     };
   }, [data]);
 
