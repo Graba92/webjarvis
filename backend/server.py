@@ -8,6 +8,8 @@ import asyncio
 import json
 import base64
 import sys
+from datetime import datetime
+from typing import Optional
 from pathlib import Path
 
 # Sicherstellen, dass das backend-Verzeichnis im sys.path liegt
@@ -101,22 +103,34 @@ class JarvisServer:
 
     def _log(self, msg: str):
         print(f"[JarvisServer] {msg}")
+        ts = datetime.now().strftime("%H:%M:%S")
         broadcast({
             "type": "dev_log",
+            "entry": {
+                "speaker": "CORE",
+                "text": msg,
+                "ts": ts
+            },
             "level": "info",
             "speaker": "CORE",
             "message": msg,
-            "timestamp": datetime.now().strftime("%H:%M:%S")
+            "timestamp": ts
         })
 
     def log(self, text: str, speaker: str = "SYS"):
         self.controller.log(text, speaker)
+        ts = datetime.now().strftime("%H:%M:%S")
         broadcast({
             "type": "dev_log",
+            "entry": {
+                "speaker": speaker,
+                "text": text,
+                "ts": ts
+            },
             "level": "error" if speaker == "ERR" else "warn" if speaker == "WARN" else "info",
             "speaker": speaker,
             "message": text,
-            "timestamp": datetime.now().strftime("%H:%M:%S")
+            "timestamp": ts
         })
 
     def _on_audio_level(self, level: float):
