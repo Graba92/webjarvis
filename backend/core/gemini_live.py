@@ -291,7 +291,8 @@ class GeminiLiveController:
                             # Tool ausführen
                             ctx = {
                                 "speak": self.send_text_prompt,
-                                "ws_broadcast": self.broadcast
+                                "ws_broadcast": self.broadcast,
+                                "registry": self.registry
                             }
                             res_str = await asyncio.to_thread(self.registry.run, name, args, ctx)
                             self.log(f"Tool-Antwort ({name}): {res_str[:120]}", "SYS")

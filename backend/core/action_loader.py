@@ -16,7 +16,7 @@ from core.json_repair import repair_and_parse_parameters
 
 _NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]{0,63}$")
 _DEFAULT_PARAMS = {"type": "OBJECT", "properties": {}}
-_CTX_KEYS = ("player", "speak", "response", "session_memory", "ws_broadcast")
+_CTX_KEYS = ("player", "speak", "response", "session_memory", "ws_broadcast", "registry")
 
 @dataclass
 class ActionRecord:
@@ -45,6 +45,28 @@ class ActionRegistry:
 
     def names(self) -> set[str]:
         return set(self._actions.keys())
+
+    def reload_mcp(self, mcp_config: Path) -> list[str]:
+        """Lädt MCP-Tools basierend auf der aktuellen mcp_servers.json dynamisch in die Registry."""
+        to_remove = [name for name, rec in self._actions.items() if rec.file.startswith("mcp_servers.json")]
+        for name in to_remove:
+            del self._actions[name]
+
+        added = []
+        if mcp_config.exists():
+            try:
+                from core.mcp_client import MCPManager
+                mcp_mgr = MCPManager(mcp_config, logger=self._logger)
+                mcp_tools = mcp_mgr.load_mcp_servers()
+                for raw_tool in mcp_tools:
+                    rec = _validate_single(raw_tool, raw_tool.get("file", "mcp_servers.json"))
+                    if rec.valid and rec.name not in self._actions:
+                        self._actions[rec.name] = rec
+                        added.append(rec.name)
+                        self._logger(f"[ActionRegistry / MCP] Dynamisch aktualisiert: {rec.name}")
+            except Exception as e:
+                self._logger(f"[ActionRegistry] Fehler beim dynamischen MCP-Reload: {e}")
+        return added
 
     def run(self, name: str, parameters: dict | str | Any, ctx: dict | None = None) -> str:
         rec = self._actions.get(name)

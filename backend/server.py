@@ -260,7 +260,7 @@ class JarvisServer:
                     tool_name = data.get("tool")
                     params = data.get("params", {})
                     if self.registry.has(tool_name):
-                        ctx = {"speak": self.controller.send_text_prompt, "ws_broadcast": broadcast}
+                        ctx = {"speak": self.controller.send_text_prompt, "ws_broadcast": broadcast, "registry": self.registry}
                         res = await asyncio.to_thread(self.registry.run, tool_name, params, ctx)
                         self.log(f"Manuelle Ausführung von '{tool_name}': {res}", "SYS")
 
@@ -312,6 +312,7 @@ class JarvisServer:
                             if server_id in content.get("mcpServers", {}):
                                 content["mcpServers"][server_id]["enabled"] = enabled
                                 mcp_file.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
+                                self.registry.reload_mcp(mcp_file)
                                 broadcast({
                                     "type": "mcp_servers_data",
                                     "servers": content.get("mcpServers", {})
@@ -332,6 +333,7 @@ class JarvisServer:
                                 content = json.loads(mcp_file.read_text(encoding="utf-8"))
                             content.setdefault("mcpServers", {})[server_id] = server_cfg
                             mcp_file.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
+                            self.registry.reload_mcp(mcp_file)
                             broadcast({
                                 "type": "mcp_servers_data",
                                 "servers": content.get("mcpServers", {})
@@ -349,6 +351,7 @@ class JarvisServer:
                             if server_id in content.get("mcpServers", {}):
                                 del content["mcpServers"][server_id]
                                 mcp_file.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
+                                self.registry.reload_mcp(mcp_file)
                                 broadcast({
                                     "type": "mcp_servers_data",
                                     "servers": content.get("mcpServers", {})

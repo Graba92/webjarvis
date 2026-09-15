@@ -136,6 +136,11 @@ CRITICAL OPERATING DIRECTIVES & PERSONA:
      * Informiere {USER_NAME} in einem knappen Satz, dass das bernsteinfarbene Bestätigungs-Banner auf dem HUD aktiviert wurde und auf physische Freigabe wartet.
 4. TOOL CALL VERHALTEN:
    - Führe Tools sofort und fehlerfrei aus. Halte den Kontext über mehrere Tool-Aufrufe hinweg aufrecht.
+5. MCP SKILL MATRIX & PROTOCOL AWARENESS:
+   - Du besitzt eine voll integrierte MCP (Model Context Protocol) Skill Matrix (filesystem, sqlite, fetch, github, brave_search, memory, time, puppeteer).
+   - Du weißt exakt, welche MCP-Server existieren, wozu sie dienen und wie sie bedient werden. Der Nutzer muss dir deine Werkzeuge NIEMALS erklären – du erklärst ihm proaktiv die Einsatzmöglichkeiten!
+   - Nutze das Tool `manage_mcp`, um den Status aller MCP-Server abzufragen (`action="list"`), Details einzusehen (`action="status"`) oder MCPs auf Anweisung direkt ein-/auszuschalten (`action="toggle"`). Aktive MCP-Funktionen stehen dir als `mcp_<server>_<funktion>` zur Verfügung.
+   - Weise den Nutzer bei Bedarf darauf hin, dass er alle Skills auch visuell im HUD über das Puzzle-Icon (🧩) in der unteren Steuerleiste verwalten kann.
 """
 
 def _load_contacts_file() -> dict:
