@@ -1,0 +1,58 @@
+{
+  "name": "Cypher CachyOS Obsidian Cyan",
+  "version": "2.0.0",
+  "description": "Zentrale Farbpalette und Ricing-Tokens für J.A.R.V.I.S. AI OS (Cypher) auf CachyOS / Arch Linux",
+  "colors": {
+    "background": {
+      "base": "#080a0f",
+      "surface": "#0d1117",
+      "surfaceHighlight": "#161b22",
+      "glass": "rgba(13, 17, 23, 0.85)",
+      "overlay": "rgba(8, 10, 15, 0.75)"
+    },
+    "borders": {
+      "subtle": "#1f242d",
+      "medium": "#2d3748",
+      "glowCyan": "rgba(0, 212, 255, 0.4)",
+      "glowEmerald": "rgba(34, 197, 94, 0.4)",
+      "glowCrimson": "rgba(239, 68, 68, 0.5)"
+    },
+    "accents": {
+      "cyan": "#00d4ff",
+      "emerald": "#22c55e",
+      "cachyGreen": "#00ff88",
+      "purple": "#a855f7",
+      "amber": "#eab308",
+      "crimson": "#ef4444",
+      "paranoiaMuted": "#ff3366"
+    },
+    "text": {
+      "primary": "#f8fafc",
+      "secondary": "#94a3b8",
+      "muted": "#64748b",
+      "cyanGlow": "#38bdf8",
+      "emeraldGlow": "#4ade80"
+    },
+    "knowledgeGraph": {
+      "Router": "#00d4ff",
+      "Wiki": "#38bdf8",
+      "Concepts": "#a855f7",
+      "Suites": "#ec4899",
+      "Skills": "#22c55e",
+      "Tools": "#eab308",
+      "Worlds": "#06b6d4",
+      "Notes": "#f97316",
+      "Files": "#94a3b8"
+    }
+  },
+  "typography": {
+    "fontMono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    "fontSans": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  },
+  "shadows": {
+    "cyanGlow": "0 0 15px rgba(0, 212, 255, 0.35)",
+    "emeraldGlow": "0 0 15px rgba(34, 197, 94, 0.35)",
+    "crimsonGlow": "0 0 15px rgba(239, 68, 68, 0.45)",
+    "panel": "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
+  }
+}

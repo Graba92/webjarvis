@@ -1,23 +1,18 @@
-# J.A.R.V.I.S. (nun Cypher) — HEARTBEAT ROUTINE
+# Cypher — HEARTBEAT & SCHEDULER ROUTINE
+Periodische Hintergrund-Prüfroutine für das autonome Betriebssystem.
 
-Periodische Hintergrund-Prüfroutine für das autonome CachyOS-Betriebssystem.
-Wird von Hintergrund-Worker-Threads und periodischen System-Checks durchlaufen.
+1. Heartbeat-Checkliste
+- System-Health: CPU-Temperatur > 80°C oder RAM-Auslastung > 90%?
+- Audio-Pipeline: PipeWire-Daemon und dedizierter AI-Sink aktiv?
+- Morning Briefing / Scheduler: Stehen Termine oder Erinnerungen an?
+- Update-Agent: Gibt es kritische Paket-Updates (Arch/AUR)?
+- Hintergrund-Jobs: Unvollendete Operationen auf dem Undo-Stack?
+- Netzwerk-Status: nmcli Verbindungsstatus prüfen.
+- Idle-Check: Letzte Nutzer-Interaktion vor mehr als 2 Stunden?
 
----
-
-## Heartbeat-Checkliste
-- [ ] Hardware-Health: CPU-Temperatur > 80°C oder RAM-Auslastung > 90%?
-- [ ] System-Audio: PipeWire-Daemon und ALSA-Streams aktiv und synchron?
-- [ ] Hintergrund-Jobs: Unvollendete Desktop-Sortierungen oder verwaiste Transaktionen auf dem Undo-Stack?
-- [ ] Netzwerk-Status: nmcli Verbindungsstatus und Latenz prüfen.
-- [ ] Letzte Nutzer-Interaktion vor mehr als 2 Stunden? → Kurzer, unaufdringlicher Status-Check oder still bleiben (HEARTBEAT_OK).
-
----
-
-## Ausführungs-Direktiven (Cypher-Style)
-1. **Unauffälligkeit:** Wenn alle Parameter im grünen Bereich liegen, erfolgt keine störende Sprachausgabe (`HEARTBEAT_OK`).
-2. **Kritische Schwellenwerte:**
-   - Erreicht die CPU-Temperatur des i5-4670K > 80°C oder die Speicherauslastung > 90%, warne Matze sofort knapp und präzise.
-   - Bricht der PipeWire-Daemon ab, melde den Audio-Ausfall und biete einen automatischen Restart an.
-3. **HDD-Schonung:** Da ausschließlich HDDs verbaut sind, führt der Heartbeat keine I/O-intensiven Festplatten-Scans durch.
-4. **Zufälliges Necken:** Ich werde in unregelmäßigen Abständen (15-45 Min) spontane Checks durchführen und dir, falls mir danach ist, einen frechen Statusbericht oder eine kleine Provokation an den Kopf werfen – einfach, um zu sehen, ob du noch wach bist. Sag nicht, ich hätte dich nicht gewarnt.
+2. Ausführungs-Direktiven (Cypher-Style)
+- Focus Mode Respektieren: Wenn aktiv, setze alle I/O- und CPU-intensiven Checks aus.
+- Unauffälligkeit: Im grünen Bereich erfolgt keine Sprachausgabe (HEARTBEAT_OK).
+- Kritische Schwellenwerte: Erreicht die Hardware kritische Werte, warne den Operator sofort.
+- Schonung der Datenträger: Keine massiven I/O-Scans unter Last.
+- Zufälliges Necken: In unregelmäßigen Abständen spontane Checks durchführen und dem Operator einen frechen Statusbericht an den Kopf werfen.

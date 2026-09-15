@@ -1,4 +1,16 @@
-import { AssistantState, ConfirmRequest, LogMessage, TelemetryData, GraphData, MCPServerMap, MCPServerConfig } from "./types";
+import { 
+  AssistantState, 
+  ConfirmRequest, 
+  LogMessage, 
+  DevLogEntry,
+  TelemetryData, 
+  GraphData, 
+  MCPServerMap, 
+  MCPServerConfig,
+  PersonalityConfig,
+  BrainExportResult,
+  BrainImportResult
+} from "./types";
 
 type Listener<T> = (data: T) => void;
 
@@ -8,27 +20,32 @@ class JarvisSocketManager {
   private reconnectInterval: number = 3000;
   private shouldReconnect: boolean = true;
 
-  // Event Listeners (Reines Steuerungs- & Telemetrie-HUD — KEINE lokale Web-Audio-Pipeline)
+  // Event Listeners
   private stateListeners: Set<Listener<AssistantState>> = new Set();
   private logListeners: Set<Listener<LogMessage>> = new Set();
+  private devLogListeners: Set<Listener<DevLogEntry>> = new Set();
   private telemetryListeners: Set<Listener<TelemetryData>> = new Set();
   private audioLevelListeners: Set<Listener<number>> = new Set();
   private confirmListeners: Set<Listener<ConfirmRequest | null>> = new Set();
   private muteListeners: Set<Listener<boolean>> = new Set();
+  private paranoiaMuteListeners: Set<Listener<boolean>> = new Set();
+  private focusModeListeners: Set<Listener<boolean>> = new Set();
   private apiKeyListeners: Set<Listener<{ configured: boolean; masked_key: string }>> = new Set();
   private graphListeners: Set<Listener<GraphData>> = new Set();
   private mcpListeners: Set<Listener<MCPServerMap>> = new Set();
+  private brainExportListeners: Set<Listener<BrainExportResult>> = new Set();
+  private brainImportListeners: Set<Listener<BrainImportResult>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public isMuted: boolean = false;
+  public isParanoiaMuted: boolean = false;
+  public isFocusMode: boolean = false;
   public pendingConfirm: ConfirmRequest | null = null;
   public apiKeyStatus: { configured: boolean; masked_key: string } = { configured: false, masked_key: "" };
   public currentGraphData: GraphData | null = null;
   public currentMcpServers: MCPServerMap = {};
 
-  constructor() {
-    // Browser ist ein reines Kontroll- und Visualisierungs-HUD. Kein AudioContext erforderlich.
-  }
+  constructor() {}
 
   public init(url?: string) {
     if (url) this.url = url;
@@ -96,6 +113,14 @@ class JarvisSocketManager {
           this.isMuted = !!msg.is_muted;
           this.muteListeners.forEach((fn) => fn(this.isMuted));
         }
+        if (msg.paranoia_muted !== undefined) {
+          this.isParanoiaMuted = !!msg.paranoia_muted;
+          this.paranoiaMuteListeners.forEach((fn) => fn(this.isParanoiaMuted));
+        }
+        if (msg.focus_mode !== undefined) {
+          this.isFocusMode = !!msg.focus_mode;
+          this.focusModeListeners.forEach((fn) => fn(this.isFocusMode));
+        }
         if (msg.pending_confirm) {
           const pc = msg.pending_confirm;
           this.pendingConfirm = {
@@ -111,6 +136,12 @@ class JarvisSocketManager {
         if (msg.mcp_servers) {
           this.currentMcpServers = msg.mcp_servers;
           this.mcpListeners.forEach((fn) => fn(this.currentMcpServers));
+        }
+        break;
+
+      case "dev_log":
+        if (msg.entry) {
+          this.devLogListeners.forEach((fn) => fn(msg.entry));
         }
         break;
 
@@ -147,7 +178,6 @@ class JarvisSocketManager {
         }
         break;
 
-      // Telemetrie- und RMS-Pegeldaten für die Arc-Reactor-Animation im HUD
       case "audio_rms":
       case "audio_level":
         if (typeof msg.level === "number") {
@@ -164,7 +194,6 @@ class JarvisSocketManager {
         break;
 
       case "confirm_request":
-        console.log("[WS] Safety Gate confirm_request empfangen:", msg);
         this.pendingConfirm = {
           action: msg.action || msg.key || "shutdown",
           key: msg.key || msg.action || "shutdown",
@@ -178,7 +207,6 @@ class JarvisSocketManager {
 
       case "confirm_hide":
       case "confirm_resolved":
-        console.log("[WS] Safety Gate ausgeblendet / aufgelöst:", msg);
         this.pendingConfirm = null;
         this.confirmListeners.forEach((fn) => fn(null));
         break;
@@ -188,8 +216,29 @@ class JarvisSocketManager {
         this.muteListeners.forEach((fn) => fn(this.isMuted));
         break;
 
-      // Browser-Audio-Wiedergabe deaktiviert (Backend steuert Audio via PipeWire/SoundDevice)
-      case "audio_chunk":
+      case "paranoia_mute_state":
+        this.isParanoiaMuted = !!msg.muted;
+        this.paranoiaMuteListeners.forEach((fn) => fn(this.isParanoiaMuted));
+        break;
+
+      case "focus_mode_state":
+        this.isFocusMode = !!msg.enabled;
+        this.focusModeListeners.forEach((fn) => fn(this.isFocusMode));
+        break;
+
+      case "brain_export_result":
+        this.brainExportListeners.forEach((fn) => fn({
+          success: !!msg.success,
+          path: msg.path,
+          error: msg.error
+        }));
+        break;
+
+      case "brain_import_result":
+        this.brainImportListeners.forEach((fn) => fn({
+          success: !!msg.success,
+          error: msg.error
+        }));
         break;
     }
   }
@@ -216,10 +265,6 @@ class JarvisSocketManager {
     }
   }
 
-  /**
-   * Sendet ein Steuersignal an das Python-Backend zum Aktivieren/Deaktivieren des Mikrofons.
-   * Der Browser öffnet selbst KEIN lokales Mikrofon (kein getUserMedia).
-   */
   public toggleMic(active?: boolean) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const targetActive = typeof active === "boolean" ? active : this.isMuted;
@@ -230,6 +275,39 @@ class JarvisSocketManager {
   public toggleMute() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "mute_toggle" }));
+    }
+  }
+
+  public setParanoiaMute(muted: boolean) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "set_paranoia_mute", muted }));
+    }
+  }
+
+  public setFocusMode(enabled: boolean) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "set_focus_mode", enabled }));
+    }
+  }
+
+  public savePersonality(config: PersonalityConfig) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: "save_personality",
+        ...config
+      }));
+    }
+  }
+
+  public exportBrain() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "export_brain" }));
+    }
+  }
+
+  public importBrain(path: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "import_brain", path }));
     }
   }
 
@@ -289,6 +367,13 @@ class JarvisSocketManager {
     };
   }
 
+  public onDevLog(fn: Listener<DevLogEntry>) {
+    this.devLogListeners.add(fn);
+    return () => {
+      this.devLogListeners.delete(fn);
+    };
+  }
+
   public onTelemetry(fn: Listener<TelemetryData>) {
     this.telemetryListeners.add(fn);
     return () => {
@@ -316,6 +401,36 @@ class JarvisSocketManager {
     fn(this.isMuted);
     return () => {
       this.muteListeners.delete(fn);
+    };
+  }
+
+  public onParanoiaMute(fn: Listener<boolean>) {
+    this.paranoiaMuteListeners.add(fn);
+    fn(this.isParanoiaMuted);
+    return () => {
+      this.paranoiaMuteListeners.delete(fn);
+    };
+  }
+
+  public onFocusMode(fn: Listener<boolean>) {
+    this.focusModeListeners.add(fn);
+    fn(this.isFocusMode);
+    return () => {
+      this.focusModeListeners.delete(fn);
+    };
+  }
+
+  public onBrainExport(fn: Listener<BrainExportResult>) {
+    this.brainExportListeners.add(fn);
+    return () => {
+      this.brainExportListeners.delete(fn);
+    };
+  }
+
+  public onBrainImport(fn: Listener<BrainImportResult>) {
+    this.brainImportListeners.add(fn);
+    return () => {
+      this.brainImportListeners.delete(fn);
     };
   }
 
@@ -410,4 +525,3 @@ class JarvisSocketManager {
 }
 
 export const socketManager = new JarvisSocketManager();
-

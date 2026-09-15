@@ -439,29 +439,32 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     const linkLinesSegments = new THREE.LineSegments(lineGeo, lineMat);
     constellationGroup.add(linkLinesSegments);
 
-    // 11. Wandernde Aktivitätsperlen ("Pearls")
-    const pearlPoolSize = 24;
+    // 11. Wandernde Aktivitätsperlen & Datenfluss-Partikel ("Data Flow Particles")
+    const pearlPoolSize = 48;
     const pearls: DataPearl[] = [];
     const pearlGeo = new THREE.SphereGeometry(1.6, 12, 12);
-    const pearlMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending
-    });
+    const flowColorHexes = [0x00d4ff, 0x00ff88, 0xa855f7, 0x38bdf8, 0x4ade80];
 
     for (let p = 0; p < pearlPoolSize; p++) {
-      const pMesh = new THREE.Mesh(pearlGeo, pearlMat.clone());
+      const pColorHex = flowColorHexes[p % flowColorHexes.length];
+      const pColor = new THREE.Color(pColorHex);
+      const pMeshMat = new THREE.MeshBasicMaterial({
+        color: pColor,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending
+      });
+      const pMesh = new THREE.Mesh(pearlGeo, pMeshMat);
       const pHaloMat = new THREE.SpriteMaterial({
         map: glowTexture,
-        color: new THREE.Color(0x50d7ff),
+        color: pColor,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.85,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
       const pHalo = new THREE.Sprite(pHaloMat);
-      pHalo.scale.set(6, 6, 1);
+      pHalo.scale.set(7, 7, 1);
       pMesh.add(pHalo);
 
       const linkIdx = p % Math.max(1, curvedLinks.length);

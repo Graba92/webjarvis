@@ -10,8 +10,6 @@ set -eo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$SCRIPT_DIR/backend"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
-WHATSAPP_DIR="$BACKEND_DIR/whatsapp_bridge"
-DISCORD_DIR="$BACKEND_DIR/discord_bridge"
 VENV_PYTHON="$BACKEND_DIR/.venv/bin/python3"
 
 # ── Farbcodes ────────────────────────────────────────────────────────────────
@@ -179,15 +177,6 @@ start_backend() {
     exec "$VENV_PYTHON" "$BACKEND_DIR/server.py"
 }
 
-start_whatsapp() {
-    echo -e "\n${BOLD}${CYAN}[*] Starte WhatsApp Multi-Device Gateway Bridge (http://127.0.0.1:3001)...${RESET}"
-    cd "$WHATSAPP_DIR"
-    if [ ! -d "node_modules" ]; then
-        npm install
-    fi
-    exec node server.js
-}
-
 start_frontend() {
     echo -e "\n${BOLD}${CYAN}[*] Starte Next.js 15 WebGL HUD Frontend (http://localhost:3000)...${RESET}"
     cd "$FRONTEND_DIR"
@@ -197,45 +186,19 @@ start_frontend() {
     exec npm run dev
 }
 
-start_discord() {
-    ensure_venv
-    echo -e "\n${BOLD}${CYAN}[*] Starte J.A.R.V.I.S. Discord Gateway Bridge...${RESET}"
-    if [ -f "$DISCORD_DIR/start_discord.sh" ]; then
-        exec bash "$DISCORD_DIR/start_discord.sh" -s
-    else
-        exec "$VENV_PYTHON" "$DISCORD_DIR/discord_bot.py"
-    fi
-}
-
 start_all() {
     ensure_venv
     ensure_api_key
-    echo -e "\n${BOLD}${GREEN}[*] Starte J.A.R.V.I.S. AI OS (Backend + WhatsApp + Frontend + Discord)...${RESET}"
+    echo -e "\n${BOLD}${GREEN}[*] Starte J.A.R.V.I.S. AI OS Core (Backend + Frontend HUD)...${RESET}"
     
     export PYTHONPATH="$BACKEND_DIR:${PYTHONPATH:-}"
     "$VENV_PYTHON" "$BACKEND_DIR/server.py" &
     BACKEND_PID=$!
     echo -e "  ${CYAN}• Backend läuft unter PID $BACKEND_PID (ws://127.0.0.1:8765)${RESET}"
 
-    WA_PID=""
-    if [ -d "$WHATSAPP_DIR" ]; then
-        (cd "$WHATSAPP_DIR" && [ ! -d "node_modules" ] && npm install >/dev/null 2>&1; node server.js) &
-        WA_PID=$!
-        echo -e "  ${CYAN}• WhatsApp Bridge läuft unter PID $WA_PID (http://127.0.0.1:3001)${RESET}"
-    fi
-
-    DISCORD_PID=""
-    if [ -d "$DISCORD_DIR" ] && grep -q '^DISCORD_BOT_TOKEN=.\+' "$SCRIPT_DIR/.env" 2>/dev/null; then
-        ("$VENV_PYTHON" "$DISCORD_DIR/discord_bot.py") &
-        DISCORD_PID=$!
-        echo -e "  ${CYAN}• Discord Gateway Bridge läuft unter PID $DISCORD_PID${RESET}"
-    fi
-
     cleanup() {
         echo -e "\n${YELLOW}[*] Fahre Subsysteme herunter...${RESET}"
         kill "$BACKEND_PID" 2>/dev/null || true
-        [ -n "$WA_PID" ] && kill "$WA_PID" 2>/dev/null || true
-        [ -n "$DISCORD_PID" ] && kill "$DISCORD_PID" 2>/dev/null || true
         exit 0
     }
     trap cleanup SIGINT SIGTERM EXIT
@@ -293,16 +256,6 @@ case "${1:-}" in
         start_frontend
         exit 0
         ;;
-    -w|--whatsapp)
-        banner
-        start_whatsapp
-        exit 0
-        ;;
-    -d|--discord)
-        banner
-        start_discord
-        exit 0
-        ;;
     -c|--check)
         banner
         check_system
@@ -312,11 +265,9 @@ case "${1:-}" in
         banner
         echo "Verwendung: ./start.sh [OPTION]"
         echo "Optionen:"
-        echo "  -a, --all, --apply   Startet Gesamtsystem (Backend + WhatsApp + Frontend + Discord)"
+        echo "  -a, --all, --apply   Startet Gesamtsystem (Backend + Frontend HUD)"
         echo "  -b, --backend        Startet nur das Python Gemini Live WebSocket Backend"
         echo "  -f, --frontend       Startet nur das Next.js 15 3D WebGL Frontend"
-        echo "  -w, --whatsapp       Startet WhatsApp Multi-Device Gateway Bridge & Pairing"
-        echo "  -d, --discord        Startet den J.A.R.V.I.S. Discord Gateway Bot"
         echo "  -c, --check          Führt System- & Hardware-Prüfungen aus"
         echo "  -h, --help           Zeigt diese Hilfe an"
         exit 0
@@ -326,27 +277,23 @@ esac
 while true; do
     clear
     banner
-    echo -e "${BOLD}${CYAN}   1)${RESET} Gesamtsystem starten (Backend + WhatsApp + Frontend + Discord)"
+    echo -e "${BOLD}${CYAN}   1)${RESET} Gesamtsystem starten (Backend + Frontend HUD)"
     echo -e "${BOLD}${CYAN}   2)${RESET} Nur Python Backend starten (Gemini Live WebSocket)"
     echo -e "${BOLD}${CYAN}   3)${RESET} Nur Next.js Frontend starten (Three.js 3D WebGL HUD)"
-    echo -e "${BOLD}${CYAN}   4)${RESET} WhatsApp Multi-Device Bridge starten & QR-Pairing"
-    echo -e "${BOLD}${CYAN}   5)${RESET} Discord Gateway Bridge starten"
-    echo -e "${BOLD}${CYAN}   6)${RESET} Hardware- & Systemprüfung ausführen"
-    echo -e "${BOLD}${CYAN}   7)${RESET} Gemini API Key konfigurieren"
-    echo -e "${BOLD}${CYAN}   8)${RESET} Beenden"
+    echo -e "${BOLD}${CYAN}   4)${RESET} Hardware- & Systemprüfung ausführen"
+    echo -e "${BOLD}${CYAN}   5)${RESET} Gemini API Key konfigurieren"
+    echo -e "${BOLD}${CYAN}   6)${RESET} Beenden"
     echo -e "${BLUE}──────────────────────────────────────────────────────────────────────────────${RESET}"
-    echo -ne "${BOLD}Wähle eine Option [1-8]: ${RESET}"
+    echo -ne "${BOLD}Wähle eine Option [1-6]: ${RESET}"
     read -r CHOICE
 
     case "$CHOICE" in
         1) start_all ;;
         2) start_backend ;;
         3) start_frontend ;;
-        4) start_whatsapp ;;
-        5) start_discord ;;
-        6) check_system; echo -ne "\nDrücke Enter zum Fortfahren..."; read -r ;;
-        7) configure_env; echo -ne "\nDrücke Enter zum Fortfahren..."; read -r ;;
-        8|q|Q) echo -e "\n${CYAN}J.A.R.V.I.S. beendet. Bis bald, Operator.${RESET}"; exit 0 ;;
+        4) check_system; echo -ne "\nDrücke Enter zum Fortfahren..."; read -r ;;
+        5) configure_env; echo -ne "\nDrücke Enter zum Fortfahren..."; read -r ;;
+        6|q|Q) echo -e "\n${CYAN}J.A.R.V.I.S. beendet. Bis bald, Operator.${RESET}"; exit 0 ;;
         *) echo -e "\n${RED}Ungültige Eingabe.${RESET}"; sleep 1 ;;
     esac
 done

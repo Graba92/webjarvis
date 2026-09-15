@@ -86,6 +86,13 @@ class CronEngine:
         self._running = False
         self._task: Optional[asyncio.Task] = None
         self.controller = None
+        self.focus_mode = False
+
+    def set_focus_mode(self, enabled: bool) -> None:
+        """Aktiviert oder pausiert den Performance-Fokusmodus (friert Hintergrund-Jobs ein)."""
+        self.focus_mode = bool(enabled)
+        state_str = "AKTIVIERT (Hintergrund-Checks pausiert)" if self.focus_mode else "DEAKTIVIERT (Normalbetrieb)"
+        self.logger(f"[CronEngine] Focus Mode {state_str}.")
 
     def ensure_default_config(self) -> None:
         """Legt standardmäßig geplante Jobs an, die sich an HEARTBEAT.md orientieren."""
@@ -218,8 +225,40 @@ class CronEngine:
         return status, False
 
     def _run_morning_briefing(self) -> tuple[str, bool]:
-        date_str = datetime.now().strftime("%A, %d. %B %Y")
-        briefing = f"Morgen, Matze. Status-Report für {date_str}: CachyOS-Subsysteme laufen nominal. Und bevor du fragst: Nein, Lisa habe ich noch nicht im Raum geortet – hast du sie etwa schon wieder nicht mitgebracht?"
+        date_str = datetime.now().strftime("%A, %d. %B %Y — %H:%M Uhr")
+
+        # 1. Termine abrufen
+        events_str = "Keine anstehenden Termine für heute."
+        try:
+            from actions.calendar_manager import get_upcoming_events
+            upcoming = get_upcoming_events(days=1)
+            if upcoming:
+                events_str = f"{len(upcoming)} anstehende Termine: " + ", ".join([f"{e['title']} ({e['start_time'].split()[-1]})" for e in upcoming[:3]])
+        except Exception:
+            pass
+
+        # 2. Paket-Updates abrufen
+        updates_str = "Systempakete sind auf dem aktuellen Stand."
+        try:
+            from actions.update_agent import get_pending_updates
+            upd = get_pending_updates()
+            if upd["total_count"] > 0:
+                crit_note = f", davon {upd['critical_count']} sicherheitskritisch" if upd["critical_count"] > 0 else ""
+                updates_str = f"{upd['total_count']} Paket-Updates verfügbar{crit_note}."
+        except Exception:
+            pass
+
+        # 3. Systemmetriken
+        mem = psutil.virtual_memory()
+        cpu = psutil.cpu_percent(interval=0.2)
+
+        briefing = (
+            f"Guten Morgen, Operator. Status-Report für {date_str}:\n"
+            f"• Hardware: CPU {cpu}%, RAM {mem.percent}% belegt.\n"
+            f"• Kalender: {events_str}\n"
+            f"• System-Updates: {updates_str}\n"
+            f"Subsysteme und PipeWire-Audio sind nominal einsatzbereit."
+        )
         self.logger(f"[BRIEFING] {briefing}")
         return briefing, False
 
@@ -229,6 +268,10 @@ class CronEngine:
         self.logger("[CronEngine] Scheduler-Schleife aktiv gestartet.")
         while self._running:
             try:
+                if self.focus_mode:
+                    await asyncio.sleep(15)
+                    continue
+
                 now = datetime.now()
                 for job in self.jobs:
                     if job.should_run(now):

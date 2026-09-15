@@ -87,21 +87,12 @@ setup_node_deps() {
         (cd "$FRONTEND_DIR" && npm install)
         echo -e "  ${GREEN}✓${RESET} Frontend-Abhängigkeiten bereit."
     fi
-
-    if [ -d "$WHATSAPP_DIR" ]; then
-        echo -e "\n${CYAN}[*] Installiere WhatsApp Gateway Abhängigkeiten (Baileys)...${RESET}"
-        (cd "$WHATSAPP_DIR" && npm install)
-        echo -e "  ${GREEN}✓${RESET} WhatsApp-Bridge Abhängigkeiten bereit."
-    fi
 }
 
 # ── 5. Ausführungsrechte für Skripte vergeben ─────────────────────────────────
 make_executables() {
     echo -e "\n${CYAN}[*] Setze Ausführungsrechte auf Starter-Skripte...${RESET}"
     chmod +x "$SCRIPT_DIR/start.sh" "$SCRIPT_DIR/terminate_jarvis.sh" "$SCRIPT_DIR/setup.sh" 2>/dev/null || true
-    if [ -f "$BACKEND_DIR/discord_bridge/start_discord.sh" ]; then
-        chmod +x "$BACKEND_DIR/discord_bridge/start_discord.sh" 2>/dev/null || true
-    fi
     echo -e "  ${GREEN}✓${RESET} Berechtigungen gesetzt."
 }
 

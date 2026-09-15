@@ -101,9 +101,23 @@ class JarvisServer:
 
     def _log(self, msg: str):
         print(f"[JarvisServer] {msg}")
+        broadcast({
+            "type": "dev_log",
+            "level": "info",
+            "speaker": "CORE",
+            "message": msg,
+            "timestamp": datetime.now().strftime("%H:%M:%S")
+        })
 
     def log(self, text: str, speaker: str = "SYS"):
         self.controller.log(text, speaker)
+        broadcast({
+            "type": "dev_log",
+            "level": "error" if speaker == "ERR" else "warn" if speaker == "WARN" else "info",
+            "speaker": speaker,
+            "message": text,
+            "timestamp": datetime.now().strftime("%H:%M:%S")
+        })
 
     def _on_audio_level(self, level: float):
         # Broadcastet den gemessenen Audiopegel an das Frontend für die 60 FPS Reaktor-Visualisierung
@@ -176,7 +190,9 @@ class JarvisServer:
                 "masked_key": get_masked_api_key()
             },
             "graph_data": get_full_graph_data(),
-            "mcp_servers": mcp_servers
+            "mcp_servers": mcp_servers,
+            "focus_mode": getattr(self.cron_engine, "focus_mode", False),
+            "paranoia_muted": self.audio.is_paranoia_muted()
         }
         await websocket.send(json.dumps(welcome_payload))
 
@@ -195,26 +211,7 @@ class JarvisServer:
                     sender = data.get("sender")
                     is_self = data.get("is_self", False)
                     if text:
-                        if source == "whatsapp":
-                            clean_s = str(sender or "").replace("+", "").strip()
-                            sender_display = sender
-                            contacts_file = BACKEND_DIR / "config" / "contacts.json"
-                            if not contacts_file.exists():
-                                contacts_file = BACKEND_DIR / "config" / "contacts.example.json"
-                            if contacts_file.exists():
-                                try:
-                                    cd = json.loads(contacts_file.read_text(encoding="utf-8"))
-                                    known = cd.get("contacts", {})
-                                    if clean_s in known:
-                                        sender_display = f"{known[clean_s]} ({sender})"
-                                except Exception:
-                                    pass
-
-                            context_info = f"Notiz an mich selbst / WhatsApp-Befehl von {USER_NAME}" if is_self else f"Eingehende WhatsApp von {sender_display}"
-                            prompt = f"[{context_info}]: {text}\n(Hinweis: Du kannst bei Bedarf per send_whatsapp(recipient='{sender}', message=...) direkt per WhatsApp auf das Smartphone antworten.)"
-                            await self.controller.send_text_prompt(prompt)
-                        else:
-                            await self.controller.send_text_prompt(text)
+                        await self.controller.send_text_prompt(text)
 
                 elif msg_type == "interrupt":
                     self.controller.interrupt()
@@ -471,6 +468,42 @@ class JarvisServer:
                     if nid:
                         ok, msg = delete_node_internal(nid, broadcast_fn=broadcast)
                         self.log(msg, "SYS" if ok else "ERR")
+
+                elif msg_type == "set_focus_mode":
+                    enabled = bool(data.get("enabled", False))
+                    self.cron_engine.set_focus_mode(enabled)
+                    broadcast({"type": "focus_mode_status", "enabled": enabled})
+
+                elif msg_type == "set_paranoia_mute":
+                    active = bool(data.get("active", False))
+                    self.audio.set_paranoia_mute(active)
+                    broadcast({"type": "paranoia_mute_status", "active": active})
+
+                elif msg_type == "save_personality":
+                    soul_text = str(data.get("soul", "")).strip()
+                    if soul_text:
+                        try:
+                            (BACKEND_DIR / "SOUL.md").write_text(soul_text, encoding="utf-8")
+                            (BACKEND_DIR / "config" / "SOUL.md").write_text(soul_text, encoding="utf-8")
+                            self.log("Neue Persönlichkeits-Seele (SOUL.md) erfolgreich übernommen.", "SYS")
+                            broadcast({"type": "personality_saved", "status": "ok"})
+                        except Exception as e:
+                            self.log(f"Fehler beim Speichern der Persona: {e}", "ERR")
+
+                elif msg_type == "export_brain":
+                    from core.backup_manager import export_brain
+                    pwd = data.get("passphrase")
+                    res = export_brain(passphrase=pwd)
+                    self.log(res, "SYS")
+                    broadcast({"type": "brain_export_result", "result": res})
+
+                elif msg_type == "import_brain":
+                    from core.backup_manager import import_brain
+                    path_val = data.get("path")
+                    pwd = data.get("passphrase")
+                    res = import_brain(path_val, passphrase=pwd)
+                    self.log(res, "SYS")
+                    broadcast({"type": "brain_import_result", "result": res})
 
         except websockets.exceptions.ConnectionClosed:
             pass

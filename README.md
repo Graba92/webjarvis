@@ -7,40 +7,30 @@
 </p>
 
 [![GitHub](https://img.shields.io/badge/GitHub-Graba92%2Fwebjarvis-blue?logo=github)](https://github.com/Graba92/webjarvis)
-[![OS](https://img.shields.io/badge/OS-Linux%20(CachyOS%20%7C%20Arch%20%7C%20Generic)-blue?logo=linux)](https://cachyos.org)
+[![OS](https://img.shields.io/badge/OS-CachyOS%20%7C%20Arch%20Linux%20%7C%20Generic-blue?logo=archlinux)](https://cachyos.org)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-yellow?logo=python)](https://python.org)
 [![Next.js](https://img.shields.io/badge/Next.js-15%20(App%20Router)-black?logo=next.js)](https://nextjs.org)
 [![Three.js](https://img.shields.io/badge/3D%20WebGL-Three.js-cyan?logo=threedotjs)](https://threejs.org)
-[![Gemini Live](https://img.shields.io/badge/Gemini-3.1%20Flash%20Live-brightgreen?logo=google)](https://aistudio.google.com)
+[![Gemini Live](https://img.shields.io/badge/Gemini-Live%20API-brightgreen?logo=google)](https://aistudio.google.com)
+[![PipeWire](https://img.shields.io/badge/Audio-PipeWire%20Dedicated%20Sink-blue)](https://pipewire.org)
 [![MCP](https://img.shields.io/badge/Protocol-MCP%20JSON--RPC%202.0-purple)](#-mcp-ecosystem-model-context-protocol)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **J.A.R.V.I.S. (Codename: Cypher)** is an autonomous, multimodal desktop AI Operating System for Linux. It combines bi-directional full-duplex voice streaming via Google's `gemini-3.1-flash-live-preview` (WebSockets), a hermetic Bubblewrap sandbox, proactive cron heartbeats, hardware safety gates, an extensible MCP plugin architecture, and a reactive 3D WebGL holographic HUD (Three.js & Next.js 15).
+> **J.A.R.V.I.S. (Codename: Cypher)** is an autonomous, lean, multimodal desktop AI Operating System specifically tailored for CachyOS and Arch Linux. It features bi-directional low-latency voice streaming via Gemini Live (WebSockets), dedicated PipeWire virtual audio sink routing, a hardware safety confirmation gate, a hermetic Bubblewrap sandbox, proactive heartbeat briefings, SQLite calendar management, native CachyOS kernel/package updates, and a 3D WebGL holographic HUD (Three.js & Next.js 15).
 
 ---
 
 ## 📑 Table of Contents
 1. [System Architecture & Data Flow](#-system-architecture--data-flow)
-2. [Quickstart in under 2 minutes](#-quickstart-in-under-2-minutes)
-3. [Master Orchestrator (`start.sh`)](#-master-orchestrator-startsh)
-4. [Backend Architecture & Core Subsystems](#-backend-architecture--core-subsystems)
-   - [Gemini Live Controller & Audio Engine](#gemini-live-controller--audio-engine)
-   - [Security Architecture (Bubblewrap & Safety Gate)](#security-architecture)
-   - [Undo Stack & Rollback System](#undo-stack--rollback-system)
-   - [Memory & Vector Engine (LanceDB + Hybrid Store)](#memory--vector-engine)
-   - [Proactive Cron Engine & Heartbeat Scheduler](#proactive-cron-engine)
-   - [Action Registry](#action-registry)
-   - [Multi-Platform Bridges (Discord & WhatsApp)](#multi-platform-bridges)
-5. [Frontend Architecture & Holographic HUD](#-frontend-architecture--holographic-hud)
-   - [3D WebGL Constellation Knowledge Graph (`ApexWorld`)](#3d-webgl-constellation-knowledge-graph-apexworld)
-   - [Apex Reactor Cockpit (`AgentCockpit`)](#apex-reactor-cockpit-agentcockpit)
-   - [Telemetry & Category Filter (`ApexOverviewPanel`)](#telemetry--category-filter)
-   - [Interactive Dock & Terminal (`BottomDock`)](#interactive-dock--terminal)
-   - [Hardware Confirmation Banner (`ConfirmBanner`)](#hardware-confirmation-banner)
-6. [Frontend Button Audit: Real Functions vs. Visual Controls](#-frontend-button-audit-real-functions-vs-visual-controls)
+2. [Identity & Configuration Triad (`SOUL.md`, `MEMORY.md`, `HEARTBEAT.md`)](#-identity--configuration-triad)
+3. [Native CachyOS Skills & Scheduler](#-native-cachyos-skills--scheduler)
+4. [Performance, Audio Routing & Privacy](#-performance-audio-routing--privacy)
+5. [Developer Tools, Backup & Personality Wizard](#-developer-tools-backup--personality-wizard)
+6. [3D WebGL Holographic HUD & Theme Engine](#-3d-webgl-holographic-hud--theme-engine)
 7. [MCP Ecosystem (Model Context Protocol)](#-mcp-ecosystem-model-context-protocol)
-8. [Top 3 Recommended Backend & Frontend Optimizations](#-top-3-recommended-backend--frontend-optimizations)
-9. [License & Author](#-license--author)
+8. [Quickstart in under 2 minutes](#-quickstart-in-under-2-minutes)
+9. [Master Orchestrator (`start.sh`)](#-master-orchestrator-startsh)
+10. [License & Author](#-license--author)
 
 ---
 
@@ -49,28 +39,35 @@
 ```
                                   ┌────────────────────────┐
                                   │   Google Gemini Live   │
-                                  │ (3.1-flash-live-preview│
+                                  │  Bi-directional Stream │
                                   └───────────▲────────────┘
-                                              │ (Bi-directional Audio /
-                                              │  v1alpha WebSocket)
+                                              │ (Audio in/out & Function Calls)
                                               ▼
-┌────────────────────────┐        ┌────────────────────────┐        ┌────────────────────────┐
-│  WhatsApp Multi-Device │        │   Python Core Server   │        │     Discord Bridge     │
-│   Bridge (Baileys)     ├───────►│      (server.py)       │◄───────┤    (discord_bot.py)    │
-│    Port 3001 (Node)    │ HTTP   │   Port 8765 (WebSocket)│ WS     │   Commands & Webhooks  │
-└────────────────────────┘        └───────────▲────────────┘        └────────────────────────┘
+                                  ┌────────────────────────┐
+                                  │   Python Core Server   │
+                                  │      (server.py)       │
+                                  │   Port 8765 (WebSocket)│
+                                  └───────────▲────────────┘
                                               │
                          ┌────────────────────┼────────────────────┐
                          │                    │                    │
                          ▼                    ▼                    ▼
                ┌───────────────────┐┌───────────────────┐┌───────────────────┐
-               │  Action Registry  ││  LanceDB Memory   ││  MCP Gateway      │
-               │ (Shell, pactl,    ││ (128d Vector DB + ││ (JSON-RPC 2.0     │
-               │  mss, bwrap, etc.)││  long_term.json)  ││  Dynamic Plugins) │
+               │ CachyOS Skills    ││  Hybrid Memory    ││  MCP Gateway      │
+               │ - update_agent.py ││ - calendar.db     ││ (Brave Search,    │
+               │ - calendar_mgr.py ││ - LanceDB Vector  ││  Fetch, Custom    │
+               │ - confirm.py Gate ││ - long_term.json  ││  JSON-RPC 2.0)    │
+               └───────────────────┘└───────────────────┘└───────────────────┘
+                         │                    │                    │
+                         ▼                    ▼                    ▼
+               ┌───────────────────┐┌───────────────────┐┌───────────────────┐
+               │ PipeWire Audio    ││ Proactive Cron    ││ 1-Click Backup    │
+               │ Dedicated Sink    ││ Morning Briefing  ││ ZIP Exporter /    │
+               │ Paranoia Kill     ││ Focus Mode Pause  ││ Restore Manager   │
                └───────────────────┘└───────────────────┘└───────────────────┘
                                               │
-                                              │ WebSocket Telemetry (1 Hz)
-                                              │ Audio RMS (60 FPS) & Events
+                                              │ Real-time Telemetry, Live Audio RMS,
+                                              │ Unfiltered dev_log & Graph Events
                                               ▼
                                   ┌────────────────────────┐
                                   │   Next.js 15 App HUD   │
@@ -81,189 +78,95 @@
 
 ---
 
-## ⚡ Quickstart in under 2 minutes
+## 🧬 Identity & Configuration Triad
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/Graba92/webjarvis.git
-cd webjarvis
-```
+J.A.R.V.I.S. is driven by three transparent Markdown configuration documents located in `backend/`:
 
-### 2. Run automated setup
-The failsafe installer automatically sets up system tools, Python virtual environment, dependencies, and template configurations:
-```bash
-chmod +x setup.sh start.sh terminate_jarvis.sh
-./setup.sh
-```
-
-### 3. Launch the AI OS (Native)
-```bash
-./start.sh
-```
-*On first startup, the orchestrator will prompt for your free [Google Gemini API Key](https://aistudio.google.com/app/apikey).*
+1. **`SOUL.md` (Persona, Tone & Core Behavioral Directives):**
+   Defines the identity, concise and dry communication style, technical precision, and behavioral boundaries. Can be edited manually or live via the **Personality Wizard** in the HUD.
+2. **`MEMORY.md` (Long-Term User Models & Epistemic Facts):**
+   Maintains user preferences, workflows, hardware specs, and persistent knowledge without hardcoded identities.
+3. **`HEARTBEAT.md` (Autonomous Periodic Scheduler):**
+   Governs autonomous background routines (e.g. system health checks, calendar sweeps, CachyOS package scans, and morning briefings).
 
 ---
 
-### 🐳 Alternative: Launch with Docker (Isolated & Instant)
+## 🐧 Native CachyOS Skills & Scheduler
 
-If you prefer not to install Python or Node.js packages on your host system, run WebJarvis in a container stack:
-
-```bash
-# 1-Click Launch via helper script
-./docker-start.sh
-
-# Or directly with Docker Compose:
-docker compose up -d
-```
-
-* **HUD Cockpit:** [http://localhost:3005](http://localhost:3005) *(or port 3000)*
-* **Backend WebSocket:** `ws://127.0.0.1:8765`
-* **Visual Management (Portainer):** [https://localhost:9443](https://localhost:9443)
-* **View Logs:** `./docker-logs.sh`
-* **Stop Containers:** `./docker-stop.sh`
+- **CachyOS Update Agent (`backend/actions/update_agent.py`):**
+  Monitors pending package upgrades via `checkupdates` and `yay -Qu`. Specifically isolates critical system components (`linux`, `linux-cachyos`, `systemd`, `glibc`, `nvidia`, `mesa`, `openssl`). Never executes unconfirmed package upgrades: strictly routes through the Hardware Confirmation Gate (`confirm.py`).
+- **Calendar & Appointment Manager (`backend/actions/calendar_manager.py`):**
+  Embedded SQLite engine (`backend/memory/calendar.db`) providing full CRUD capabilities and natural-language scheduling ("Erinnere mich zwei Tage vorher an das Release").
+- **Proactive Morning Briefing (`backend/core/cron_engine.py`):**
+  Autonomously triggers at 08:00 or system boot, summarizing appointments, pending package updates, and system metrics via PipeWire voice playback.
 
 ---
 
-## 🚀 Master Orchestrator (`start.sh`)
+## 🔊 Performance, Audio Routing & Privacy
 
-| Option / Flag | Description |
-|---|---|
-| `-a`, `--all` | Starts the complete system (Python Backend, WhatsApp Gateway, Discord Bot & Next.js Frontend). |
-| `-b`, `--backend` | Starts only the Python Gemini Live WebSocket Backend (`ws://127.0.0.1:8765`). |
-| `-f`, `--frontend` | Starts only the Three.js WebGL HUD Frontend (`http://localhost:3000`). |
-| `-w`, `--whatsapp` | Starts the Baileys WhatsApp Gateway Bridge (`http://127.0.0.1:3001`). |
-| `-d`, `--discord` | Starts the Discord Gateway Bridge. |
-| `-c`, `--check` | Runs hardware diagnostics & dependency verification. |
-| `./terminate_jarvis.sh` | Safely terminates all running subsystems and releases occupied ports. |
+- **Dedicated PipeWire Virtual Sink (`cypher_ai_sink`):**
+  Jarvis registers as an independent audio node (`Cypher AI Audio`) within PipeWire and PulseAudio emulation. It appears as an individual volume slider in the KDE Plasma System Tray Audio Mixer, allowing independent balance without altering system audio.
+- **Paranoia Killswitch (Hardware-Level Microphone Cut):**
+  A dedicated toggle in the HUD that immediately terminates and closes the ALSA/PipeWire input stream handle. When activated, the HUD displays a bright red `PARANOIA MUTED (HARDWARE-OFF)` alert.
+- **Focus Mode (Zero-Interference Gaming & Compilation):**
+  Temporarily halts all background cron jobs and heartbeats with a single HUD click, freeing 100% CPU time for gaming, kernel compilation, or benchmark tasks.
 
 ---
 
-## ⚙️ Backend Architecture & Core Subsystems
+## 🛠️ Developer Tools, Backup & Personality Wizard
 
-### Gemini Live Controller & Audio Engine
-* **Core Modules**: `backend/core/gemini_live.py` & `backend/core/audio_streamer.py`.
-* **Full-Duplex Audio**: 16 kHz Mono Input (Microphone via `sounddevice`), 24 kHz Mono Output via PipeWire.
-* **Audio-Reactive Visualization**: Computes live RMS volume at 60 FPS and broadcasts it via WebSockets to synchronize the 3D Arc Reactor pulse.
-* **Seamless Session Resumption**: Transparently handles WebSocket reconnects (Code 1008 / GoAway) via sliding window context compression.
-
-### Security Architecture
-* **Bubblewrap Sandbox (`backend/core/sandbox.py`)**:
-  * Generated shell commands execute inside hardened Linux namespaces (`--unshare-pid`, `--unshare-ipc`).
-  * System directories (`/usr`, `/lib`, `/bin`) are strictly mounted **Read-Only**; the host home directory remains completely invisible.
-  * Only the dedicated `backend/sandbox_workspace/` directory is writable.
-* **Hardware Confirmation Gate (`backend/core/confirm.py`)**:
-  * Intercepts dangerous or irreversible operations (shutdown, reboot, network disconnects).
-  * Requires physical human confirmation via an amber HUD banner with a 90-second timeout.
-
-### Undo Stack & Rollback System (`backend/core/undo.py`)
-* Maintains an in-memory stack of the last 10 mutating operations (file changes, volume/brightness adjustments).
-* Reverses mistakes instantly via voice command ("undo") or HUD click.
-
-### Memory & Vector Engine (`backend/memory/`)
-* **LanceDB Vector Store (`lancedb_manager.py`)**: 128-dimensional dense vectors for semantic similarity retrieval.
-* **Structured Long-Term JSON (`long_term.json`)**: Persistent storage of system facts, user preferences, and configuration.
-* **Core Trio Markdown Directives**: `SOUL.md` (Persona), `MEMORY.md` (Long-term facts), and `HEARTBEAT.md` (Cron checklist).
-
-### Action Registry (`backend/actions/`)
-* `computer_settings.py`: Controls volume (`pactl`), brightness (`brightnessctl`), and WiFi (`nmcli`).
-* `file_controller.py`: File operations with safe trash recovery (`send2trash`).
-* `screen_processor.py`: Desktop screen capture (`mss`) with multimodal Gemini vision analysis.
-* `system_monitor.py`: Real-time hardware telemetry (`psutil` CPU, RAM, GPU, temperatures).
-* `web_search.py`: Live DuckDuckGo web search & BeautifulSoup scraping.
+- **Live Dev-Console (`DevConsole.tsx`):**
+  A collapsible floating terminal streaming unfiltered backend events, exceptions, tool invocations, and tracebacks directly over WebSockets (`dev_log`).
+- **1-Click Brain Backup (`backup_manager.py` & `BottomDock.tsx`):**
+  Exports all persistent data (`long_term.json`, `calendar.db`, LanceDB vector indices, `SOUL.md`, and `mcp_servers.json`) into a compressed `.zip` archive.
+- **Personality Wizard Modal (`PersonalityWizardModal.tsx`):**
+  Interactive in-HUD wizard for configuring persona tone, humor, expertise domain, and ethical guardrails with 1-click live saving to `SOUL.md`.
 
 ---
 
-## 🖥️ Frontend Architecture & Holographic HUD
+## 🌐 3D WebGL Holographic HUD & Theme Engine
 
-### 3D WebGL Constellation Knowledge Graph (`ApexWorld.tsx`)
-* Native Three.js canvas featuring force-directed physics.
-* Quadratic Bézier curves with animated "data pearls" visualizing continuous information flow.
-* Spheres pulse organically in sync with the assistant's voice (WebSocket RMS feed).
-* Contextual node actions: Open in Terminal (*Konsole*/*Alacritty*), File Manager (*Dolphin*), Editor (*Kate*), Browser, or AI summarization.
-
-### Apex Reactor Cockpit (`AgentCockpit.tsx`)
-* Holographic central core with animated SVG rings and live state badges (`ONLINE`, `THINKING`, `SPEAKING`, `RECONNECTING`, `OFFLINE`).
-* Quick `INTERRUPT` button to instantly mute the AI speech output.
-* Microphone toggle and modal for on-the-fly Gemini API key updates.
-
-### Telemetry & Category Filter (`ApexOverviewPanel.tsx`)
-* Live gauges for system hardware metrics (1 Hz refresh rate).
-* Sliders for simulation physics (repel force and link length).
-* 9-category filter matrix to isolate specific domains in the 3D graph.
-
----
-
-## 🎛️ Frontend Button Audit: Real Functions vs. Visual Controls
-
-| Component | Button / Control | Status | Actual System Behavior |
-|---|---|---|---|
-| **AgentCockpit** | **Category Filters** (9 Pills) | ✅ **Real** | Filters nodes in the 3D canvas in real time (`activeFilter`). |
-| **AgentCockpit** | **INTERRUPT** (Red Pulse) | ✅ **Real** | Sends `interrupt` via WebSocket to immediately silence Gemini Live. |
-| **AgentCockpit** | **GEMINI 3.1 LIVE** (Key Icon) | ✅ **Real** | Opens API Key modal to update credentials without server restart. |
-| **AgentCockpit** | **Microphone Toggle** (Mute) | ✅ **Real** | Physically mutes/unmutes the host microphone stream in Python. |
-| **AgentCockpit** | **View Switcher** (`RING`/`CUBE`/`FACE`)| 🟡 **Visual** | Toggles HUD reactor visualization between SVG ring, 3D cube, and eye. |
-| **AgentCockpit** | **Sensor EYES** | ✅ **Real** | Triggers desktop screen capture and vision analysis via WebSocket. |
-| **AgentCockpit** | **Sensor WATCH** | ✅ **Real** | Enables proactive system monitoring mode. |
-| **AgentCockpit** | **Sensor HOLO** | ✅ **Real** | Toggles visual holographic display mode. |
-| **AgentCockpit** | **Sensor FOCUS** | ✅ **Real** | Directs AI attention to prioritize deep reasoning and code accuracy. |
-| **BottomDock** | **Handsfree (Ear Icon)** | ✅ **Real** | Toggles backend microphone mode via WebSocket. |
-| **BottomDock** | **Content Studio (Feather)** | ✅ **Real** | Opens node composer modal to add knowledge to `graph_nodes.json`. |
-| **BottomDock** | **Device Bridge (Folder)** | ✅ **Real** | Opens hardware control panel (audio, brightness, WiFi, telemetry). |
-| **BottomDock** | **Prompt Input & Send** | ✅ **Real** | Dispatches text commands directly to Gemini Live. |
-| **BottomDock** | **Quick Reminder (Bell)** | ✅ **Real** | Creates an automated 10-minute reminder. |
-| **BottomDock** | **Deep Reasoning (Bulb)** | ✅ **Real** | Commands the AI to perform autonomous graph cluster reasoning. |
-| **BottomDock** | **Sync / Refresh (Arrows)** | ✅ **Real** | Triggers the `system_status` backend action. |
-| **BottomDock** | **MCP Skill Matrix (Puzzle)**| ✅ **Real** | Opens interactive Skill Matrix modal: toggle, configure, or register new stdio MCP servers with 1 click. |
-| **ApexOverview** | **Fit / Target Reset** | ✅ **Real** | Re-centers camera or fits entire constellation into view. |
-| **ApexOverview** | **2D / 3D Mode Toggle** | ✅ **Real** | Projects graph onto a 2D plane (`z=0`) or unfolds 3D space. |
-| **ApexWorld** | **Node Context Menu** | ✅ **Real** | Launches Terminal, Dolphin, Kate, Browser, or deletes node. |
-| **ConfirmBanner** | **Confirm / Cancel** | ✅ **Real** | Resolves pending action in the Hardware Safety Gate. |
-| **DeviceControl** | **Sliders & Toggles** | ✅ **Real** | Controls system hardware via `pactl`, `brightnessctl`, and `nmcli`. |
+- **Three.js Knowledge Constellation (`ApexWorld.tsx`):**
+  Interactive 3D graph with multi-colored data flow particles (`0x00d4ff`, `0x00ff88`, `0xa855f7`), reactive audio pulse scale, and Bezier link routing.
+- **Centralized Theme Config (`frontend/theme.json`):**
+  Defines standardized color palettes and glowing borders tailored for Arch Linux and CachyOS desktop ricing.
 
 ---
 
 ## 🔌 MCP Ecosystem (Model Context Protocol)
 
-The backend includes a production-ready **JSON-RPC 2.0 Stdio Client (`backend/core/mcp_client.py`) adhering to the official 2024-11-05 specification**, manageable in real time via the HUD's **Skill Matrix modal (Puzzle icon)**.
-
-### Pre-Configured MCP Skills (Disabled by default — activate in HUD):
-1. **`filesystem`**: Secure workspace directory reading & writing (`@modelcontextprotocol/server-filesystem`).
-2. **`sqlite`**: Fast local SQL database querying and schema inspection (`mcp-server-sqlite`).
-3. **`fetch`**: Fetch and convert web articles and markdown documentation via URL (`@modelcontextprotocol/server-fetch`).
-4. **`github`**: GitHub repository management, commits, issues, and PRs (`@modelcontextprotocol/server-github`).
-5. **`brave_search`**: Privacy-centric, ad-free web searching (`@modelcontextprotocol/server-brave-search`).
-6. **`memory`**: Open-source structured knowledge graph for long-term facts (`@modelcontextprotocol/server-memory`).
-7. **`time`**: Accurate timezone, datetime, and international time conversion (`@modelcontextprotocol/server-time`).
-8. **`puppeteer`**: Headless browser automation for dynamic rendering and web screenshots (`@modelcontextprotocol/server-puppeteer`).
-
-### Why MCP Completes J.A.R.V.I.S.:
-1. **Dynamic Skills (Install & Remove without Code Changes)**:
-   * Add any community MCP server simply from the HUD or in `backend/config/mcp_servers.json`.
-   * Gemini Live gains immediate typed access to new tools.
-   * To deactivate, toggle the switch in the HUD (`"enabled": false`).
-2. **Deterministic Tool Execution**:
-   * Strict JSON schemas prevent parameter hallucination.
-3. **Sandboxed Subprocess Isolation**:
-   * MCP servers run as independent processes that can be confined inside Bubblewrap namespaces.
+J.A.R.V.I.S. implements standard Model Context Protocol (MCP) JSON-RPC 2.0 servers configured in `backend/config/mcp_servers.json`:
+- **`brave_search`:** Privacy-focused web search replacing legacy scrapers.
+- **`fetch`:** Efficient web content retrieval and markdown conversion.
+- **Dynamic MCP GUI:** Toggle and configure new MCP servers directly in the HUD via the Skills Matrix.
 
 ---
 
-## 💡 Top 3 Recommended Backend & Frontend Optimizations
+## ⚡ Quickstart in under 2 minutes
 
-### Backend
-1. **Gemini `text-embedding-004` Integration**: Native semantic embeddings in LanceDB to replace trigram hashing for conceptual synonym search.
-2. **DesktopAdapter Abstraction**: Dynamic detection of GNOME, Sway, and Wayland (`wpctl`) for universal Linux portability.
-3. **Dedicated Worker Pool**: Offload heavy vision/file tasks to dedicated worker threads to guarantee jitter-free 24 kHz audio streaming.
+### 1. Clone & Setup
+```bash
+git clone https://github.com/Graba92/webjarvis.git
+cd webjarvis
+chmod +x setup.sh start.sh terminate_jarvis.sh
+./setup.sh
+```
 
-### Frontend
-1. **Three.js `InstancedMesh`**: Collapse hundreds of individual draw calls into a single call for 120 FPS performance with 1,000+ nodes.
-2. **Web Audio API Browser Streaming**: Optional browser-level microphone/speaker handling for remote tablet/mobile HUD access.
-3. **3D Drag-and-Drop Editor**: Interactive node positioning and relation linking via Three.js `DragControls`.
+### 2. Configure API Key
+```bash
+cp backend/.env.example backend/.env
+# Edit backend/.env and insert your GEMINI_API_KEY
+```
+
+### 3. Launch
+```bash
+./start.sh
+# Select option 1 (Native Fullstack) or option 4 (Docker Compose)
+```
 
 ---
 
-## 📄 License & Author
+## 📜 License & Author
 
-Developed by **Matthias Haase ([@Graba92](https://github.com/Graba92))**.
-
-Released under the [MIT License](LICENSE).
+- **Author:** Graba92
+- **License:** MIT License (Open Source)

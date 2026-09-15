@@ -11,6 +11,16 @@ import numpy as np
 import sounddevice as sd
 from typing import Callable, Optional
 
+import os
+import subprocess
+
+# PipeWire / PulseAudio Properties für dedizierten System-Mixer-Eintrag
+os.environ.setdefault(
+    "PULSE_PROP",
+    "media.role=Production application.name=Cypher_AI_OS node.name=Cypher_AI_Audio "
+    "node.description=\"Cypher AI Audio\" media.name=\"Cypher Live Audio\""
+)
+
 LEVEL_FLOOR = 60.0
 LEVEL_FULL = 2600.0
 
@@ -39,10 +49,26 @@ class AudioStreamer:
         self._is_speaking = False
         self._is_listening = True
         self._muted = False
+        self._paranoia_muted = False
 
         self.on_level_change: Optional[Callable[[float], None]] = None
         self.on_log: Optional[Callable[[str], None]] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self.ensure_pipewire_sink()
+
+    @staticmethod
+    def ensure_pipewire_sink():
+        """Richtet bei Bedarf einen eigenen virtuellen PipeWire/PulseAudio Audio-Knoten ein."""
+        try:
+            res = subprocess.run(["pactl", "list", "short", "sinks"], capture_output=True, text=True, timeout=2)
+            if res.returncode == 0 and "cypher_ai_sink" not in res.stdout:
+                subprocess.run([
+                    "pactl", "load-module", "module-null-sink",
+                    "sink_name=cypher_ai_sink",
+                    "sink_properties=device.description=\"Cypher_AI_Audio\""
+                ], capture_output=True, timeout=2)
+        except Exception:
+            pass
 
     def set_loop(self, loop: asyncio.AbstractEventLoop):
         self._loop = loop
@@ -53,11 +79,39 @@ class AudioStreamer:
     def set_muted(self, muted: bool):
         self._muted = muted
 
+    def set_paranoia_mute(self, active: bool):
+        """Paranoia Killswitch: Kappt den physischen Audio-Inputstream auf PipeWire-Ebene rigoros."""
+        self._paranoia_muted = bool(active)
+        if active:
+            if self._in_stream is not None:
+                try:
+                    self._in_stream.stop()
+                    self._in_stream.close()
+                except Exception:
+                    pass
+                self._in_stream = None
+            while not self.audio_out_queue.empty():
+                try:
+                    self.audio_out_queue.get_nowait()
+                except Exception:
+                    break
+            if self.on_level_change:
+                self.on_level_change(0.0)
+            if self.on_log:
+                self.on_log("SYS: 🛑 PARANOIA KILLSWITCH AKTIV: Mikrofon-Stream auf Hardware-/PipeWire-Ebene rigoros getrennt.")
+        else:
+            if self.on_log:
+                self.on_log("SYS: 🟢 PARANOIA KILLSWITCH DEAKTIVIERT: Re-aktiviere Mikrofon-Stream...")
+            self.start_input()
+
     def is_speaking(self) -> bool:
         return self._is_speaking
 
     def is_muted(self) -> bool:
         return self._muted
+
+    def is_paranoia_muted(self) -> bool:
+        return self._paranoia_muted
 
     @staticmethod
     def get_preferred_device() -> Optional[int]:
@@ -71,6 +125,8 @@ class AudioStreamer:
         return None
 
     def start_input(self):
+        if self._paranoia_muted:
+            return
         if self._in_stream is not None:
             return
 

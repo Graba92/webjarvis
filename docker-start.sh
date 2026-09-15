@@ -12,17 +12,10 @@ echo -e "\033[1;32m  🚀 STARTE WEBJARVIS DOCKER TESTUMGEBUNG\033[0m"
 echo -e "\033[1;36m====================================================\033[0m"
 
 # Verzeichnisse anlegen falls nötig
-mkdir -p data/lancedb data/logs data/whatsapp_auth
-
-# Optional: WhatsApp Bridge mit --full starten
-PROFILE_ARG=""
-if [[ "${1:-}" == "--full" ]]; then
-  echo -e "\033[1;33m[+] Starte mit vollem Profil inkl. WhatsApp Bridge\033[0m"
-  PROFILE_ARG="--profile full"
-fi
+mkdir -p data/lancedb data/logs
 
 # Build & Start via Docker Compose
-docker compose $PROFILE_ARG up -d --build
+docker compose up -d --build
 
 echo -e "\n\033[1;32m[✓] WebJarvis Docker-Container erfolgreich gestartet!\033[0m"
 echo -e "\033[1;34m----------------------------------------------------\033[0m"

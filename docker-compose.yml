@@ -45,26 +45,6 @@ services:
     networks:
       - webjarvis-net
 
-  jarvis-whatsapp:
-    build:
-      context: .
-      dockerfile: Dockerfile.whatsapp
-    container_name: webjarvis-whatsapp
-    restart: unless-stopped
-    ports:
-      - "${WHATSAPP_PORT:-3001}:3001"
-    environment:
-      - PORT=3001
-      - NODE_ENV=production
-      - JARVIS_WS_URL=ws://jarvis-backend:8765
-    volumes:
-      - ./data/whatsapp_auth:/app/auth_info_baileys
-    depends_on:
-      - jarvis-backend
-    networks:
-      - webjarvis-net
-    profiles:
-      - full # Nur starten, wenn explizit gewünscht (docker compose --profile full up)
 
 networks:
   webjarvis-net:

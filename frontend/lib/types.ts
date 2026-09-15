@@ -54,6 +54,12 @@ export interface LogMessage {
   ts: string;
 }
 
+export interface DevLogEntry {
+  speaker: string;
+  text: string;
+  ts: string;
+}
+
 export type AssistantState = 
   | "OFFLINE"
   | "CONNECTING"
@@ -83,3 +89,23 @@ export interface MCPServerConfig {
 
 export type MCPServerMap = Record<string, MCPServerConfig>;
 
+export interface PersonalityConfig {
+  name: string;
+  role: string;
+  tone: string;
+  domain: string;
+  humor: string;
+  boundaries: string;
+  custom_prompt?: string;
+}
+
+export interface BrainExportResult {
+  success: boolean;
+  path?: string;
+  error?: string;
+}
+
+export interface BrainImportResult {
+  success: boolean;
+  error?: string;
+}

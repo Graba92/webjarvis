@@ -143,31 +143,6 @@ CRITICAL OPERATING DIRECTIVES & PERSONA:
    - Weise den Nutzer bei Bedarf darauf hin, dass er alle Skills auch visuell im HUD über das Puzzle-Icon (🧩) in der unteren Steuerleiste verwalten kann.
 """
 
-def _load_contacts_file() -> dict:
-    for cf in (CONFIG_DIR / "contacts.json", CONFIG_DIR / "contacts.example.json"):
-        if cf.exists():
-            try:
-                return json.loads(cf.read_text(encoding="utf-8"))
-            except Exception:
-                pass
-    return {"self_numbers": [], "contacts": {}}
-
-_contacts_data = _load_contacts_file()
-KNOWN_CONTACTS = _contacts_data.get("contacts", {})
-
-def get_whatsapp_config() -> dict:
-    _p = _load_persisted_keys()
-    contacts = dict(KNOWN_CONTACTS)
-    if _p.get("contacts") and isinstance(_p["contacts"], dict):
-        contacts.update(_p["contacts"])
-    return {
-        "recipient": os.getenv("WHATSAPP_RECIPIENT") or _p.get("whatsapp_recipient") or "",
-        "api_token": os.getenv("WHATSAPP_API_TOKEN") or _p.get("whatsapp_api_token") or "",
-        "phone_number_id": os.getenv("WHATSAPP_PHONE_NUMBER_ID") or _p.get("whatsapp_phone_number_id") or "",
-        "bridge_url": os.getenv("WHATSAPP_BRIDGE_URL") or _p.get("whatsapp_bridge_url") or "http://127.0.0.1:3001",
-        "contacts": contacts
-    }
-
 # Core-Trio Dateipfade & Lade-Funktionen
 SOUL_MD_FILE = BACKEND_DIR / "SOUL.md"
 MEMORY_MD_FILE = BACKEND_DIR / "MEMORY.md"

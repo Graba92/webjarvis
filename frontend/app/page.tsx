@@ -13,6 +13,8 @@ import { DeviceControlPanel } from "@/components/DeviceControlPanel";
 import { ContentStudio } from "@/components/ContentStudio";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
 import { SkillsModal } from "@/components/SkillsModal";
+import { DevConsole } from "@/components/DevConsole";
+import { PersonalityWizardModal } from "@/components/PersonalityWizardModal";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -35,11 +37,13 @@ export default function Home() {
   const [assistantState, setAssistantState] = useState<AssistantState>("OFFLINE");
   const [audioLevel, setAudioLevel] = useState<number>(0);
 
-  // Modals
+  // Modals & Panels
   const [isDevicePanelOpen, setIsDevicePanelOpen] = useState<boolean>(false);
   const [isContentStudioOpen, setIsContentStudioOpen] = useState<boolean>(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState<boolean>(false);
+  const [isDevConsoleOpen, setIsDevConsoleOpen] = useState<boolean>(false);
+  const [isPersonalityWizardOpen, setIsPersonalityWizardOpen] = useState<boolean>(false);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
 
@@ -126,7 +130,7 @@ export default function Home() {
         onFocusNode={handleFocusNode}
       />
 
-      {/* 3. Rechte Sidebar: J.A.R.V.I.S. Core, Arc Reactor & Sensor Matrix */}
+      {/* 3. Rechte Sidebar: J.A.R.V.I.S. Core, Arc Reactor, Killswitch & Sensor Matrix */}
       <AgentCockpit
         state={assistantState}
         audioLevel={audioLevel}
@@ -141,12 +145,26 @@ export default function Home() {
         onOpenDevicePanel={() => setIsDevicePanelOpen(true)}
         onOpenContentStudio={() => setIsContentStudioOpen(true)}
         onOpenSkillsModal={() => setIsSkillsModalOpen(true)}
+        onOpenDevConsole={() => setIsDevConsoleOpen((prev) => !prev)}
+        onOpenPersonalityWizard={() => setIsPersonalityWizardOpen(true)}
       />
 
-      {/* 5. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}
+      {/* 5. Live Dev-Console Floating Drawer */}
+      <DevConsole
+        isOpen={isDevConsoleOpen}
+        onClose={() => setIsDevConsoleOpen(false)}
+      />
+
+      {/* 6. Personality Wizard Modal */}
+      <PersonalityWizardModal
+        isOpen={isPersonalityWizardOpen}
+        onClose={() => setIsPersonalityWizardOpen(false)}
+      />
+
+      {/* 7. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}
       <ConfirmBanner />
 
-      {/* 6. Modals */}
+      {/* 8. Modals */}
       <DeviceControlPanel
         isOpen={isDevicePanelOpen}
         onClose={() => setIsDevicePanelOpen(false)}

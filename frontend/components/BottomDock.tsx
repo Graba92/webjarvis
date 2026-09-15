@@ -5,31 +5,36 @@ import { LogMessage } from "@/lib/types";
 import { socketManager } from "@/lib/websocket";
 import { 
   Send, Ear, Feather, Folder, Bell, Lightbulb, RefreshCw, 
-  ChevronUp, ChevronDown, Terminal, Sparkles, Volume2, VolumeX, Puzzle 
+  ChevronUp, ChevronDown, Terminal, Sparkles, Puzzle, Archive, UserCheck, ShieldCheck
 } from "lucide-react";
 
 interface BottomDockProps {
   onOpenDevicePanel: () => void;
   onOpenContentStudio: () => void;
   onOpenSkillsModal?: () => void;
+  onOpenDevConsole?: () => void;
+  onOpenPersonalityWizard?: () => void;
 }
 
 export const BottomDock: React.FC<BottomDockProps> = ({
   onOpenDevicePanel,
   onOpenContentStudio,
   onOpenSkillsModal,
+  onOpenDevConsole,
+  onOpenPersonalityWizard,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
   const [logs, setLogs] = useState<LogMessage[]>([
     {
       speaker: "JARVIS",
-      text: "Cypher online. Linux-Subsysteme nominal, Latenz gegen Null. Bereit für Instruktionen, Operator – bevor die Kohlenstoff-Einheiten draußen wieder alles verlangsamen?",
+      text: "Cypher online. CachyOS-Subsysteme nominal, PipeWire Audio geroutet. Bereit für Instruktionen, Operator.",
       ts: ""
     }
   ]);
   const [showLogDrawer, setShowLogDrawer] = useState(false);
   const [isHandsfree, setIsHandsfree] = useState(true);
+  const [backupFeedback, setBackupFeedback] = useState<string | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,9 +51,19 @@ export const BottomDock: React.FC<BottomDockProps> = ({
     const unsubMute = socketManager.onMute((muted) => {
       setIsHandsfree(!muted);
     });
+    const unsubExport = socketManager.onBrainExport((res) => {
+      if (res.success) {
+        setBackupFeedback("Backup erfolgreich erstellt!");
+      } else {
+        setBackupFeedback(`Backup Fehler: ${res.error || "Unbekannt"}`);
+      }
+      setTimeout(() => setBackupFeedback(null), 4000);
+    });
+
     return () => {
       unsubLog();
       unsubMute();
+      unsubExport();
     };
   }, []);
 
@@ -68,15 +83,27 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   const handleToggleHandsfree = () => {
     const nextState = !isHandsfree;
     setIsHandsfree(nextState);
-    // Sendet lediglich das Steuersignal toggle_mic ans Python-Backend — kein lokales Browser-Mikrofon
     socketManager.toggleMic(nextState);
+  };
+
+  const handleTriggerBackup = () => {
+    setBackupFeedback("Erstelle Brain Backup (ZIP)...");
+    socketManager.exportBrain();
   };
 
   const lastMessage = logs[logs.length - 1];
 
   return (
     <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-2xl px-4 flex flex-col items-center gap-2 pointer-events-auto">
-      {/* 1. System Terminal Bubble (Speech-Bubble Look) */}
+      {/* Backup Notification Toast */}
+      {backupFeedback && (
+        <div className="px-4 py-1.5 rounded-full bg-[#22c55e]/20 border border-[#22c55e]/50 text-[#22c55e] text-xs font-mono font-bold shadow-lg shadow-[#22c55e]/20 animate-fade-in flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4" />
+          <span>{backupFeedback}</span>
+        </div>
+      )}
+
+      {/* 1. System Terminal Bubble */}
       <div className="w-full">
         <div className="relative rounded-2xl glass-panel bg-[#0d1117]/90 border border-[#1f242d] p-3 shadow-2xl transition-all">
           <div className="flex items-center justify-between border-b border-[#1f242d]/60 pb-1.5 mb-1.5 text-[10px] text-gray-400">
@@ -89,13 +116,27 @@ export const BottomDock: React.FC<BottomDockProps> = ({
                 {mounted && lastMessage?.ts ? `(${lastMessage.ts})` : ""}
               </span>
             </span>
-            <button
-              onClick={() => setShowLogDrawer(!showLogDrawer)}
-              className="flex items-center gap-1 hover:text-white transition-colors"
-            >
-              <span>{showLogDrawer ? "Logs schließen" : "Vollständiges Terminal"}</span>
-              {showLogDrawer ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-            </button>
+            <div className="flex items-center gap-2">
+              {onOpenDevConsole && (
+                <button
+                  type="button"
+                  onClick={onOpenDevConsole}
+                  className="flex items-center gap-1 text-[10px] text-[#00d4ff] hover:text-white transition-colors"
+                  title="Live Dev-Console mit ungefilterten Systemlogs öffnen"
+                >
+                  <Terminal className="w-2.5 h-2.5" />
+                  <span>Dev-Console</span>
+                </button>
+              )}
+              <button
+                onClick={() => setShowLogDrawer(!showLogDrawer)}
+                className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+                title={showLogDrawer ? "Logs einklappen" : "Vollständigen Chatverlauf anzeigen"}
+              >
+                <span>{showLogDrawer ? "Schließen" : "Historie"}</span>
+                {showLogDrawer ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+              </button>
+            </div>
           </div>
 
           {/* Single Bubble Line or Expanded Drawer */}
@@ -136,17 +177,17 @@ export const BottomDock: React.FC<BottomDockProps> = ({
 
       {/* 2. Command Input Row & Tool-Dock */}
       <div className="w-full flex items-center gap-2">
-        {/* Tool-Dock (Icons links) */}
+        {/* Tool-Dock links */}
         <div className="flex items-center gap-1.5 p-1 rounded-full glass-panel border border-[#1f242d]">
           {/* Handsfree Toggle */}
           <button
             onClick={handleToggleHandsfree}
-            className={`p-2 rounded-full transition-colors ${
+            className={`p-2 rounded-full transition-colors cursor-pointer ${
               isHandsfree
                 ? "bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/40"
                 : "text-gray-400 hover:text-white"
             }`}
-            title="Handsfree Mikrofon-Modus umschalten"
+            title="Handsfree Sprachsteuerung umschalten (Voice Detection)"
           >
             <Ear className="w-4 h-4" />
           </button>
@@ -154,7 +195,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
           {/* Content Studio */}
           <button
             onClick={onOpenContentStudio}
-            className="p-2 rounded-full text-gray-400 hover:text-[#a855f7] hover:bg-white/5 transition-colors"
+            className="p-2 rounded-full text-gray-400 hover:text-[#a855f7] hover:bg-white/5 transition-colors cursor-pointer"
             title="Content Studio / Markdown Composer öffnen"
           >
             <Feather className="w-4 h-4" />
@@ -163,8 +204,8 @@ export const BottomDock: React.FC<BottomDockProps> = ({
           {/* OS Device Bridge */}
           <button
             onClick={onOpenDevicePanel}
-            className="p-2 rounded-full text-gray-400 hover:text-[#00d4ff] hover:bg-white/5 transition-colors"
-            title="CachyOS Device Bridge / Hardware-Steuerung öffnen"
+            className="p-2 rounded-full text-gray-400 hover:text-[#00d4ff] hover:bg-white/5 transition-colors cursor-pointer"
+            title="CachyOS Device Bridge / Hardware-Steuerung & Apps"
           >
             <Folder className="w-4 h-4" />
           </button>
@@ -174,10 +215,22 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             <button
               type="button"
               onClick={onOpenSkillsModal}
-              className="p-2 rounded-full text-gray-400 hover:text-[#00ff88] hover:bg-white/5 transition-colors"
-              title="MCP Skill Matrix / Werkzeuge & Schnittstellen verwalten"
+              className="p-2 rounded-full text-gray-400 hover:text-[#00ff88] hover:bg-white/5 transition-colors cursor-pointer"
+              title="MCP Skill Matrix: Brave-Search, Fetch, Git & Tools verwalten"
             >
               <Puzzle className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Personality Wizard */}
+          {onOpenPersonalityWizard && (
+            <button
+              type="button"
+              onClick={onOpenPersonalityWizard}
+              className="p-2 rounded-full text-gray-400 hover:text-[#a855f7] hover:bg-white/5 transition-colors cursor-pointer"
+              title="Personality Wizard: SOUL.md, Rolle, Tonfall & Humor konfigurieren"
+            >
+              <UserCheck className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -189,7 +242,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
         >
           <input
             type="text"
-            placeholder="Ask 'remind me...' · 'good morning' · 'show...'"
+            placeholder="Frag z.B. 'Prüfe Updates', 'Erstelle Termin', 'Backup Gedächtnis'..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="flex-1 bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none"
@@ -197,20 +250,42 @@ export const BottomDock: React.FC<BottomDockProps> = ({
           <button
             type="submit"
             disabled={!input.trim()}
-            className="ml-2 p-1.5 rounded-full bg-[#00d4ff]/20 text-[#00d4ff] hover:bg-[#00d4ff]/30 disabled:opacity-30 transition-all"
+            title="Befehl an Jarvis senden"
+            className="ml-2 p-1.5 rounded-full bg-[#00d4ff]/20 text-[#00d4ff] hover:bg-[#00d4ff]/30 disabled:opacity-30 transition-all cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
         </form>
 
-        {/* Tool-Dock (Icons rechts) */}
+        {/* Tool-Dock rechts */}
         <div className="flex items-center gap-1.5 p-1 rounded-full glass-panel border border-[#1f242d]">
+          {/* 1-Click Brain Backup */}
+          <button
+            onClick={handleTriggerBackup}
+            className="p-2 rounded-full text-gray-400 hover:text-[#22c55e] hover:bg-white/5 transition-colors cursor-pointer"
+            title="1-Click Brain Backup: Gedächtnis, Kalender & LanceDB als ZIP sichern"
+          >
+            <Archive className="w-4 h-4" />
+          </button>
+
+          {/* Dev-Console Trigger */}
+          {onOpenDevConsole && (
+            <button
+              type="button"
+              onClick={onOpenDevConsole}
+              className="p-2 rounded-full text-gray-400 hover:text-[#00d4ff] hover:bg-white/5 transition-colors cursor-pointer"
+              title="Live Dev-Console / Error-Log Terminal öffnen"
+            >
+              <Terminal className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Quick Reminder */}
           <button
             onClick={() => {
               socketManager.sendText("Erinnere mich in 10 Minuten daran den System-Benchmark zu prüfen.");
             }}
-            className="p-2 rounded-full text-gray-400 hover:text-[#eab308] hover:bg-white/5 transition-colors"
+            className="p-2 rounded-full text-gray-400 hover:text-[#eab308] hover:bg-white/5 transition-colors cursor-pointer"
             title="Schnell-Erinnerung in 10 Minuten anlegen"
           >
             <Bell className="w-4 h-4" />
@@ -221,8 +296,8 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             onClick={() => {
               socketManager.sendText("Starte eine autonome Deep-Reasoning Analyse des Wissensgraphen.");
             }}
-            className="p-2 rounded-full text-gray-400 hover:text-[#22c55e] hover:bg-white/5 transition-colors"
-            title="Autonomes Reasoning im Wissensgraphen"
+            className="p-2 rounded-full text-gray-400 hover:text-[#a855f7] hover:bg-white/5 transition-colors cursor-pointer"
+            title="Autonomes Reasoning im Wissensgraphen anfordern"
           >
             <Lightbulb className="w-4 h-4" />
           </button>
@@ -232,8 +307,8 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             onClick={() => {
               socketManager.triggerTool("system_status", {});
             }}
-            className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-            title="Systemmetriken aktualisieren"
+            className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            title="Systemmetriken & Status aktualisieren"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
