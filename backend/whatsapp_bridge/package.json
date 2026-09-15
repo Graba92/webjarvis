@@ -1,0 +1,18 @@
+{
+  "name": "jarvis-whatsapp-bridge",
+  "version": "1.0.0",
+  "description": "Native Multi-Device WhatsApp Gateway Bridge für J.A.R.V.I.S. AI OS",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "pair": "node server.js --pair"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.16",
+    "express": "^4.21.2",
+    "pino": "^9.6.0",
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.18.0"
+  }
+}

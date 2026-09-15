@@ -1,0 +1,84 @@
+# ==============================================================================
+# J.A.R.V.I.S. AI OS — Git Ignore Configuration
+# Zero-Leak Policy für Keys, Tokens, Sessions, Binaries & Caches
+# ==============================================================================
+
+# ── Umgebungsvariablen & API Keys (STRENGSTENS AUSGESCHLOSSEN) ────────────────
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/discord_bridge/.env
+backend/discord_bridge/.env.*
+!backend/discord_bridge/.env.example
+config/api_keys.json
+backend/config/api_keys.json
+!backend/config/api_keys.example.json
+config/contacts.json
+backend/config/contacts.json
+!backend/config/contacts.example.json
+
+# ── Python Virtual Environments & Bytecode ───────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pth
+
+# ── Node.js / Next.js / Frontend Caches ───────────────────────────────────────
+node_modules/
+frontend/node_modules/
+backend/whatsapp_bridge/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
+.turbo/
+*.tsbuildinfo
+frontend/*.tsbuildinfo
+next-env.d.ts.bak
+
+# ── Lokale Datenbanken, Sessions & Vektor-Speicher ─────────────────────────────
+backend/memory/lancedb_data/
+*.lance
+*.txn
+backend/whatsapp_bridge/auth_info_baileys/
+backend/sandbox_workspace/*
+!backend/sandbox_workspace/.gitkeep
+
+# ── Logs & Temporäre Dateien ──────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+.directory

@@ -1,0 +1,49 @@
+{
+  "identity": {
+    "name": {
+      "value": "Operator",
+      "updated": "2026-09-15"
+    },
+    "os": {
+      "value": "Linux (CachyOS / Arch / Debian / Fedora)",
+      "updated": "2026-09-15"
+    },
+    "desktop": {
+      "value": "KDE Plasma / Wayland",
+      "updated": "2026-09-15"
+    },
+    "language": {
+      "value": "Deutsch",
+      "updated": "2026-09-15"
+    }
+  },
+  "preferences": {
+    "package_manager": {
+      "value": "pacman & yay / apt / dnf",
+      "updated": "2026-09-15"
+    },
+    "audio_subsystem": {
+      "value": "PipeWire (pactl / wpctl)",
+      "updated": "2026-09-15"
+    },
+    "code_quality": {
+      "value": "Produktionsreifer, modularer und sicherer Code ohne Platzhalter",
+      "updated": "2026-09-15"
+    }
+  },
+  "projects": {
+    "webjarvis": {
+      "value": "Next.js 15 & Three.js 3D Force-Directed Knowledge Graph + Python Gemini Live Backend",
+      "updated": "2026-09-15"
+    }
+  },
+  "relationships": {},
+  "wishes": {},
+  "notes": {
+    "system_role": {
+      "value": "J.A.R.V.I.S. AI OS Hybrid Operating System",
+      "updated": "2026-09-15"
+    }
+  },
+  "sessions": []
+}

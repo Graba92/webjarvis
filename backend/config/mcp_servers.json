@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "filesystem_example": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./backend/sandbox_workspace"],
+      "description": "Offizieller MCP Filesystem Server für sicheren Dateizugriff",
+      "enabled": false
+    },
+    "sqlite_example": {
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "./database.db"],
+      "description": "MCP SQLite Server für Datenbankabfragen",
+      "enabled": false
+    },
+    "github_example": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "description": "MCP GitHub Integration (benötigt GITHUB_PERSONAL_ACCESS_TOKEN)",
+      "enabled": false
+    }
+  }
+}

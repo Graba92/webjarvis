@@ -1,0 +1,25 @@
+{
+  "jobs": [
+    {
+      "name": "heartbeat_health_check",
+      "schedule": "*/15 * * * *",
+      "action": "heartbeat_check",
+      "enabled": true,
+      "description": "Periodische Hardware- & PipeWire-Prüfung nach HEARTBEAT.md alle 15 Minuten."
+    },
+    {
+      "name": "daily_morning_briefing",
+      "schedule": "0 8 * * *",
+      "action": "morning_briefing",
+      "enabled": true,
+      "description": "Autonomes Morgen-Briefing um 08:00 Uhr mit System- & Aufgabenübersicht."
+    },
+    {
+      "name": "hourly_system_telemetry",
+      "schedule": "0 * * * *",
+      "action": "system_check",
+      "enabled": true,
+      "description": "Stündliche System-Telemetrie und RAM/CPU Protokollierung."
+    }
+  ]
+}
