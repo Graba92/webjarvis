@@ -5,17 +5,19 @@ import { LogMessage } from "@/lib/types";
 import { socketManager } from "@/lib/websocket";
 import { 
   Send, Ear, Feather, Folder, Bell, Lightbulb, RefreshCw, 
-  ChevronUp, ChevronDown, Terminal, Sparkles, Volume2, VolumeX 
+  ChevronUp, ChevronDown, Terminal, Sparkles, Volume2, VolumeX, Puzzle 
 } from "lucide-react";
 
 interface BottomDockProps {
   onOpenDevicePanel: () => void;
   onOpenContentStudio: () => void;
+  onOpenSkillsModal?: () => void;
 }
 
 export const BottomDock: React.FC<BottomDockProps> = ({
   onOpenDevicePanel,
   onOpenContentStudio,
+  onOpenSkillsModal,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
@@ -166,6 +168,18 @@ export const BottomDock: React.FC<BottomDockProps> = ({
           >
             <Folder className="w-4 h-4" />
           </button>
+
+          {/* MCP Skill Matrix */}
+          {onOpenSkillsModal && (
+            <button
+              type="button"
+              onClick={onOpenSkillsModal}
+              className="p-2 rounded-full text-gray-400 hover:text-[#00ff88] hover:bg-white/5 transition-colors"
+              title="MCP Skill Matrix / Werkzeuge & Schnittstellen verwalten"
+            >
+              <Puzzle className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Input Formular */}

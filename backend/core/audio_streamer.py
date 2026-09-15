@@ -59,6 +59,17 @@ class AudioStreamer:
     def is_muted(self) -> bool:
         return self._muted
 
+    @staticmethod
+    def get_preferred_device() -> Optional[int]:
+        """Ermittelt bevorzugt das 'pulse'-Gerät für nahtlose PipeWire/PulseAudio Integration."""
+        try:
+            for idx, dev in enumerate(sd.query_devices()):
+                if dev.get("name") == "pulse":
+                    return idx
+        except Exception:
+            pass
+        return None
+
     def start_input(self):
         if self._in_stream is not None:
             return
@@ -74,17 +85,20 @@ class AudioStreamer:
                 level = calculate_pcm_level(np.frombuffer(pcm_bytes, dtype=np.int16))
                 self.on_level_change(level)
 
+        target_dev = self.get_preferred_device()
         try:
             self._in_stream = sd.InputStream(
                 samplerate=self.input_rate,
                 channels=1,
                 dtype="int16",
                 blocksize=self.chunk_size,
-                callback=_mic_callback
+                callback=_mic_callback,
+                device=target_dev
             )
             self._in_stream.start()
             if self.on_log:
-                self.on_log("SYS: Mikrofon-Stream (16 kHz) aktiv.")
+                dev_name = "pulse" if target_dev is not None else "default"
+                self.on_log(f"SYS: Mikrofon-Stream (16 kHz auf {dev_name}) aktiv.")
         except Exception as e:
             if self.on_log:
                 self.on_log(f"WARN: Lokales Mikrofon konnte nicht geöffnet werden: {e}")
@@ -92,16 +106,19 @@ class AudioStreamer:
     def start_output(self):
         if self._out_stream is not None:
             return
+        target_dev = self.get_preferred_device()
         try:
             self._out_stream = sd.RawOutputStream(
                 samplerate=self.output_rate,
                 channels=1,
                 dtype="int16",
-                blocksize=self.chunk_size
+                blocksize=self.chunk_size,
+                device=target_dev
             )
             self._out_stream.start()
             if self.on_log:
-                self.on_log("SYS: Lautsprecher-Stream (24 kHz) aktiv.")
+                dev_name = "pulse" if target_dev is not None else "default"
+                self.on_log(f"SYS: Lautsprecher-Stream (24 kHz auf {dev_name}) aktiv.")
         except Exception as e:
             if self.on_log:
                 self.on_log(f"WARN: Lautsprecher konnte nicht geöffnet werden: {e}")

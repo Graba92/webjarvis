@@ -1,0 +1,71 @@
+services:
+  jarvis-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: webjarvis-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8765}:8765"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - JARVIS_WS_HOST=0.0.0.0
+      - JARVIS_WS_PORT=8765
+      - PULSE_SERVER=unix:/tmp/pulse-socket
+    volumes:
+      # Audio Passthrough für Host-Mikrofon & Lautsprecher (PipeWire/PulseAudio)
+      - /run/user/1000/pulse/native:/tmp/pulse-socket:ro
+      # Persistente Speicherdaten (LanceDB Vektoren, Logs, Konfigurationen)
+      - ./data/lancedb:/app/backend/memory/lancedb_data
+      - ./data/logs:/app/backend/logs
+      - ./backend/config:/app/backend/config
+    devices:
+      - /dev/snd:/dev/snd
+    group_add:
+      - audio
+    ipc: host
+    networks:
+      - webjarvis-net
+
+  jarvis-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: webjarvis-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3005}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      - jarvis-backend
+    networks:
+      - webjarvis-net
+
+  jarvis-whatsapp:
+    build:
+      context: .
+      dockerfile: Dockerfile.whatsapp
+    container_name: webjarvis-whatsapp
+    restart: unless-stopped
+    ports:
+      - "${WHATSAPP_PORT:-3001}:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - JARVIS_WS_URL=ws://jarvis-backend:8765
+    volumes:
+      - ./data/whatsapp_auth:/app/auth_info_baileys
+    depends_on:
+      - jarvis-backend
+    networks:
+      - webjarvis-net
+    profiles:
+      - full # Nur starten, wenn explizit gewünscht (docker compose --profile full up)
+
+networks:
+  webjarvis-net:
+    driver: bridge

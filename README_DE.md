@@ -96,13 +96,31 @@ chmod +x setup.sh start.sh terminate_jarvis.sh
 ./setup.sh
 ```
 
-### 3. Gesamtsystem starten
+### 3. Gesamtsystem starten (Nativ)
 ```bash
 ./start.sh
 ```
 *Beim ersten Start fordert das Skript zur Eingabe des kostenfreien [Google Gemini API Keys](https://aistudio.google.com/app/apikey) auf.*
 
 ---
+
+### 🐳 Alternative: Starten mit Docker (Isoliert & sofort startklar)
+
+Falls du keine lokalen Python- oder Node-Pakete auf deinem Host installieren möchtest, kannst du WebJarvis mit einem einzigen Befehl im Docker-Verbund starten:
+
+```bash
+# 1-Klick Start via Hilfsskript
+./docker-start.sh
+
+# Oder direkt via Docker Compose:
+docker compose up -d
+```
+
+* **HUD-Cockpit:** [http://localhost:3005](http://localhost:3005) *(oder Port 3000)*
+* **Backend-WebSocket:** `ws://127.0.0.1:8765`
+* **Grafische Verwaltung (Portainer):** [https://localhost:9443](https://localhost:9443)
+* **Logs ansehen:** `./docker-logs.sh`
+* **Stoppen:** `./docker-stop.sh`
 
 ## 🚀 Master Orchestrator (`start.sh`)
 
@@ -193,6 +211,7 @@ chmod +x setup.sh start.sh terminate_jarvis.sh
 | **BottomDock** | **Quick Reminder (Glocke)** | ✅ **Echt** | Erstellt automatischen 10-Minuten-Timer. |
 | **BottomDock** | **Deep Reasoning (Birne)** | ✅ **Echt** | Weist die KI an, Wissensgraph-Cluster autonom zu analysieren. |
 | **BottomDock** | **Sync / Refresh (Kreispfeil)**| ✅ **Echt** | Triggert `system_status` im Backend via WebSocket. |
+| **BottomDock** | **MCP Skill Matrix (Puzzle)** | ✅ **Echt** | Öffnet das interaktive Skill-Modal: MCP-Server per 1-Klick an-/ausschalten, konfigurieren oder neue Stdio-Server registrieren. |
 | **ApexOverview** | **Fit / Target Reset** | ✅ **Echt** | Steuert Three.js-Kamera (Gesamtansicht oder Zentrum). |
 | **ApexOverview** | **2D / 3D Mode Toggle** | ✅ **Echt** | Projiziert Knoten auf flache Ebene (`z=0`) oder 3D-Kugelraum. |
 | **ApexWorld** | **Node Kontextmenü** | ✅ **Echt** | Startet Terminal, Dolphin, Kate, Browser oder löscht Knoten. |
@@ -203,13 +222,23 @@ chmod +x setup.sh start.sh terminate_jarvis.sh
 
 ## 🔌 Das MCP-Ökosystem (Model Context Protocol)
 
-Im Backend existiert mit `backend/core/mcp_client.py` und `backend/config/mcp_servers.json` ein vollwertiger **JSON-RPC 2.0 Stdio-Client nach der offiziellen Spezifikation**.
+Im Backend existiert mit `backend/core/mcp_client.py` und `backend/config/mcp_servers.json` ein vollwertiger **JSON-RPC 2.0 Stdio-Client nach der offiziellen Spezifikation**, der nahtlos über das Frontend-Cockpit per **Skills-Modal (Puzzle-Icon)** gesteuert werden kann.
+
+### Vorkonfigurierte MCP-Skills (Standardmäßig deaktiviert – im HUD aktivierbar):
+1. **`filesystem`**: Sicherer Dateisystem-Zugriff im Workspace (`@modelcontextprotocol/server-filesystem`).
+2. **`sqlite`**: Lokale relationale Datenbankabfragen und Tabellenverwaltung (`mcp-server-sqlite`).
+3. **`fetch`**: Webseiten, Online-Artikel und Dokumentationen direkt per URL einlesen (`@modelcontextprotocol/server-fetch`).
+4. **`github`**: Repositories, Pull Requests, Commits und Issues verwalten (`@modelcontextprotocol/server-github`).
+5. **`brave_search`**: Datenschutzfreundliche, werbefreie Websuche (`@modelcontextprotocol/server-brave-search`).
+6. **`memory`**: Strukturierter Wissensgraph für persistente Langzeitfakten (`@modelcontextprotocol/server-memory`).
+7. **`time`**: Exakte Zeitzonen-, Datums- und Weltzeitberechnungen (`@modelcontextprotocol/server-time`).
+8. **`puppeteer`**: Headless-Browser-Automatisierung für dynamisches Web-Rendering und Screenshots (`@modelcontextprotocol/server-puppeteer`).
 
 ### Warum MCP J.A.R.V.I.S. abrundet:
 1. **Dynamische Skills (Installieren & Entfernen ohne Neustart)**:
-   * Neue Fähigkeiten (z. B. GitHub, SQLite, Docker, Home Assistant) werden einfach als Eintrag in `mcp_servers.json` registriert.
+   * Neue Fähigkeiten werden einfach im HUD oder in `mcp_servers.json` registriert.
    * Das Tool steht Gemini Live sofort typisiert zur Verfügung.
-   * Zum Entfernen genügt das Setzen auf `"enabled": false`.
+   * Zum Entfernen genügt der Schiebeschalter im HUD (`"enabled": false`).
 2. **Fehlerfreie Tool-Calls ohne Halluzinationen**:
    * Strikte JSON-Schemas zwingen die KI zu exakt typisierten Parameteraufrufen.
 3. **Sicherheit durch Prozess-Isolation**:

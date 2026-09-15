@@ -1,0 +1,38 @@
+# Dockerfile.backend — WebJarvis AI Core (Python 3.12 + PipeWire / PulseAudio Support)
+FROM python:3.12-slim-bookworm
+
+# System-Abhängigkeiten für Audio I/O, Sandboxing und Native Module
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libportaudio2 \
+    libasound2 \
+    libasound2-plugins \
+    pulseaudio-utils \
+    libsndfile1 \
+    gcc \
+    g++ \
+    python3-dev \
+    bubblewrap \
+    procps \
+    curl \
+    && echo -e "pcm.!default {\n    type pulse\n}\nctl.!default {\n    type pulse\n}" > /etc/asound.conf \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Python-Abhängigkeiten vorab cachen
+COPY backend/requirements.txt requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Backend-Quellcode kopieren
+COPY backend/ /app/backend/
+
+# Standard-Port für WebSocket Core
+EXPOSE 8765
+
+# Unbuffered Output für sofortige Docker-Logs
+ENV PYTHONUNBUFFERED=1
+ENV JARVIS_WS_HOST=0.0.0.0
+ENV JARVIS_WS_PORT=8765
+
+CMD ["python", "backend/server.py"]

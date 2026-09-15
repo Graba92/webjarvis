@@ -96,11 +96,31 @@ chmod +x setup.sh start.sh terminate_jarvis.sh
 ./setup.sh
 ```
 
-### 3. Launch the AI OS
+### 3. Launch the AI OS (Native)
 ```bash
 ./start.sh
 ```
 *On first startup, the orchestrator will prompt for your free [Google Gemini API Key](https://aistudio.google.com/app/apikey).*
+
+---
+
+### 🐳 Alternative: Launch with Docker (Isolated & Instant)
+
+If you prefer not to install Python or Node.js packages on your host system, run WebJarvis in a container stack:
+
+```bash
+# 1-Click Launch via helper script
+./docker-start.sh
+
+# Or directly with Docker Compose:
+docker compose up -d
+```
+
+* **HUD Cockpit:** [http://localhost:3005](http://localhost:3005) *(or port 3000)*
+* **Backend WebSocket:** `ws://127.0.0.1:8765`
+* **Visual Management (Portainer):** [https://localhost:9443](https://localhost:9443)
+* **View Logs:** `./docker-logs.sh`
+* **Stop Containers:** `./docker-stop.sh`
 
 ---
 
@@ -193,6 +213,7 @@ chmod +x setup.sh start.sh terminate_jarvis.sh
 | **BottomDock** | **Quick Reminder (Bell)** | ✅ **Real** | Creates an automated 10-minute reminder. |
 | **BottomDock** | **Deep Reasoning (Bulb)** | ✅ **Real** | Commands the AI to perform autonomous graph cluster reasoning. |
 | **BottomDock** | **Sync / Refresh (Arrows)** | ✅ **Real** | Triggers the `system_status` backend action. |
+| **BottomDock** | **MCP Skill Matrix (Puzzle)**| ✅ **Real** | Opens interactive Skill Matrix modal: toggle, configure, or register new stdio MCP servers with 1 click. |
 | **ApexOverview** | **Fit / Target Reset** | ✅ **Real** | Re-centers camera or fits entire constellation into view. |
 | **ApexOverview** | **2D / 3D Mode Toggle** | ✅ **Real** | Projects graph onto a 2D plane (`z=0`) or unfolds 3D space. |
 | **ApexWorld** | **Node Context Menu** | ✅ **Real** | Launches Terminal, Dolphin, Kate, Browser, or deletes node. |
@@ -203,13 +224,23 @@ chmod +x setup.sh start.sh terminate_jarvis.sh
 
 ## 🔌 MCP Ecosystem (Model Context Protocol)
 
-The backend includes a production-ready **JSON-RPC 2.0 Stdio Client (`backend/core/mcp_client.py`) adhering to the official 2024-11-05 specification**.
+The backend includes a production-ready **JSON-RPC 2.0 Stdio Client (`backend/core/mcp_client.py`) adhering to the official 2024-11-05 specification**, manageable in real time via the HUD's **Skill Matrix modal (Puzzle icon)**.
+
+### Pre-Configured MCP Skills (Disabled by default — activate in HUD):
+1. **`filesystem`**: Secure workspace directory reading & writing (`@modelcontextprotocol/server-filesystem`).
+2. **`sqlite`**: Fast local SQL database querying and schema inspection (`mcp-server-sqlite`).
+3. **`fetch`**: Fetch and convert web articles and markdown documentation via URL (`@modelcontextprotocol/server-fetch`).
+4. **`github`**: GitHub repository management, commits, issues, and PRs (`@modelcontextprotocol/server-github`).
+5. **`brave_search`**: Privacy-centric, ad-free web searching (`@modelcontextprotocol/server-brave-search`).
+6. **`memory`**: Open-source structured knowledge graph for long-term facts (`@modelcontextprotocol/server-memory`).
+7. **`time`**: Accurate timezone, datetime, and international time conversion (`@modelcontextprotocol/server-time`).
+8. **`puppeteer`**: Headless browser automation for dynamic rendering and web screenshots (`@modelcontextprotocol/server-puppeteer`).
 
 ### Why MCP Completes J.A.R.V.I.S.:
 1. **Dynamic Skills (Install & Remove without Code Changes)**:
-   * Add any community MCP server (GitHub, SQLite, Docker, Home Assistant, Brave Search) by adding an entry in `backend/config/mcp_servers.json`.
+   * Add any community MCP server simply from the HUD or in `backend/config/mcp_servers.json`.
    * Gemini Live gains immediate typed access to new tools.
-   * To deactivate, simply set `"enabled": false`.
+   * To deactivate, toggle the switch in the HUD (`"enabled": false`).
 2. **Deterministic Tool Execution**:
    * Strict JSON schemas prevent parameter hallucination.
 3. **Sandboxed Subprocess Isolation**:

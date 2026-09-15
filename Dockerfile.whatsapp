@@ -1,0 +1,14 @@
+# Dockerfile.whatsapp — WebJarvis Baileys Multi-Device WhatsApp Gateway
+FROM node:20-alpine
+WORKDIR /app
+
+COPY backend/whatsapp_bridge/package*.json ./
+RUN npm ci --only=production
+
+COPY backend/whatsapp_bridge/ ./
+
+EXPOSE 3001
+ENV PORT=3001
+ENV NODE_ENV=production
+
+CMD ["node", "server.js"]

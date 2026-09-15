@@ -12,6 +12,7 @@ import { ConfirmBanner } from "@/components/ConfirmBanner";
 import { DeviceControlPanel } from "@/components/DeviceControlPanel";
 import { ContentStudio } from "@/components/ContentStudio";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
+import { SkillsModal } from "@/components/SkillsModal";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -38,6 +39,7 @@ export default function Home() {
   const [isDevicePanelOpen, setIsDevicePanelOpen] = useState<boolean>(false);
   const [isContentStudioOpen, setIsContentStudioOpen] = useState<boolean>(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
+  const [isSkillsModalOpen, setIsSkillsModalOpen] = useState<boolean>(false);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
 
@@ -138,6 +140,7 @@ export default function Home() {
       <BottomDock
         onOpenDevicePanel={() => setIsDevicePanelOpen(true)}
         onOpenContentStudio={() => setIsContentStudioOpen(true)}
+        onOpenSkillsModal={() => setIsSkillsModalOpen(true)}
       />
 
       {/* 5. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}
@@ -158,6 +161,11 @@ export default function Home() {
       <ApiKeyModal
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
+      />
+
+      <SkillsModal
+        isOpen={isSkillsModalOpen}
+        onClose={() => setIsSkillsModalOpen(false)}
       />
     </main>
   );

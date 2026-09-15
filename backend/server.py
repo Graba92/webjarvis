@@ -152,6 +152,14 @@ class JarvisServer:
 
         # Initialer Begrüßungszustand
         pending = confirm_gate.pending_info()
+        mcp_file = BACKEND_DIR / "config" / "mcp_servers.json"
+        mcp_servers = {}
+        if mcp_file.exists():
+            try:
+                mcp_servers = json.loads(mcp_file.read_text(encoding="utf-8")).get("mcpServers", {})
+            except Exception:
+                pass
+
         welcome_payload = {
             "type": "init",
             "state": "ONLINE",
@@ -167,7 +175,8 @@ class JarvisServer:
                 "configured": is_api_key_configured(),
                 "masked_key": get_masked_api_key()
             },
-            "graph_data": get_full_graph_data()
+            "graph_data": get_full_graph_data(),
+            "mcp_servers": mcp_servers
         }
         await websocket.send(json.dumps(welcome_payload))
 
@@ -279,6 +288,74 @@ class JarvisServer:
                             "masked_key": get_masked_api_key()
                         })
                         self.log(f"GEMINI_API_KEY erfolgreich aktualisiert ({get_masked_api_key()}). Live-Sitzung wird initialisiert...", "SYS")
+
+                elif msg_type == "get_mcp_servers":
+                    mcp_file = BACKEND_DIR / "config" / "mcp_servers.json"
+                    servers = {}
+                    if mcp_file.exists():
+                        try:
+                            servers = json.loads(mcp_file.read_text(encoding="utf-8")).get("mcpServers", {})
+                        except Exception:
+                            pass
+                    await websocket.send(json.dumps({
+                        "type": "mcp_servers_data",
+                        "servers": servers
+                    }))
+
+                elif msg_type == "toggle_mcp_server":
+                    server_id = str(data.get("id", "")).strip()
+                    enabled = bool(data.get("enabled", False))
+                    mcp_file = BACKEND_DIR / "config" / "mcp_servers.json"
+                    if mcp_file.exists() and server_id:
+                        try:
+                            content = json.loads(mcp_file.read_text(encoding="utf-8"))
+                            if server_id in content.get("mcpServers", {}):
+                                content["mcpServers"][server_id]["enabled"] = enabled
+                                mcp_file.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
+                                broadcast({
+                                    "type": "mcp_servers_data",
+                                    "servers": content.get("mcpServers", {})
+                                })
+                                status_str = "aktiviert" if enabled else "deaktiviert"
+                                self.log(f"MCP-Skill '{server_id}' {status_str}.", "SYS")
+                        except Exception as e:
+                            self.log(f"Fehler beim Umschalten von MCP-Skill '{server_id}': {e}", "ERR")
+
+                elif msg_type == "save_mcp_server":
+                    server_id = str(data.get("id", "")).strip().lower().replace(" ", "_")
+                    server_cfg = data.get("config", {})
+                    mcp_file = BACKEND_DIR / "config" / "mcp_servers.json"
+                    if server_id and server_cfg:
+                        try:
+                            content = {"mcpServers": {}}
+                            if mcp_file.exists():
+                                content = json.loads(mcp_file.read_text(encoding="utf-8"))
+                            content.setdefault("mcpServers", {})[server_id] = server_cfg
+                            mcp_file.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
+                            broadcast({
+                                "type": "mcp_servers_data",
+                                "servers": content.get("mcpServers", {})
+                            })
+                            self.log(f"MCP-Skill '{server_id}' erfolgreich gespeichert.", "SYS")
+                        except Exception as e:
+                            self.log(f"Fehler beim Speichern von MCP-Skill '{server_id}': {e}", "ERR")
+
+                elif msg_type == "delete_mcp_server":
+                    server_id = str(data.get("id", "")).strip()
+                    mcp_file = BACKEND_DIR / "config" / "mcp_servers.json"
+                    if mcp_file.exists() and server_id:
+                        try:
+                            content = json.loads(mcp_file.read_text(encoding="utf-8"))
+                            if server_id in content.get("mcpServers", {}):
+                                del content["mcpServers"][server_id]
+                                mcp_file.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
+                                broadcast({
+                                    "type": "mcp_servers_data",
+                                    "servers": content.get("mcpServers", {})
+                                })
+                                self.log(f"MCP-Skill '{server_id}' gelöscht.", "SYS")
+                        except Exception as e:
+                            self.log(f"Fehler beim Löschen von MCP-Skill '{server_id}': {e}", "ERR")
 
                 elif msg_type == "execute_node_action":
                     node_id = str(data.get("node_id", "")).strip()

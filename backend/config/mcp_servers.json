@@ -1,21 +1,59 @@
 {
   "mcpServers": {
-    "filesystem_example": {
+    "filesystem": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "./backend/sandbox_workspace"],
-      "description": "Offizieller MCP Filesystem Server für sicheren Dateizugriff",
+      "description": "Dateisystem-Zugriff: Erlaubt das Lesen und Schreiben von Dateien im sicheren Workspace.",
+      "category": "System",
       "enabled": false
     },
-    "sqlite_example": {
+    "sqlite": {
       "command": "uvx",
       "args": ["mcp-server-sqlite", "--db-path", "./database.db"],
-      "description": "MCP SQLite Server für Datenbankabfragen",
+      "description": "SQLite-Datenbank: Schnelle lokale SQL-Abfragen und Tabellenverwaltung.",
+      "category": "Database",
       "enabled": false
     },
-    "github_example": {
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "description": "Web-Fetcher: Liest Webseiten, Artikel und Markdown-Dokumentationen direkt per URL ein.",
+      "category": "Web",
+      "enabled": false
+    },
+    "github": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
-      "description": "MCP GitHub Integration (benötigt GITHUB_PERSONAL_ACCESS_TOKEN)",
+      "description": "GitHub Bridge: Verwaltet Repositories, Issues, Pull Requests und Code-Commits.",
+      "category": "Development",
+      "enabled": false
+    },
+    "brave_search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "description": "Brave Websuche: Führt datenschutzfreundliche Web- und Nachrichtensuchen durch.",
+      "category": "Web",
+      "enabled": false
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "Wissensgraph-Memory: Baut ein strukturiertes Beziehungsnetz für Langzeitfakten auf.",
+      "category": "AI Memory",
+      "enabled": false
+    },
+    "time": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-time"],
+      "description": "Zeitzonen & Weltuhr: Exakte Zeit- und Datumsberechnungen rund um den Globus.",
+      "category": "Utility",
+      "enabled": false
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "description": "Browser-Automation: Öffnet Webseiten headless für dynamisches Rendern und Screenshots.",
+      "category": "Automation",
       "enabled": false
     }
   }
