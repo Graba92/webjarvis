@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bubblewrap \
     procps \
     curl \
-    && echo -e "pcm.!default {\n    type pulse\n}\nctl.!default {\n    type pulse\n}" > /etc/asound.conf \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
