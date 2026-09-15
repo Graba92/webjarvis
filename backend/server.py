@@ -21,7 +21,7 @@ import websockets
 from core.config import (
     WS_HOST, WS_PORT, AUDIO_SAMPLE_RATE_INPUT, AUDIO_SAMPLE_RATE_OUTPUT,
     USER_NAME, save_gemini_api_key, is_api_key_configured, get_masked_api_key, get_gemini_api_key,
-    get_personality_dict
+    get_personality_dict, format_soul_md
 )
 from core.action_loader import discover_actions
 from core.audio_streamer import AudioStreamer
@@ -496,12 +496,10 @@ class JarvisServer:
                     broadcast({"type": "paranoia_mute_status", "active": active})
 
                 elif msg_type == "get_personality":
-                    from core.config import get_personality_dict
                     p = get_personality_dict()
                     await websocket.send(json.dumps({"type": "personality_data", "personality": p}))
 
                 elif msg_type == "save_personality":
-                    from core.config import format_soul_md, get_personality_dict
                     name = str(data.get("name", "Cypher")).strip() or "Cypher"
                     role = str(data.get("role", "Autonomes Cybernetic AI OS & Arch Linux Co-Pilot")).strip()
                     tone = str(data.get("tone", "Sarkastisch, trocken, präzise und hocheffizient")).strip()
