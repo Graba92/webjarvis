@@ -35,6 +35,7 @@ class JarvisSocketManager {
   private mcpListeners: Set<Listener<MCPServerMap>> = new Set();
   private brainExportListeners: Set<Listener<BrainExportResult>> = new Set();
   private brainImportListeners: Set<Listener<BrainImportResult>> = new Set();
+  private personalityListeners: Set<Listener<PersonalityConfig>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public isMuted: boolean = false;
@@ -44,6 +45,7 @@ class JarvisSocketManager {
   public apiKeyStatus: { configured: boolean; masked_key: string } = { configured: false, masked_key: "" };
   public currentGraphData: GraphData | null = null;
   public currentMcpServers: MCPServerMap = {};
+  public currentPersonality: PersonalityConfig | null = null;
 
   constructor() {}
 
@@ -136,6 +138,10 @@ class JarvisSocketManager {
         if (msg.mcp_servers) {
           this.currentMcpServers = msg.mcp_servers;
           this.mcpListeners.forEach((fn) => fn(this.currentMcpServers));
+        }
+        if (msg.personality) {
+          this.currentPersonality = msg.personality;
+          this.personalityListeners.forEach((fn) => fn(this.currentPersonality!));
         }
         break;
 
@@ -239,6 +245,14 @@ class JarvisSocketManager {
           success: !!msg.success,
           error: msg.error
         }));
+        break;
+
+      case "personality_data":
+      case "personality_saved":
+        if (msg.personality) {
+          this.currentPersonality = msg.personality;
+          this.personalityListeners.forEach((fn) => fn(this.currentPersonality!));
+        }
         break;
     }
   }
@@ -520,6 +534,20 @@ class JarvisSocketManager {
   public deleteMcpServer(id: string) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "delete_mcp_server", id }));
+    }
+  }
+
+  public onPersonality(fn: Listener<PersonalityConfig>) {
+    this.personalityListeners.add(fn);
+    if (this.currentPersonality) fn(this.currentPersonality);
+    return () => {
+      this.personalityListeners.delete(fn);
+    };
+  }
+
+  public requestPersonality() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "get_personality" }));
     }
   }
 }

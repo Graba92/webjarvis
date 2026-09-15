@@ -97,6 +97,8 @@ export interface PersonalityConfig {
   humor: string;
   boundaries: string;
   custom_prompt?: string;
+  soul?: string;
+  soul_text?: string;
 }
 
 export interface BrainExportResult {

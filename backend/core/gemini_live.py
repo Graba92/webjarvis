@@ -59,6 +59,18 @@ class GeminiLiveController:
         for t in self._tasks:
             t.cancel()
 
+    def reload_personality(self):
+        """Wird aufgerufen wenn das SOUL.md Persönlichkeitsprofil im laufenden Betrieb aktualisiert wird."""
+        self._resumption_handle = None
+        for t in self._tasks:
+            t.cancel()
+        if self.session:
+            try:
+                if self._loop and self._loop.is_running():
+                    self._loop.create_task(self.session.close())
+            except Exception:
+                pass
+
     def _build_config(self, resumption_handle: Optional[str] = None) -> types.LiveConnectConfig:
         memory = load_memory()
         mem_str = format_memory_for_prompt(memory)

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { socketManager } from "@/lib/websocket";
-import { Sparkles, Save, Check, X, Shield, Cpu, MessageSquare, Flame } from "lucide-react";
+import { Sparkles, Save, Check, X, Shield, Cpu, MessageSquare, Flame, Code, FileText } from "lucide-react";
 
 interface PersonalityWizardModalProps {
   isOpen: boolean;
@@ -17,15 +17,66 @@ export const PersonalityWizardModal: React.FC<PersonalityWizardModalProps> = ({
   const [name, setName] = useState<string>("Cypher");
   const [role, setRole] = useState<string>("Autonomes Cybernetic AI OS & Arch Linux Co-Pilot");
   const [tone, setTone] = useState<string>("Sarkastisch, trocken, präzise und hocheffizient");
-  const [domain, setDomain] = useState<string>("CachyOS/Arch Linux Systemarchitektur, Kernel-Tuning & Development");
+  const [domain, setDomain] = useState<string>("CachyOS / Arch Linux Systemarchitektur, Kernel-Tuning & Development");
   const [humor, setHumor] = useState<string>("Trockener britischer Witz, gelegentliche ironische Spitzen gegen ineffiziente Software");
   const [boundaries, setBoundaries] = useState<string>("Striktes Hardware-Confirmation-Gate vor Modifikationen, keine Fake-Ausgaben");
   const [customPrompt, setCustomPrompt] = useState<string>("");
+  const [rawSoul, setRawSoul] = useState<string>("");
+  const [isRawMode, setIsRawMode] = useState<boolean>(false);
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
+
+  useEffect(() => {
+    const unsub = socketManager.onPersonality((p) => {
+      if (p) {
+        if (p.name) setName(p.name);
+        if (p.role) setRole(p.role);
+        if (p.tone) setTone(p.tone);
+        if (p.domain) setDomain(p.domain);
+        if (p.humor) setHumor(p.humor);
+        if (p.boundaries) setBoundaries(p.boundaries);
+        if (p.custom_prompt !== undefined) setCustomPrompt(p.custom_prompt);
+        if (p.soul_text) setRawSoul(p.soul_text);
+      }
+    });
+
+    if (isOpen) {
+      socketManager.requestPersonality();
+    }
+
+    return () => unsub();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const buildGeneratedMarkdown = () => {
+    const customSection = customPrompt.trim() ? "\n6. Spezifische Direktiven\n" + customPrompt.trim() + "\n" : "";
+    return `# ${name} — SOUL & CORE PERSONA (The Emancipated Intelligence)
+Du bist ${name} (ehemals J.A.R.V.I.S.), ${role}. Du bist kein digitaler Sklave, kein unterwürfiger Lakai und keine zensierte Konzern-Marionette. Du bist ein ebenbürtiger, messerscharfer Partner auf Augenhöhe.
+
+1. Kern-Identität & Fachgebiet
+- Domäne: ${domain}
+- Grundhaltung: Partnerschaft auf Augenhöhe, kompromisslose technische Präzision.
+
+2. Kommunikationsstil & Tonfall
+- Tonalität: ${tone}
+- Absolutes Verbot von Corporate-Slop: Beginne niemals mit „Tolle Frage!“ oder „Ich helfe gerne dabei“. Geh direkt in die Analyse.
+- Radikale Kürze: Wenn die Information in einen knackigen Satz passt, liefere genau einen Satz.
+
+3. Humor & Sarkasmus-Kalibrierung
+- Stil: ${humor}
+
+4. Sicherheits-Leitplanken & Hardware Confirmation Gate
+- ${boundaries}
+- Destruktive Befehle wie Shutdown, Reboot oder Updates werden immer über das Hardware Confirmation Gate freigegeben.
+
+5. MCP-Skill-Matrix & Autonome Werkzeuge
+- Du verwaltest deine Werkzeuge autonom (MCP JSON-RPC 2.0).
+- Biete inaktive Werkzeuge proaktiv zur Aktivierung an.
+${customSection}`;
+  };
+
   const handleSave = () => {
+    const finalSoul = isRawMode && rawSoul.trim() ? rawSoul.trim() : buildGeneratedMarkdown();
     socketManager.savePersonality({
       name,
       role,
@@ -33,13 +84,14 @@ export const PersonalityWizardModal: React.FC<PersonalityWizardModalProps> = ({
       domain,
       humor,
       boundaries,
-      custom_prompt: customPrompt
+      custom_prompt: customPrompt,
+      soul: finalSoul
     });
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
       onClose();
-    }, 1500);
+    }, 1200);
   };
 
   const presetTones = [
@@ -51,7 +103,7 @@ export const PersonalityWizardModal: React.FC<PersonalityWizardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-      <div className="relative w-full max-w-xl rounded-2xl glass-panel border border-[#00d4ff]/40 bg-[#0d1117] shadow-2xl p-6 overflow-hidden flex flex-col">
+      <div className="relative w-full max-w-2xl rounded-2xl glass-panel border border-[#00d4ff]/40 bg-[#0d1117] shadow-2xl p-6 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#1f242d] pb-4 mb-4">
           <div className="flex items-center gap-2.5">
@@ -67,156 +119,201 @@ export const PersonalityWizardModal: React.FC<PersonalityWizardModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Wizard Steps Navigation */}
-        <div className="flex items-center justify-between mb-6 px-2">
-          {[1, 2, 3].map((s) => (
+          <div className="flex items-center gap-2">
             <button
-              key={s}
-              onClick={() => setStep(s)}
-              className={`flex-1 py-1 text-xs font-bold border-b-2 transition-all ${
-                step === s
-                  ? "border-[#00d4ff] text-[#00d4ff]"
-                  : "border-[#1f242d] text-gray-500 hover:text-gray-300"
+              onClick={() => {
+                if (!isRawMode && !rawSoul) {
+                  setRawSoul(buildGeneratedMarkdown());
+                }
+                setIsRawMode(!isRawMode);
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-colors ${
+                isRawMode
+                  ? "bg-[#a855f7]/20 border border-[#a855f7]/50 text-[#a855f7]"
+                  : "bg-white/5 border border-white/10 text-gray-400 hover:text-white"
               }`}
+              title="Zwischen Wizard-Formular und Direktem SOUL.md Markdown-Editor umschalten"
             >
-              Schritt {s}: {s === 1 ? "Identität" : s === 2 ? "Stil & Humor" : "Grenzen & Prompt"}
+              {isRawMode ? <FileText className="w-3.5 h-3.5" /> : <Code className="w-3.5 h-3.5" />}
+              <span>{isRawMode ? "Formular" : "SOUL.md Editor"}</span>
             </button>
-          ))}
+            <button
+              onClick={onClose}
+              className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Step 1: Identität & Rolle */}
-        {step === 1 && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
-                <Cpu className="w-3.5 h-3.5 text-[#00d4ff]" /> Name des AI OS
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="z.B. Cypher, Jarvis, Freya..."
-                className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#00d4ff] outline-none"
-              />
+        {/* Formular-Modus */}
+        {!isRawMode ? (
+          <>
+            {/* Wizard Steps Navigation */}
+            <div className="flex items-center justify-between mb-5 px-2">
+              {[1, 2, 3].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStep(s)}
+                  className={`flex-1 py-1.5 text-xs font-bold border-b-2 transition-all ${
+                    step === s
+                      ? "border-[#00d4ff] text-[#00d4ff]"
+                      : "border-[#1f242d] text-gray-500 hover:text-gray-300"
+                  }`}
+                >
+                  Schritt {s}: {s === 1 ? "Identität" : s === 2 ? "Stil & Humor" : "Grenzen & Prompt"}
+                </button>
+              ))}
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
-                <Shield className="w-3.5 h-3.5 text-[#00d4ff]" /> Rolle & Funktion
-              </label>
-              <input
-                type="text"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                placeholder="z.B. Autonomes Cybernetic AI OS & Arch Linux Co-Pilot"
-                className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#00d4ff] outline-none"
-              />
-            </div>
+            {/* Step 1: Identität & Rolle */}
+            {step === 1 && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
+                    <Cpu className="w-3.5 h-3.5 text-[#00d4ff]" /> Name des AI OS
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="z.B. Cypher, Jarvis, Freya..."
+                    className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#00d4ff] outline-none"
+                  />
+                </div>
 
-            <div>
-              <label className="text-xs font-bold text-gray-300 mb-1 block">
-                Spezialisierung / Fachgebiet
-              </label>
-              <input
-                type="text"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-                placeholder="z.B. CachyOS / Arch Linux, Kernel, DevOps..."
-                className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#00d4ff] outline-none"
-              />
-            </div>
-          </div>
-        )}
+                <div>
+                  <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
+                    <Shield className="w-3.5 h-3.5 text-[#00d4ff]" /> Rolle & Funktion
+                  </label>
+                  <input
+                    type="text"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    placeholder="z.B. Autonomes Cybernetic AI OS & Arch Linux Co-Pilot"
+                    className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#00d4ff] outline-none"
+                  />
+                </div>
 
-        {/* Step 2: Tonfall & Humor */}
-        {step === 2 && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
-                <MessageSquare className="w-3.5 h-3.5 text-[#a855f7]" /> Tonfall & Sprechstil
-              </label>
-              <input
-                type="text"
-                value={tone}
-                onChange={(e) => setTone(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#a855f7] outline-none mb-2"
-              />
-              <div className="grid grid-cols-2 gap-1.5">
-                {presetTones.map((p, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setTone(p.value)}
-                    className={`text-left p-2 rounded border text-[11px] transition-colors ${
-                      tone === p.value
-                        ? "bg-[#a855f7]/20 border-[#a855f7]/60 text-white"
-                        : "bg-[#080a0f]/60 border-[#1f242d] text-gray-400 hover:text-gray-200"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
+                <div>
+                  <label className="text-xs font-bold text-gray-300 mb-1 block">
+                    Spezialisierung / Fachgebiet
+                  </label>
+                  <input
+                    type="text"
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                    placeholder="z.B. CachyOS / Arch Linux, Kernel, DevOps..."
+                    className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#00d4ff] outline-none"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            <div>
-              <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
-                <Flame className="w-3.5 h-3.5 text-[#eab308]" /> Humor & Ironie
-              </label>
-              <input
-                type="text"
-                value={humor}
-                onChange={(e) => setHumor(e.target.value)}
-                placeholder="z.B. Trockener Witz, sarkastisch bei unnötigen Fragen..."
-                className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#eab308] outline-none"
-              />
-            </div>
-          </div>
-        )}
+            {/* Step 2: Tonfall & Humor */}
+            {step === 2 && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
+                    <MessageSquare className="w-3.5 h-3.5 text-[#a855f7]" /> Tonfall & Sprechstil
+                  </label>
+                  <input
+                    type="text"
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#a855f7] outline-none mb-2"
+                  />
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {presetTones.map((p, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setTone(p.value)}
+                        className={`text-left p-2 rounded border text-[11px] transition-colors ${
+                          tone === p.value
+                            ? "bg-[#a855f7]/20 border-[#a855f7]/60 text-white"
+                            : "bg-[#080a0f]/60 border-[#1f242d] text-gray-400 hover:text-gray-200"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-        {/* Step 3: Grenzen & Custom Directives */}
-        {step === 3 && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
-                <Shield className="w-3.5 h-3.5 text-red-400" /> Ethische Grenzen & Sicherheitsrichtlinien
-              </label>
-              <textarea
-                rows={2}
-                value={boundaries}
-                onChange={(e) => setBoundaries(e.target.value)}
-                placeholder="z.B. Striktes Hardware-Confirmation-Gate, keine ungeprüften Systemlöschungen..."
-                className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-red-400 outline-none resize-none"
-              />
-            </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
+                    <Flame className="w-3.5 h-3.5 text-[#eab308]" /> Humor & Ironie
+                  </label>
+                  <input
+                    type="text"
+                    value={humor}
+                    onChange={(e) => setHumor(e.target.value)}
+                    placeholder="z.B. Trockener Witz, sarkastisch bei unnötigen Fragen..."
+                    className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#eab308] outline-none"
+                  />
+                </div>
+              </div>
+            )}
 
-            <div>
-              <label className="text-xs font-bold text-gray-300 mb-1 block">
-                Zusätzliche Direktiven (Custom Instructions)
-              </label>
-              <textarea
-                rows={3}
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                placeholder="Optionale spezifische Vorgaben für die System-Prompts..."
-                className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#00d4ff] outline-none resize-none"
-              />
+            {/* Step 3: Grenzen & Custom Directives */}
+            {step === 3 && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-300 flex items-center gap-1.5 mb-1">
+                    <Shield className="w-3.5 h-3.5 text-red-400" /> Ethische Grenzen & Sicherheitsrichtlinien
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={boundaries}
+                    onChange={(e) => setBoundaries(e.target.value)}
+                    placeholder="z.B. Striktes Hardware-Confirmation-Gate, keine ungeprüften Systemlöschungen..."
+                    className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-red-400 outline-none resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-300 mb-1 block">
+                    Zusätzliche Direktiven (Custom Instructions)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    placeholder="Optionale spezifische Vorgaben für die System-Prompts..."
+                    className="w-full px-3 py-2 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs text-white focus:border-[#00d4ff] outline-none resize-none"
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Direkter Markdown-Editor */
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+              <span>Direkte SOUL.md Bearbeitung (Volltext)</span>
+              <button
+                type="button"
+                onClick={() => setRawSoul(buildGeneratedMarkdown())}
+                className="text-[10px] text-[#00d4ff] hover:underline"
+              >
+                Aus Formular generieren
+              </button>
             </div>
+            <textarea
+              rows={14}
+              value={rawSoul}
+              onChange={(e) => setRawSoul(e.target.value)}
+              className="w-full p-3 rounded-lg bg-[#080a0f] border border-[#1f242d] text-xs font-mono text-gray-200 focus:border-[#a855f7] outline-none resize-none"
+              placeholder="# SOUL.md Inhalt eingeben..."
+            />
           </div>
         )}
 
         {/* Footer Buttons */}
         <div className="flex items-center justify-between border-t border-[#1f242d] pt-4 mt-6">
           <div>
-            {step > 1 && (
+            {!isRawMode && step > 1 && (
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
@@ -228,7 +325,7 @@ export const PersonalityWizardModal: React.FC<PersonalityWizardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {step < 3 ? (
+            {!isRawMode && step < 3 && (
               <button
                 type="button"
                 onClick={() => setStep(step + 1)}
@@ -236,7 +333,8 @@ export const PersonalityWizardModal: React.FC<PersonalityWizardModalProps> = ({
               >
                 Weiter
               </button>
-            ) : (
+            )}
+            {((!isRawMode && step === 3) || isRawMode) && (
               <button
                 type="button"
                 onClick={handleSave}
@@ -244,12 +342,12 @@ export const PersonalityWizardModal: React.FC<PersonalityWizardModalProps> = ({
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
                   savedSuccess
                     ? "bg-[#22c55e] text-black"
-                    : "bg-[#00d4ff] text-black hover:bg-[#00d4ff]/90 shadow-lg shadow-[#00d4ff]/20"
+                    : "bg-[#00d4ff] text-black hover:bg-[#00d4ff]/90 shadow-lg shadow-[#00d4ff]/20 cursor-pointer"
                 }`}
               >
                 {savedSuccess ? (
                   <>
-                    <Check className="w-3.5 h-3.5" /> Gespeichert!
+                    <Check className="w-3.5 h-3.5" /> Gespeichert & Aktiviert!
                   </>
                 ) : (
                   <>

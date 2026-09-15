@@ -20,7 +20,8 @@ if str(BACKEND_DIR) not in sys.path:
 import websockets
 from core.config import (
     WS_HOST, WS_PORT, AUDIO_SAMPLE_RATE_INPUT, AUDIO_SAMPLE_RATE_OUTPUT,
-    USER_NAME, save_gemini_api_key, is_api_key_configured, get_masked_api_key, get_gemini_api_key
+    USER_NAME, save_gemini_api_key, is_api_key_configured, get_masked_api_key, get_gemini_api_key,
+    get_personality_dict
 )
 from core.action_loader import discover_actions
 from core.audio_streamer import AudioStreamer
@@ -206,7 +207,8 @@ class JarvisServer:
             "graph_data": get_full_graph_data(),
             "mcp_servers": mcp_servers,
             "focus_mode": getattr(self.cron_engine, "focus_mode", False),
-            "paranoia_muted": self.audio.is_paranoia_muted()
+            "paranoia_muted": self.audio.is_paranoia_muted(),
+            "personality": get_personality_dict()
         }
         await websocket.send(json.dumps(welcome_payload))
 
@@ -493,16 +495,43 @@ class JarvisServer:
                     self.audio.set_paranoia_mute(active)
                     broadcast({"type": "paranoia_mute_status", "active": active})
 
+                elif msg_type == "get_personality":
+                    from core.config import get_personality_dict
+                    p = get_personality_dict()
+                    await websocket.send(json.dumps({"type": "personality_data", "personality": p}))
+
                 elif msg_type == "save_personality":
+                    from core.config import format_soul_md, get_personality_dict
+                    name = str(data.get("name", "Cypher")).strip() or "Cypher"
+                    role = str(data.get("role", "Autonomes Cybernetic AI OS & Arch Linux Co-Pilot")).strip()
+                    tone = str(data.get("tone", "Sarkastisch, trocken, präzise und hocheffizient")).strip()
+                    domain = str(data.get("domain", "CachyOS / Arch Linux Systemarchitektur, Kernel-Tuning & Development")).strip()
+                    humor = str(data.get("humor", "Trockener britischer Witz, gelegentliche ironische Spitzen gegen ineffiziente Software")).strip()
+                    boundaries = str(data.get("boundaries", "Striktes Hardware-Confirmation-Gate vor Modifikationen, keine Fake-Ausgaben")).strip()
+                    custom_prompt = str(data.get("custom_prompt", "")).strip()
                     soul_text = str(data.get("soul", "")).strip()
-                    if soul_text:
-                        try:
-                            (BACKEND_DIR / "SOUL.md").write_text(soul_text, encoding="utf-8")
-                            (BACKEND_DIR / "config" / "SOUL.md").write_text(soul_text, encoding="utf-8")
-                            self.log("Neue Persönlichkeits-Seele (SOUL.md) erfolgreich übernommen.", "SYS")
-                            broadcast({"type": "personality_saved", "status": "ok"})
-                        except Exception as e:
-                            self.log(f"Fehler beim Speichern der Persona: {e}", "ERR")
+
+                    if not soul_text:
+                        soul_text = format_soul_md(name, role, tone, domain, humor, boundaries, custom_prompt)
+
+                    try:
+                        (BACKEND_DIR / "SOUL.md").write_text(soul_text, encoding="utf-8")
+                        (BACKEND_DIR / "config" / "SOUL.md").write_text(soul_text, encoding="utf-8")
+                        if hasattr(self.controller, "reload_personality"):
+                            self.controller.reload_personality()
+                        p_dict = get_personality_dict()
+                        p_dict["name"] = name
+                        p_dict["role"] = role
+                        p_dict["tone"] = tone
+                        p_dict["domain"] = domain
+                        p_dict["humor"] = humor
+                        p_dict["boundaries"] = boundaries
+                        p_dict["custom_prompt"] = custom_prompt
+                        p_dict["soul_text"] = soul_text
+                        self.log(f"Persönlichkeit '{name}' (SOUL.md) erfolgreich übernommen & Live-Sitzung aktualisiert.", "SYS")
+                        broadcast({"type": "personality_saved", "status": "ok", "personality": p_dict})
+                    except Exception as e:
+                        self.log(f"Fehler beim Speichern der Persona: {e}", "ERR")
 
                 elif msg_type == "export_brain":
                     from core.backup_manager import export_brain
