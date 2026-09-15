@@ -24,6 +24,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   onOpenSkillsModal,
   onOpenDevConsole,
   onOpenPersonalityWizard,
+  onOpenCalendarModal,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
