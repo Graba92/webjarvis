@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bubblewrap \
     procps \
     curl \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -21,6 +23,7 @@ WORKDIR /app
 # Python-Abhängigkeiten vorab cachen
 COPY backend/requirements.txt requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir uv && \
     pip install --no-cache-dir -r requirements.txt
 
 # Backend-Quellcode kopieren
