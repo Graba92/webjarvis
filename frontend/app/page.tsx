@@ -57,10 +57,19 @@ export default function Home() {
     const unsubAudio = socketManager.onAudioLevel(setAudioLevel);
     const unsubGraph = socketManager.onGraphUpdate(setData);
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === "c" || e.key === "C")) {
+        e.preventDefault();
+        setIsCalendarOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
       unsubState();
       unsubAudio();
       unsubGraph();
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 

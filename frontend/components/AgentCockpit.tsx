@@ -31,6 +31,7 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
   const [focusMode, setFocusMode] = useState(false);
   const [autoBriefing, setAutoBriefing] = useState(true);
   const [paranoiaMuted, setParanoiaMuted] = useState(false);
+  const [aiName, setAiName] = useState<string>("CYPHER");
   const [angle, setAngle] = useState(0);
 
   useEffect(() => {
@@ -54,10 +55,14 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
     const unsubBriefing = socketManager.onAutoBriefing((enabled) => {
       setAutoBriefing(enabled);
     });
+    const unsubAiName = socketManager.onAiName((name) => {
+      if (name) setAiName(name);
+    });
     return () => {
       unsubParanoia();
       unsubFocus();
       unsubBriefing();
+      unsubAiName();
     };
   }, []);
 
@@ -147,8 +152,17 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
               fill="rgba(0, 212, 255, 0.25)"
               style={{ filter: "drop-shadow(0 0 10px #00d4ff)" }}
             />
-            <text x="100" y="104" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="900" letterSpacing="2" fontFamily="monospace">
-              CYPHER
+            <text
+              x="100"
+              y="104"
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize={aiName.length > 8 ? "7.5" : aiName.length > 6 ? "9" : "10"}
+              fontWeight="900"
+              letterSpacing={aiName.length > 8 ? "1" : "2"}
+              fontFamily="monospace"
+            >
+              {aiName.toUpperCase()}
             </text>
           </svg>
 

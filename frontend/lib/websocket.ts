@@ -12,13 +12,17 @@ import {
   BrainImportResult,
   CalendarEvent
 } from "./types";
+import { auditor } from "../utils/auditLogger";
 
 type Listener<T> = (data: T) => void;
 
 class JarvisSocketManager {
   private ws: WebSocket | null = null;
   private url: string = "ws://127.0.0.1:8765";
-  private reconnectInterval: number = 3000;
+  private baseReconnectDelay: number = 1000;
+  private maxReconnectDelay: number = 15000;
+  private reconnectAttempts: number = 0;
+  private reconnectTimer: any = null;
   private shouldReconnect: boolean = true;
 
   // Event Listeners
@@ -39,8 +43,10 @@ class JarvisSocketManager {
   private personalityListeners: Set<Listener<PersonalityConfig>> = new Set();
   private calendarListeners: Set<Listener<CalendarEvent[]>> = new Set();
   private autoBriefingListeners: Set<Listener<boolean>> = new Set();
+  private aiNameListeners: Set<Listener<string>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
+  public currentAiName: string = "Cypher";
   public isMuted: boolean = false;
   public isParanoiaMuted: boolean = false;
   public isFocusMode: boolean = false;
@@ -59,6 +65,19 @@ class JarvisSocketManager {
     this.connect();
   }
 
+  private scheduleReconnect() {
+    if (this.reconnectTimer) return;
+    const factor = Math.min(this.reconnectAttempts, 5);
+    const delay = Math.min(this.maxReconnectDelay, this.baseReconnectDelay * Math.pow(1.8, factor));
+    const jitter = Math.random() * 500;
+    const totalDelay = Math.round(delay + jitter);
+    this.reconnectAttempts++;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect();
+    }, totalDelay);
+  }
+
   private connect() {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
@@ -69,6 +88,11 @@ class JarvisSocketManager {
       this.ws = new WebSocket(this.url);
 
       this.ws.onopen = () => {
+        this.reconnectAttempts = 0;
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
         this.setState("ONLINE");
         this.notifyLog({
           speaker: "SYS",
@@ -89,7 +113,7 @@ class JarvisSocketManager {
       this.ws.onclose = () => {
         this.setState("OFFLINE");
         if (this.shouldReconnect) {
-          setTimeout(() => this.connect(), this.reconnectInterval);
+          this.scheduleReconnect();
         }
       };
 
@@ -99,7 +123,7 @@ class JarvisSocketManager {
     } catch (e) {
       this.setState("ERROR");
       if (this.shouldReconnect) {
-        setTimeout(() => this.connect(), this.reconnectInterval);
+        this.scheduleReconnect();
       }
     }
   }
@@ -107,6 +131,12 @@ class JarvisSocketManager {
   private handleMessage(msg: any) {
     switch (msg.type) {
       case "init":
+      case "SYSTEM_INIT":
+        const initName = msg.ai_name || msg.data?.ai_name || msg.personality?.name || msg.data?.personality?.name;
+        if (initName && typeof initName === "string") {
+          this.currentAiName = initName;
+          this.aiNameListeners.forEach((fn) => fn(this.currentAiName));
+        }
         if (msg.api_key_status) {
           this.apiKeyStatus = msg.api_key_status;
           this.apiKeyListeners.forEach((fn) => fn(this.apiKeyStatus));
@@ -199,8 +229,10 @@ class JarvisSocketManager {
 
       case "audio_rms":
       case "audio_level":
-        if (typeof msg.level === "number") {
-          this.audioLevelListeners.forEach((fn) => fn(msg.level));
+      case "AUDIO_RMS":
+        const rawLevel = typeof msg.level === "number" ? msg.level : (typeof msg.value === "number" ? msg.value : null);
+        if (rawLevel !== null) {
+          this.audioLevelListeners.forEach((fn) => fn(rawLevel));
         }
         break;
 
@@ -230,17 +262,31 @@ class JarvisSocketManager {
         this.confirmListeners.forEach((fn) => fn(null));
         break;
 
+      case "ACTION_RECEIPT":
+      case "action_receipt":
+        if (msg.correlationId) {
+          auditor.handleBackendAck({
+            correlationId: msg.correlationId,
+            status: msg.status || "PROCESSED",
+            result: msg.result
+          });
+        }
+        break;
+
       case "mute_state":
+      case "mute_status":
         this.isMuted = !!msg.muted;
         this.muteListeners.forEach((fn) => fn(this.isMuted));
         break;
 
       case "paranoia_mute_state":
-        this.isParanoiaMuted = !!msg.muted;
+      case "paranoia_mute_status":
+        this.isParanoiaMuted = msg.active !== undefined ? !!msg.active : !!msg.muted;
         this.paranoiaMuteListeners.forEach((fn) => fn(this.isParanoiaMuted));
         break;
 
       case "focus_mode_state":
+      case "focus_mode_status":
         this.isFocusMode = !!msg.enabled;
         this.focusModeListeners.forEach((fn) => fn(this.isFocusMode));
         break;
@@ -265,13 +311,32 @@ class JarvisSocketManager {
         if (msg.personality) {
           this.currentPersonality = msg.personality;
           this.personalityListeners.forEach((fn) => fn(this.currentPersonality!));
+          if (msg.personality.name) {
+            this.currentAiName = msg.personality.name;
+            this.aiNameListeners.forEach((fn) => fn(this.currentAiName));
+          }
+        }
+        if (msg.ai_name) {
+          this.currentAiName = msg.ai_name;
+          this.aiNameListeners.forEach((fn) => fn(this.currentAiName));
         }
         break;
 
       case "calendar_events_data":
+      case "CALENDAR_EVENTS_DATA":
         if (msg.events && Array.isArray(msg.events)) {
           this.currentCalendarEvents = msg.events;
           this.calendarListeners.forEach((fn) => fn(this.currentCalendarEvents));
+        }
+        break;
+
+      case "CALENDAR_SYNC":
+      case "calendar_sync":
+        if (msg.events && Array.isArray(msg.events)) {
+          this.currentCalendarEvents = msg.events;
+          this.calendarListeners.forEach((fn) => fn(this.currentCalendarEvents));
+        } else {
+          this.requestCalendarEvents();
         }
         break;
 
@@ -572,6 +637,14 @@ class JarvisSocketManager {
     };
   }
 
+  public onAiName(fn: Listener<string>) {
+    this.aiNameListeners.add(fn);
+    if (this.currentAiName) fn(this.currentAiName);
+    return () => {
+      this.aiNameListeners.delete(fn);
+    };
+  }
+
   public requestPersonality() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "get_personality" }));
@@ -596,9 +669,12 @@ class JarvisSocketManager {
   public addCalendarEvent(event: {
     title: string;
     start_time: string;
+    end_time?: string;
     description?: string;
     category?: string;
     reminder?: string;
+    recurrence_rule?: string;
+    reminder_strategy?: any;
   }) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
@@ -608,13 +684,21 @@ class JarvisSocketManager {
     }
   }
 
-  public deleteCalendarEvent(eventId: number) {
+  public deleteCalendarEvent(eventId: number | string) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
         type: "delete_calendar_event",
         event_id: eventId
       }));
     }
+  }
+
+  public dispatchAuditedAction(actionName: string, payload: any = {}): Promise<boolean> {
+    return auditor.trackAction(actionName, payload, (data) => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify(data));
+      }
+    });
   }
 
   public onAutoBriefing(fn: Listener<boolean>) {

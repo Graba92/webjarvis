@@ -48,7 +48,7 @@ export const INITIAL_GRAPH_DATA: GraphData = {
       category: "Concepts",
       connections: 184,
       description: "Hauptarchitektur des hybriden Betriebssystems für CachyOS / Arch Linux.",
-      path: "/home/graba/Schreibtisch/ASGRAD/GRABAS_GITHUB/eigenjarv/2"
+      path: "."
     },
     {
       id: "hub-youtube-channel",
@@ -165,7 +165,7 @@ export const INITIAL_GRAPH_DATA: GraphData = {
       category: "Worlds",
       connections: 52,
       description: "Lokale Entwicklungsumgebung und Quellcode-Repositories.",
-      path: "/home/graba/Schreibtisch/ASGRAD/GRABAS_GITHUB/eigenjarv/2"
+      path: "."
     },
     {
       id: "world-sysadmin",
@@ -173,7 +173,7 @@ export const INITIAL_GRAPH_DATA: GraphData = {
       category: "Worlds",
       connections: 39,
       description: "Systemüberwachung, Backups, Netzwerk- und Kernel-Tools.",
-      path: "/home/graba/Schreibtisch/ASGRAD/GRABAS_GITHUB/eigenjarv/2/backend"
+      path: "backend"
     },
     // Notes
     {

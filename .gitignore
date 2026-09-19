@@ -64,6 +64,9 @@ next-env.d.ts.bak
 
 # ── Lokale Datenbanken, Sessions & Vektor-Speicher ─────────────────────────────
 backend/memory/lancedb_data/
+backend/memory/*.db
+backend/memory/*.db-wal
+backend/memory/*.db-shm
 *.lance
 *.txn
 backend/whatsapp_bridge/auth_info_baileys/

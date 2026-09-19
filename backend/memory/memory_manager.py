@@ -5,6 +5,8 @@ backend/memory/memory_manager.py — Budgetiertes Zwei-Ebenen-Langzeitgedächtni
 """
 
 from __future__ import annotations
+import os
+import tempfile
 import json
 import re
 from datetime import datetime
@@ -54,10 +56,21 @@ def save_memory(memory: dict) -> None:
         return
     MEMORY_PATH.parent.mkdir(parents=True, exist_ok=True)
     with _lock:
-        MEMORY_PATH.write_text(
-            json.dumps(memory, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        content = json.dumps(memory, indent=2, ensure_ascii=False)
+        temp_file = tempfile.NamedTemporaryFile("w", dir=MEMORY_PATH.parent, delete=False, encoding="utf-8")
+        try:
+            temp_file.write(content)
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
+            temp_file.close()
+            os.replace(temp_file.name, MEMORY_PATH)
+        except Exception:
+            if os.path.exists(temp_file.name):
+                try:
+                    os.unlink(temp_file.name)
+                except Exception:
+                    pass
+            raise
 
 def _truncate_value(val: str) -> str:
     if isinstance(val, str) and len(val) > MAX_VALUE_LENGTH:

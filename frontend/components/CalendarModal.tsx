@@ -13,7 +13,8 @@ import {
   X, 
   Bell, 
   CalendarDays,
-  CheckCircle2
+  CheckCircle2,
+  Repeat
 } from "lucide-react";
 
 interface CalendarModalProps {
@@ -26,11 +27,14 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
   const [autoBriefing, setAutoBriefing] = useState<boolean>(true);
   const [title, setTitle] = useState("");
   const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [category, setCategory] = useState("Termin");
-  const [reminder, setReminder] = useState("15 Minuten vorher");
+  const [recurrence, setRecurrence] = useState<"NONE" | "DAILY" | "WEEKLY" | "MONTHLY">("NONE");
+  const [reminder, setReminder] = useState("15m");
   const [description, setDescription] = useState("");
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [briefingTriggered, setBriefingTriggered] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const unsubEvents = socketManager.onCalendarEvents((evList) => {
@@ -58,26 +62,64 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
 
   if (!isOpen) return null;
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isSubmitting) return;
 
-    socketManager.addCalendarEvent({
+    setIsSubmitting(true);
+    let reminderRules = [{ trigger: "-15m", frequency: "once" }];
+    if (reminder === "1h") {
+      reminderRules = [{ trigger: "-1h", frequency: "once" }];
+    } else if (reminder === "1d") {
+      reminderRules = [{ trigger: "-1d", frequency: "daily" }];
+    } else if (reminder === "staged_week_hour") {
+      reminderRules = [
+        { trigger: "-7d", frequency: "daily" },
+        { trigger: "-1h", frequency: "once" }
+      ];
+    } else if (reminder === "none") {
+      reminderRules = [];
+    }
+
+    const payload = {
       title: title.trim(),
       start_time: startTime || new Date().toISOString(),
+      end_time: endTime || undefined,
       description: description.trim(),
       category: category.trim(),
-      reminder: reminder.trim()
-    });
+      recurrence_rule: recurrence,
+      reminder_strategy: { rules: reminderRules },
+      reminder: reminderRules.length > 0 ? `${reminderRules[0].trigger} (${reminderRules[0].frequency})` : "Keine"
+    };
 
-    setTitle("");
-    setDescription("");
-    setFeedbackMsg("Termin erfolgreich gespeichert!");
-    setTimeout(() => setFeedbackMsg(null), 2500);
+    const success = await socketManager.dispatchAuditedAction("CALENDAR_MANUAL_CREATE", payload);
+    setIsSubmitting(false);
+
+    if (success) {
+      setTitle("");
+      setDescription("");
+      setEndTime("");
+      setRecurrence("NONE");
+      setFeedbackMsg("Termin erfolgreich gespeichert & in Echtzeit synchronisiert!");
+      setTimeout(() => setFeedbackMsg(null), 2500);
+    } else {
+      setFeedbackMsg("Warnung: Backend-Quittierung ausstehend. Termin wird synchronisiert.");
+      setTimeout(() => setFeedbackMsg(null), 3000);
+    }
   };
 
-  const handleDelete = (id: number) => {
-    socketManager.deleteCalendarEvent(id);
+  const handleDelete = async (id: string | number) => {
+    const previousEvents = [...events];
+    // Optimistisches Entfernen aus der UI
+    setEvents((prev) => prev.filter((ev) => ev.id !== id));
+
+    const success = await socketManager.dispatchAuditedAction("CALENDAR_DELETE", { event_id: id });
+    if (!success) {
+      // Rollback bei fehlender Bestätigung
+      setEvents(previousEvents);
+      setFeedbackMsg("Fehler: Termin konnte auf dem Server nicht gelöscht werden. Wiederhergestellt.");
+      setTimeout(() => setFeedbackMsg(null), 3000);
+    }
   };
 
   const handleToggleAutoBriefing = () => {
@@ -252,22 +294,38 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                         <span className="text-sm font-semibold text-white truncate">
                           {ev.title}
                         </span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-md border font-mono ${getCategoryColor(ev.category)}`}>
-                          {ev.category}
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md border font-mono ${getCategoryColor(ev.category || "Termin")}`}>
+                          {ev.category || "Termin"}
                         </span>
+                        {ev.recurrence_rule && ev.recurrence_rule !== "NONE" && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 font-mono flex items-center gap-1">
+                            <Repeat className="w-2.5 h-2.5" />
+                            {ev.recurrence_rule}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-3 text-xs text-gray-400 mb-1 flex-wrap">
                         <span className="flex items-center gap-1 text-[#00d4ff] font-mono">
                           <Clock className="w-3 h-3" />
                           {formatEventDate(ev.start_time)}
+                          {ev.end_time ? ` → ${formatEventDate(ev.end_time)}` : ""}
                         </span>
-                        {ev.reminder_offset_minutes > 0 && (
+                        {ev.reminder_strategy_parsed?.rules && ev.reminder_strategy_parsed.rules.length > 0 ? (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {ev.reminder_strategy_parsed.rules.map((r, idx) => (
+                              <span key={idx} className="flex items-center gap-1 text-amber-300/90 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono text-[10px]">
+                                <Bell className="w-2.5 h-2.5 text-amber-400" />
+                                {r.trigger} ({r.frequency || "once"})
+                              </span>
+                            ))}
+                          </div>
+                        ) : ev.reminder_offset_minutes && ev.reminder_offset_minutes > 0 ? (
                           <span className="flex items-center gap-1 text-gray-400 font-mono text-[11px]">
                             <Bell className="w-3 h-3 text-amber-400" />
                             {ev.reminder_offset_minutes}m vorher
                           </span>
-                        )}
+                        ) : null}
                       </div>
 
                       {ev.description && (
@@ -308,58 +366,87 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="z. B. Team-Meeting, Server-Wartung..."
+                    placeholder="z. B. Team-Meeting, Zahnarzt, Server-Wartung..."
                     className="w-full px-3 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#00d4ff] transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-mono text-gray-400 mb-1">
-                    STARTZEITPUNKT *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white font-mono focus:outline-none focus:border-[#00d4ff] transition-colors"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
                     <label className="block text-[11px] font-mono text-gray-400 mb-1">
-                      KATEGORIE
+                      STARTZEITPUNKT *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full px-2.5 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white font-mono focus:outline-none focus:border-[#00d4ff] transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-mono text-gray-400 mb-1">
+                      ENDE (OPTIONAL)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full px-2.5 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white font-mono focus:outline-none focus:border-[#00d4ff] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-mono text-gray-400 mb-1">
+                      WIEDERHOLUNG
                     </label>
                     <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
+                      value={recurrence}
+                      onChange={(e) => setRecurrence(e.target.value as any)}
                       className="w-full px-2.5 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#00d4ff] transition-colors"
                     >
-                      <option value="Termin">Termin</option>
-                      <option value="Arbeit">Arbeit</option>
-                      <option value="Meeting">Meeting</option>
-                      <option value="Privat">Privat</option>
-                      <option value="System">System</option>
+                      <option value="NONE">Einmalig (NONE)</option>
+                      <option value="DAILY">Täglich (DAILY)</option>
+                      <option value="WEEKLY">Wöchentlich (WEEKLY)</option>
+                      <option value="MONTHLY">Monatlich (MONTHLY)</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-mono text-gray-400 mb-1">
-                      ERINNERUNG
+                      ERINNERUNGS-STRATEGIE
                     </label>
                     <select
                       value={reminder}
                       onChange={(e) => setReminder(e.target.value)}
                       className="w-full px-2.5 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#00d4ff] transition-colors"
                     >
-                      <option value="15 Minuten vorher">15 Min vorher</option>
-                      <option value="30 Minuten vorher">30 Min vorher</option>
-                      <option value="1 Stunde vorher">1 Std vorher</option>
-                      <option value="1 Tag vorher">1 Tag vorher</option>
-                      <option value="Keine">Keine</option>
+                      <option value="15m">15 Min vorher (einmalig)</option>
+                      <option value="1h">1 Stunde vorher (einmalig)</option>
+                      <option value="1d">1 Tag vorher (täglich)</option>
+                      <option value="staged_week_hour">Gestaffelt: -7d (tägl.) + -1h (einm.)</option>
+                      <option value="none">Keine Erinnerung</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-gray-400 mb-1">
+                    KATEGORIE
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-2.5 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#00d4ff] transition-colors"
+                  >
+                    <option value="Termin">Termin</option>
+                    <option value="Arbeit">Arbeit</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Privat">Privat</option>
+                    <option value="System">System</option>
+                  </select>
                 </div>
 
                 <div>
@@ -367,10 +454,10 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                     BESCHREIBUNG / NOTIZEN (OPTIONAL)
                   </label>
                   <textarea
-                    rows={3}
+                    rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Details, Links oder Notizen für diesen Termin..."
+                    placeholder="Details, Vorbereitung oder Notizen..."
                     className="w-full px-3 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#00d4ff] transition-colors resize-none"
                   />
                 </div>
@@ -378,10 +465,11 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
 
               <button
                 type="submit"
-                className="w-full mt-3 py-2.5 px-4 rounded-xl bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] border border-[#00d4ff]/50 hover:border-[#00d4ff] font-semibold text-xs transition-all shadow-[0_0_15px_rgba(0,212,255,0.2)] flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full mt-3 py-2.5 px-4 rounded-xl bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] border border-[#00d4ff]/50 hover:border-[#00d4ff] font-semibold text-xs transition-all shadow-[0_0_15px_rgba(0,212,255,0.2)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4" />
-                <span>Termin im Kalender speichern</span>
+                <Plus className={`w-4 h-4 ${isSubmitting ? "animate-spin" : ""}`} />
+                <span>{isSubmitting ? "Wird übertragen & verifiziert..." : "Termin im Kalender speichern"}</span>
               </button>
             </form>
           </div>

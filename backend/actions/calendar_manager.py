@@ -1,40 +1,113 @@
 """
-backend/actions/calendar_manager.py — Kalender & Dynamischer Termin-Scheduler für J.A.R.V.I.S. AI OS.
-- Lokale SQLite-Datenbank in backend/memory/calendar.db.
-- NLP-to-DateTime & Reminder Parser für natürliche Spracheingaben ("Erinnere mich zwei Tage vorher...").
-- CRUD-Operationen für Termine & Integration in das Morning Briefing.
+backend/actions/calendar_manager.py — Bidirektionaler Kalender & Termin-Scheduler für J.A.R.V.I.S. AI OS.
+- Lokale SQLite-Datenbank in backend/memory/calendar.db mit Single Source of Truth.
+- Schema: calendar_events mit Unterstützung für Wiederholungsregeln und gestaffelte Erinnerungsstrategien.
+- Event-Driven Live-Sync via WebSockets (CALENDAR_SYNC Broadcasts für INSERT, UPDATE, DELETE).
+- Gemini Function Calling Tool: create_calendar_entry (mit Slot-Filling & Bestätigungs-Gate).
 """
 
 from __future__ import annotations
+import json
 import re
 import sqlite3
+import uuid
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable
 
 DB_DIR = Path(__file__).parent.parent / "memory"
 DB_FILE = DB_DIR / "calendar.db"
 
+_BROADCAST_FN: Optional[Callable[[dict], None]] = None
+
+def bind_broadcast(fn: Callable[[dict], None]):
+    """Registriert die globale WebSocket-Broadcast-Funktion für Live-Synchronisation."""
+    global _BROADCAST_FN
+    _BROADCAST_FN = fn
+
+def _broadcast_sync(action: str, event_data: dict):
+    """Sendet ein CALENDAR_SYNC Event an alle verbundenen WebSockets (Next.js HUD)."""
+    if _BROADCAST_FN:
+        try:
+            _BROADCAST_FN({
+                "type": "CALENDAR_SYNC",
+                "action": action.upper(),  # "INSERT", "UPDATE", "DELETE"
+                "data": event_data
+            })
+            _BROADCAST_FN({
+                "type": "calendar_events_data",
+                "events": get_events_list()
+            })
+        except Exception as e:
+            print(f"[CalendarSync] Broadcast error: {e}")
+
 def _get_connection() -> sqlite3.Connection:
     DB_DIR.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_FILE))
+    conn = sqlite3.connect(str(DB_FILE), timeout=10.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA busy_timeout=10000;")
     with conn:
+        # 1. Neues relationales Schema gemäß Spezifikation 2.1
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE IF NOT EXISTS calendar_events (
+                id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
                 description TEXT DEFAULT '',
-                start_time TEXT NOT NULL,
-                end_time TEXT DEFAULT '',
-                category TEXT DEFAULT 'Termin',
-                reminder_offset_minutes INTEGER DEFAULT 15,
-                is_completed INTEGER DEFAULT 0,
-                created_at TEXT NOT NULL
-            )
+                start_time DATETIME NOT NULL,
+                end_time DATETIME DEFAULT '',
+                is_recurring BOOLEAN DEFAULT 0,
+                recurrence_rule TEXT DEFAULT 'NONE',
+                reminder_strategy TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
         """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_start_time ON events(start_time);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_calendar_start ON calendar_events(start_time);")
+
+        # 2. Migration aus bestehender legacy 'events'-Tabelle falls vorhanden
+        try:
+            cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events';")
+            if cur.fetchone():
+                c_cur = conn.execute("SELECT count(*) FROM calendar_events;")
+                if c_cur.fetchone()[0] == 0:
+                    legacy_rows = conn.execute("SELECT * FROM events;").fetchall()
+                    for r in legacy_rows:
+                        rem_min = r['reminder_offset_minutes'] if 'reminder_offset_minutes' in r.keys() else 15
+                        strategy = json.dumps({"rules": [{"trigger": f"-{rem_min}m", "frequency": "once"}]})
+                        conn.execute("""
+                            INSERT INTO calendar_events (id, title, description, start_time, end_time, is_recurring, recurrence_rule, reminder_strategy, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, 0, 'NONE', ?, ?, ?)
+                        """, (
+                            str(r['id']),
+                            r['title'],
+                            r['description'] if 'description' in r.keys() else '',
+                            r['start_time'],
+                            r['end_time'] if 'end_time' in r.keys() else '',
+                            strategy,
+                            r['created_at'] if 'created_at' in r.keys() else datetime.now().isoformat(),
+                            datetime.now().isoformat()
+                        ))
+        except Exception:
+            pass
+
     return conn
+
+@contextmanager
+def get_db():
+    """Kontextmanager für sichere SQLite-Transaktionen mit automatischem Close."""
+    conn = _get_connection()
+    try:
+        with conn:
+            yield conn
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
 
 def parse_natural_datetime(text: str, default_hour: int = 9, default_minute: int = 0) -> Optional[datetime]:
     """Wandelt natürliche Zeitangaben (Deutsch/Englisch) in ein datetime-Objekt um."""
@@ -44,7 +117,7 @@ def parse_natural_datetime(text: str, default_hour: int = 9, default_minute: int
     now = datetime.now()
 
     # 1. ISO-Format oder YYYY-MM-DD HH:MM
-    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
         try:
             return datetime.strptime(raw, fmt)
         except ValueError:
@@ -123,13 +196,160 @@ def get_upcoming_events(days: int = 1) -> List[Dict[str, Any]]:
     """Gibt alle Termine innerhalb der nächsten X Tage zurück (für Morning Briefing)."""
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     until_str = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d 23:59")
-    with _get_connection() as conn:
+    with get_db() as conn:
         cursor = conn.execute(
-            "SELECT * FROM events WHERE start_time >= ? AND start_time <= ? AND is_completed = 0 ORDER BY start_time ASC",
+            "SELECT * FROM calendar_events WHERE start_time >= ? AND start_time <= ? ORDER BY start_time ASC",
             (now_str, until_str)
         )
         return [dict(row) for row in cursor.fetchall()]
 
+def get_events_list(limit: int = 100) -> List[Dict[str, Any]]:
+    """Gibt alle aktiven Termine als formatierte Dict-Liste für das HUD zurück."""
+    with get_db() as conn:
+        cursor = conn.execute(
+            "SELECT * FROM calendar_events ORDER BY start_time ASC LIMIT ?",
+            (limit,)
+        )
+        events = []
+        for row in cursor.fetchall():
+            d = dict(row)
+            # JSON-Reminder-Strategie parsen
+            try:
+                if isinstance(d.get("reminder_strategy"), str):
+                    d["reminder_strategy_parsed"] = json.loads(d["reminder_strategy"])
+            except Exception:
+                d["reminder_strategy_parsed"] = {"rules": []}
+            events.append(d)
+        return events
+
+def add_event_entry(
+    title: str,
+    start_time: str,
+    end_time: str = "",
+    description: str = "",
+    category: str = "Termin",
+    reminder: str = "15 Minuten vorher",
+    recurrence_rule: str = "NONE",
+    reminder_strategy: Optional[Any] = None
+) -> Dict[str, Any]:
+    """Erstellt einen Termin direkt über das Frontend oder Backend und synchronisiert via WebSocket."""
+    dt = parse_natural_datetime(start_time)
+    if not dt:
+        dt = datetime.now() + timedelta(hours=1)
+    
+    start_iso = dt.strftime("%Y-%m-%d %H:%M")
+    end_iso = ""
+    if end_time:
+        edt = parse_natural_datetime(end_time)
+        if edt:
+            end_iso = edt.strftime("%Y-%m-%d %H:%M")
+
+    # Erinnerungsstrategie formulieren
+    if reminder_strategy and isinstance(reminder_strategy, (dict, list)):
+        if isinstance(reminder_strategy, list):
+            strategy_dict = {"rules": reminder_strategy}
+        else:
+            strategy_dict = reminder_strategy
+        strategy_json = json.dumps(strategy_dict, ensure_ascii=False)
+    else:
+        offset_mins = parse_reminder_offset(reminder)
+        strategy_json = json.dumps({
+            "rules": [
+                {"trigger": f"-{offset_mins}m", "frequency": "once"}
+            ]
+        }, ensure_ascii=False)
+
+    rec_rule = (recurrence_rule or "NONE").upper()
+    if rec_rule not in ("NONE", "DAILY", "WEEKLY", "MONTHLY"):
+        rec_rule = "NONE"
+    is_rec = 1 if rec_rule != "NONE" else 0
+
+    new_id = f"cal_{uuid.uuid4().hex[:10]}"
+    now_iso = datetime.now().isoformat()
+
+    with get_db() as conn:
+        conn.execute("""
+            INSERT INTO calendar_events (id, title, description, start_time, end_time, is_recurring, recurrence_rule, reminder_strategy, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            new_id,
+            title.strip(),
+            description.strip(),
+            start_iso,
+            end_iso,
+            is_rec,
+            rec_rule,
+            strategy_json,
+            now_iso,
+            now_iso
+        ))
+        row = conn.execute("SELECT * FROM calendar_events WHERE id = ?", (new_id,)).fetchone()
+        event_data = dict(row)
+
+    # Event-Driven Live-Sync an Frontend ausstoßen
+    _broadcast_sync("INSERT", event_data)
+    return event_data
+
+def delete_event_entry(event_id: str | int) -> bool:
+    """Löscht einen Termin anhand seiner ID und triggert den Live-Sync."""
+    eid_str = str(event_id)
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM calendar_events WHERE id = ?", (eid_str,))
+        # Fallback falls ID integer war
+        if cur.rowcount == 0 and eid_str.isdigit():
+            cur = conn.execute("DELETE FROM calendar_events WHERE id = ?", (int(eid_str),))
+        
+        success = cur.rowcount > 0
+
+    if success:
+        _broadcast_sync("DELETE", {"id": eid_str})
+    return success
+
+# ── Gemini Live Function Calling Handler: create_calendar_entry ───────────────
+def handle_create_calendar_entry(
+    title: str,
+    start_time: str,
+    recurrence: str = "NONE",
+    reminders: Optional[List[Dict[str, str]]] = None,
+    end_time: str = "",
+    description: str = "",
+    **kwargs
+) -> str:
+    """
+    Spezifischer Handler für das Gemini Function Calling Tool.
+    Wird vom LLM aufgerufen, nachdem Datum, Uhrzeit, Wiederholung und Erinnerung
+    vollständig geklärt und vom Operator bestätigt wurden.
+    """
+    if not title:
+        return "Fehler: Der Termin benötigt einen aussagekräftigen Titel."
+    if not start_time:
+        return "Fehler: Startzeitpunkt fehlt."
+
+    rem_list = reminders or [{"trigger": "-15m", "frequency": "once"}]
+    rec = (recurrence or "NONE").upper()
+    if rec not in ("NONE", "DAILY", "WEEKLY", "MONTHLY"):
+        rec = "NONE"
+
+    ev = add_event_entry(
+        title=title,
+        start_time=start_time,
+        end_time=end_time,
+        description=description,
+        recurrence_rule=rec,
+        reminder_strategy={"rules": rem_list}
+    )
+
+    rem_summary = ", ".join([f"{r.get('trigger', '')} ({r.get('frequency', '')})" for r in rem_list])
+    return (
+        f"Termin '{title}' erfolgreich im Kalender angelegt:\n"
+        f"• ID: {ev['id']}\n"
+        f"• Start: {ev['start_time']}\n"
+        f"• Modus: {rec}\n"
+        f"• Erinnerung: {rem_summary}\n"
+        f"Das HUD-Dashboard wurde via WebSocket in Echtzeit synchronisiert."
+    )
+
+# ── Universeller CRUD-Handler (calendar_manager) ─────────────────────────────
 def calendar_manager(
     action: str = "list",
     title: str = "",
@@ -137,17 +357,13 @@ def calendar_manager(
     description: str = "",
     category: str = "Termin",
     reminder: str = "",
-    event_id: int | str = 0,
+    event_id: str | int = "",
     timeframe: str = "upcoming",
+    recurrence: str = "NONE",
+    reminders: Optional[Any] = None,
     **kwargs
 ) -> str:
-    """
-    CRUD-Handler für den Kalender & dynamischen Scheduler.
-    - action='create': Legt einen Termin mit NLP-Parsing für Zeit und Erinnerung an.
-    - action='list': Zeigt anstehende Termine ('today', 'upcoming', 'all').
-    - action='delete': Löscht einen Termin anhand seiner ID.
-    - action='complete': Markiert einen Termin als erledigt.
-    """
+    """Universeller CRUD-Handler für den Kalender."""
     act = (action or "list").strip().lower()
 
     if act in ("create", "add", "new"):
@@ -155,137 +371,122 @@ def calendar_manager(
         if not t_clean:
             return "Fehler: Ein Titel für den Termin ist erforderlich."
 
-        dt = parse_natural_datetime(start_time or kwargs.get("date") or kwargs.get("time") or "")
-        if not dt:
-            dt = datetime.now() + timedelta(hours=1)
-
-        start_iso = dt.strftime("%Y-%m-%d %H:%M")
-        offset_mins = parse_reminder_offset(reminder or kwargs.get("remind_before") or "")
-
-        with _get_connection() as conn:
-            cursor = conn.execute(
-                """
-                INSERT INTO events (title, description, start_time, category, reminder_offset_minutes, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (t_clean, description.strip(), start_iso, category.strip(), offset_mins, datetime.now().isoformat())
-            )
-            new_id = cursor.lastrowid
-
-        remind_str = f"{offset_mins} Minuten vorher" if offset_mins < 60 else f"{offset_mins // 60} Stunden vorher"
-        return f"Termin #{new_id} '{t_clean}' erfolgreich angelegt für {dt.strftime('%A, %d.%m.%Y um %H:%M Uhr')} (Erinnerung: {remind_str})."
+        dt_str = start_time or kwargs.get("date") or kwargs.get("time") or ""
+        ev = add_event_entry(
+            title=t_clean,
+            start_time=dt_str,
+            description=description,
+            category=category,
+            reminder=reminder,
+            recurrence_rule=recurrence,
+            reminder_strategy=reminders
+        )
+        return f"Termin '{t_clean}' erfolgreich eingetragen für {ev['start_time']} (ID: {ev['id']})."
 
     elif act == "list":
         tf = (timeframe or "upcoming").strip().lower()
         now_iso = datetime.now().strftime("%Y-%m-%d %H:%M")
-        query = "SELECT * FROM events WHERE is_completed = 0"
+        query = "SELECT * FROM calendar_events"
         params: list[Any] = []
 
         if tf == "today":
             today_end = datetime.now().strftime("%Y-%m-%d 23:59")
-            query += " AND start_time >= ? AND start_time <= ? ORDER BY start_time ASC"
+            query += " WHERE start_time >= ? AND start_time <= ? ORDER BY start_time ASC"
             params = [now_iso, today_end]
         elif tf == "upcoming":
-            query += " AND start_time >= ? ORDER BY start_time ASC LIMIT 10"
+            query += " WHERE start_time >= ? ORDER BY start_time ASC LIMIT 15"
             params = [now_iso]
         else:
-            query += " ORDER BY start_time ASC LIMIT 20"
+            query += " ORDER BY start_time ASC LIMIT 25"
 
-        with _get_connection() as conn:
+        with get_db() as conn:
             rows = conn.execute(query, params).fetchall()
 
         if not rows:
-            return "Keine anstehenden Termine gefunden."
+            return "Keine anstehenden Termine im Kalender gefunden."
 
-        lines = ["Anstehende Termine:"]
+        lines = ["📅 Anstehende Termine:"]
         for r in rows:
-            lines.append(f"• [ID #{r['id']}] {r['start_time']} — {r['title']} ({r['category']})")
+            rec_badge = f" [{r['recurrence_rule']}]" if r['recurrence_rule'] != 'NONE' else ""
+            lines.append(f"• [{r['id']}] {r['start_time']} — {r['title']}{rec_badge}")
             if r['description']:
                 lines.append(f"    Notiz: {r['description']}")
         return "\n".join(lines)
 
     elif act in ("delete", "remove"):
-        try:
-            eid = int(event_id)
-        except Exception:
-            return "Fehler: Ungültige Termin-ID."
-        with _get_connection() as conn:
-            cur = conn.execute("DELETE FROM events WHERE id = ?", (eid,))
-            if cur.rowcount > 0:
-                return f"Termin #{eid} erfolgreich gelöscht."
-            return f"Termin #{eid} nicht gefunden."
+        if not event_id:
+            return "Fehler: Keine Termin-ID angegeben."
+        ok = delete_event_entry(event_id)
+        if ok:
+            return f"Termin #{event_id} erfolgreich gelöscht."
+        return f"Termin #{event_id} nicht gefunden."
 
-    elif act in ("complete", "done"):
-        try:
-            eid = int(event_id)
-        except Exception:
-            return "Fehler: Ungültige Termin-ID."
-        with _get_connection() as conn:
-            cur = conn.execute("UPDATE events SET is_completed = 1 WHERE id = ?", (eid,))
-            if cur.rowcount > 0:
-                return f"Termin #{eid} als erledigt markiert."
-            return f"Termin #{eid} nicht gefunden."
+    return f"Unbekannte Aktion '{action}'."
 
-    return f"Unbekannte Aktion '{action}'. Gültige Aktionen: 'create', 'list', 'delete', 'complete'."
+# ── Werkzeug-Deklarationen für Gemini Live ActionRegistry ────────────────────
 
-def get_events_list(limit: int = 100) -> List[Dict[str, Any]]:
-    """Gibt alle aktiven und anstehenden Termine als Dict-Liste für das HUD zurück."""
-    with _get_connection() as conn:
-        cursor = conn.execute(
-            "SELECT * FROM events WHERE is_completed = 0 ORDER BY start_time ASC LIMIT ?",
-            (limit,)
-        )
-        return [dict(row) for row in cursor.fetchall()]
+# 1. Spezialisiertes Tool gemäß Spezifikation 2.2
+CREATE_CALENDAR_ENTRY_TOOL = {
+    "name": "create_calendar_entry",
+    "description": "Erstellt einen neuen Termin erst NACH vollständiger Klärung aller Parameter mit dem Nutzer.",
+    "parameters": {
+        "type": "OBJECT",
+        "properties": {
+            "title": {
+                "type": "STRING",
+                "description": "Titel des Eintrags"
+            },
+            "start_time": {
+                "type": "STRING",
+                "description": "ISO-8601 Format (YYYY-MM-DDTHH:MM:SS)"
+            },
+            "end_time": {
+                "type": "STRING",
+                "description": "Optionales Ende im ISO-8601 Format"
+            },
+            "recurrence": {
+                "type": "STRING",
+                "enum": ["NONE", "DAILY", "WEEKLY", "MONTHLY"],
+                "description": "Wiederholungsintervall"
+            },
+            "reminders": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "trigger": {
+                            "type": "STRING",
+                            "description": "Relativer Offset z. B. '-7d', '-1d', '-1h', '-15m'"
+                        },
+                        "frequency": {
+                            "type": "STRING",
+                            "enum": ["once", "daily"],
+                            "description": "Häufigkeit der Erinnerung"
+                        }
+                    },
+                    "required": ["trigger", "frequency"]
+                },
+                "description": "Gestaffelte Erinnerungslogik"
+            }
+        },
+        "required": ["title", "start_time", "recurrence", "reminders"]
+    },
+    "handler": handle_create_calendar_entry
+}
 
-def add_event_entry(
-    title: str,
-    start_time: str,
-    description: str = "",
-    category: str = "Termin",
-    reminder: str = "15 Minuten vorher"
-) -> Dict[str, Any]:
-    """Erstellt einen Termin direkt über das Frontend-Modal."""
-    dt = parse_natural_datetime(start_time)
-    if not dt:
-        dt = datetime.now() + timedelta(hours=1)
-    offset_mins = parse_reminder_offset(reminder)
-    start_iso = dt.strftime("%Y-%m-%d %H:%M")
-
-    with _get_connection() as conn:
-        cursor = conn.execute(
-            """
-            INSERT INTO events (title, description, start_time, category, reminder_offset_minutes, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (title.strip(), description.strip(), start_iso, category.strip(), offset_mins, datetime.now().isoformat())
-        )
-        eid = cursor.lastrowid
-        row = conn.execute("SELECT * FROM events WHERE id = ?", (eid,)).fetchone()
-        return dict(row)
-
-def delete_event_entry(event_id: int | str) -> bool:
-    """Löscht einen Termin anhand seiner ID."""
-    try:
-        eid = int(event_id)
-        with _get_connection() as conn:
-            cur = conn.execute("DELETE FROM events WHERE id = ?", (eid,))
-            return cur.rowcount > 0
-    except Exception:
-        return False
-
+# 2. Bestehendes Tool für allgemeine Kalenderabfragen und Listen
 TOOL = {
     "name": "calendar_manager",
     "description": (
         "Verwaltet persönliche Termine und den Zeitplan mit lokaler SQLite-Persistenz. "
-        "Unterstützt natürliche Spracheingaben für Datum, Uhrzeit und Vorlaufzeiten von Erinnerungen "
-        "(z.B. 'morgen um 15 Uhr', 'in zwei Tagen', 'Erinnere mich 1 Stunde vorher')."
+        "Unterstützt natürliche Spracheingaben für Datum, Uhrzeit, Auflistung ('list') und Löschen ('delete')."
     ),
     "parameters": {
         "type": "OBJECT",
         "properties": {
             "action": {
                 "type": "STRING",
-                "description": "Die Aktion: 'create' (neuen Termin eintragen), 'list' (Termine abfragen), 'delete' (löschen), 'complete' (erledigt)."
+                "description": "Die Aktion: 'create' (neuen Termin eintragen), 'list' (Termine abfragen), 'delete' (löschen)."
             },
             "title": {
                 "type": "STRING",
@@ -299,13 +500,9 @@ TOOL = {
                 "type": "STRING",
                 "description": "Optionale Notizen oder Beschreibung zum Termin."
             },
-            "reminder": {
-                "type": "STRING",
-                "description": "Vorlaufzeit der Erinnerung (z.B. 'zwei Tage vorher', '1 Stunde vorher', '15 Minuten')."
-            },
             "event_id": {
-                "type": "INTEGER",
-                "description": "ID des Termins für 'delete' oder 'complete'."
+                "type": "STRING",
+                "description": "ID des Termins für 'delete'."
             },
             "timeframe": {
                 "type": "STRING",
@@ -316,3 +513,5 @@ TOOL = {
     },
     "handler": calendar_manager
 }
+
+TOOLS = [CREATE_CALENDAR_ENTRY_TOOL, TOOL]

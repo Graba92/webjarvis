@@ -239,4 +239,13 @@ def get_personality_dict() -> dict:
         "soul_text": raw
     }
 
+def get_ai_name() -> str:
+    """Ermittelt den aktuellen System- und AI-Namen (aus SOUL.md oder Environment)."""
+    p = get_personality_dict()
+    name = p.get("name")
+    if name and str(name).strip():
+        return str(name).strip()
+    return os.getenv("JARVIS_AI_NAME", "Cypher")
+
+
 

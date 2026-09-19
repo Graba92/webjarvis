@@ -8,9 +8,26 @@ import asyncio
 import json
 import base64
 import sys
+import time
 from datetime import datetime
 from typing import Optional
 from pathlib import Path
+
+class TelemetryThrottler:
+    """
+    Drosselt die ausgehende Telemetrie- und Audio-RMS-Frequenz auf eine feste Rate
+    (Standard: 60 Hz, Frame-Budget ~16.6 ms), um den JavaScript-Event-Loop und die
+    Garbage Collection im Next.js / Three.js Frontend vor Überlastung zu schützen.
+    """
+    def __init__(self, target_hz: int = 60):
+        self.interval = 1.0 / target_hz
+        self.last_sent = 0.0
+
+    def should_send(self, now: float) -> bool:
+        if (now - self.last_sent) >= self.interval:
+            self.last_sent = now
+            return True
+        return False
 
 # Sicherstellen, dass das backend-Verzeichnis im sys.path liegt
 BACKEND_DIR = Path(__file__).resolve().parent
@@ -21,7 +38,7 @@ import websockets
 from core.config import (
     WS_HOST, WS_PORT, AUDIO_SAMPLE_RATE_INPUT, AUDIO_SAMPLE_RATE_OUTPUT,
     USER_NAME, save_gemini_api_key, is_api_key_configured, get_masked_api_key, get_gemini_api_key,
-    get_personality_dict, format_soul_md
+    get_personality_dict, format_soul_md, get_ai_name
 )
 from core.action_loader import discover_actions
 from core.audio_streamer import AudioStreamer
@@ -103,6 +120,16 @@ class JarvisServer:
             log=lambda m: self.log(m, "SYS")
         )
 
+        # 60 Hz Telemetrie- & RMS-Throttler
+        self.rms_throttler = TelemetryThrottler(target_hz=60)
+
+        # Bidirektionales Event-Driven Live-Sync für Kalender anbinden
+        try:
+            from actions.calendar_manager import bind_broadcast as bind_cal_broadcast
+            bind_cal_broadcast(broadcast)
+        except Exception as e:
+            self._log(f"Warnung: Kalender-Sync-Binding fehlgeschlagen: {e}")
+
     def _log(self, msg: str):
         print(f"[JarvisServer] {msg}")
         ts = datetime.now().strftime("%H:%M:%S")
@@ -136,10 +163,19 @@ class JarvisServer:
         })
 
     def _on_audio_level(self, level: float):
-        # Broadcastet den gemessenen Audiopegel an das Frontend für die 60 FPS Reaktor-Visualisierung
-        lvl = round(level, 4)
-        broadcast({"type": "audio_rms", "level": lvl})
-        broadcast({"type": "audio_level", "level": lvl})
+        # 60 Hz Throttling: Schützt Frontend-Event-Loop und Three.js vor GC-Spikes
+        now = time.monotonic()
+        if self.rms_throttler.should_send(now):
+            lvl = round(float(level), 4)
+            payload = {
+                "type": "audio_rms",
+                "level": lvl,
+                "value": lvl,
+                "timestamp": now
+            }
+            broadcast(payload)
+            broadcast({"type": "AUDIO_RMS", "value": lvl, "timestamp": now})
+            broadcast({"type": "audio_level", "level": lvl})
 
     def _show_confirm(self, action: str, label: str, detail: str, timeout: int = 90):
         self._log(f"[SAFETY GATE BROADCAST] Sende confirm_request an Frontend: action='{action}', label='{label}', timeout={timeout}s")
@@ -190,8 +226,10 @@ class JarvisServer:
             except Exception:
                 pass
 
+        ai_name = get_ai_name()
         welcome_payload = {
             "type": "init",
+            "ai_name": ai_name,
             "state": "ONLINE",
             "actions": list(self.registry.names()),
             "telemetry": get_system_telemetry(),
@@ -214,6 +252,13 @@ class JarvisServer:
             "auto_briefing": getattr(self.cron_engine, "auto_briefing", True)
         }
         await websocket.send(json.dumps(welcome_payload))
+        await websocket.send(json.dumps({
+            "type": "SYSTEM_INIT",
+            "data": {
+                "ai_name": ai_name,
+                "personality": get_personality_dict()
+            }
+        }))
 
         try:
             async for raw_message in websocket:
@@ -488,19 +533,97 @@ class JarvisServer:
                         ok, msg = delete_node_internal(nid, broadcast_fn=broadcast)
                         self.log(msg, "SYS" if ok else "ERR")
 
+                elif msg_type == "ACTION_DISPATCH":
+                    corr_id = data.get("correlationId", "")
+                    action_name = data.get("action", "")
+                    payload = data.get("payload", {})
+                    status = "PROCESSED"
+                    result = None
+
+                    try:
+                        if action_name == "SYSTEM_AUDIO_KILL":
+                            self.audio.set_paranoia_mute(True)
+                            broadcast({"type": "paranoia_mute_state", "active": True, "muted": True})
+                            broadcast({"type": "paranoia_mute_status", "active": True, "muted": True})
+                            result = {"paranoia_muted": True}
+
+                        elif action_name == "FETCH_CALENDAR":
+                            events = get_events_list()
+                            await websocket.send(json.dumps({
+                                "type": "calendar_events_data",
+                                "events": events
+                            }))
+                            result = {"count": len(events)}
+
+                        elif action_name in ("CALENDAR_MANUAL_CREATE", "add_calendar_event"):
+                            ev = add_event_entry(
+                                title=str(payload.get("title", "")).strip(),
+                                start_time=str(payload.get("start_time", "")).strip(),
+                                end_time=str(payload.get("end_time", "")).strip(),
+                                description=str(payload.get("description", "")).strip(),
+                                category=str(payload.get("category", "Termin")).strip(),
+                                reminder=str(payload.get("reminder", "15 Minuten vorher")).strip(),
+                                recurrence_rule=str(payload.get("recurrence_rule", "NONE")).strip(),
+                                reminder_strategy=payload.get("reminder_strategy")
+                            )
+                            self.log(f"Termin '{ev.get('title')}' über UI angelegt ({ev.get('start_time')}).", "SYS")
+                            result = ev
+
+                        elif action_name in ("CALENDAR_DELETE", "delete_calendar_event"):
+                            eid = payload.get("event_id")
+                            ok = delete_event_entry(eid)
+                            status = "PROCESSED" if ok else "FAILED"
+                            result = {"deleted": ok, "id": eid}
+
+                        elif action_name == "TRIGGER_SYSTEM_UPDATE":
+                            from actions.update_agent import update_agent
+                            res = await asyncio.to_thread(update_agent, action="check")
+                            self.log(res, "SYS")
+                            result = res
+
+                        elif action_name == "TRIGGER_BACKUP":
+                            from core.backup_manager import export_brain
+                            res = await asyncio.to_thread(export_brain)
+                            self.log(res, "SYS")
+                            result = res
+
+                        else:
+                            self.log(f"Unbekannte ActionDispatch-Aktion: {action_name}", "WARN")
+                            status = "PROCESSED"
+
+                    except Exception as e:
+                        self.log(f"Fehler bei ActionDispatch '{action_name}': {e}", "ERR")
+                        status = "FAILED"
+                        result = str(e)
+
+                    receipt = {
+                        "type": "ACTION_RECEIPT",
+                        "correlationId": corr_id,
+                        "status": status,
+                        "result": result,
+                        "timestamp": time.time()
+                    }
+                    await websocket.send(json.dumps(receipt))
+
                 elif msg_type == "set_focus_mode":
                     enabled = bool(data.get("enabled", False))
                     self.cron_engine.set_focus_mode(enabled)
                     broadcast({"type": "focus_mode_status", "enabled": enabled})
+                    broadcast({"type": "focus_mode_state", "enabled": enabled})
 
                 elif msg_type == "set_paranoia_mute":
-                    active = bool(data.get("active", False))
+                    active = bool(data.get("active") if "active" in data else data.get("muted", False))
                     self.audio.set_paranoia_mute(active)
-                    broadcast({"type": "paranoia_mute_status", "active": active})
+                    broadcast({"type": "paranoia_mute_status", "active": active, "muted": active})
+                    broadcast({"type": "paranoia_mute_state", "active": active, "muted": active})
 
                 elif msg_type == "get_personality":
                     p = get_personality_dict()
-                    await websocket.send(json.dumps({"type": "personality_data", "personality": p}))
+                    await websocket.send(json.dumps({
+                        "type": "personality_data",
+                        "personality": p,
+                        "ai_name": p.get("name", "Cypher")
+                    }))
 
                 elif msg_type == "save_personality":
                     name = str(data.get("name", "Cypher")).strip() or "Cypher"
@@ -530,14 +653,19 @@ class JarvisServer:
                         p_dict["custom_prompt"] = custom_prompt
                         p_dict["soul_text"] = soul_text
                         self.log(f"Persönlichkeit '{name}' (SOUL.md) erfolgreich übernommen & Live-Sitzung aktualisiert.", "SYS")
-                        broadcast({"type": "personality_saved", "status": "ok", "personality": p_dict})
+                        broadcast({
+                            "type": "personality_saved",
+                            "status": "ok",
+                            "personality": p_dict,
+                            "ai_name": name
+                        })
                     except Exception as e:
                         self.log(f"Fehler beim Speichern der Persona: {e}", "ERR")
 
                 elif msg_type == "export_brain":
                     from core.backup_manager import export_brain
                     pwd = data.get("passphrase")
-                    res = export_brain(passphrase=pwd)
+                    res = await asyncio.to_thread(export_brain, passphrase=pwd)
                     self.log(res, "SYS")
                     broadcast({"type": "brain_export_result", "result": res})
 
@@ -545,7 +673,7 @@ class JarvisServer:
                     from core.backup_manager import import_brain
                     path_val = data.get("path")
                     pwd = data.get("passphrase")
-                    res = import_brain(path_val, passphrase=pwd)
+                    res = await asyncio.to_thread(import_brain, path_val, passphrase=pwd)
                     self.log(res, "SYS")
                     broadcast({"type": "brain_import_result", "result": res})
 
@@ -558,16 +686,24 @@ class JarvisServer:
                 elif msg_type == "add_calendar_event":
                     title = str(data.get("title", "")).strip()
                     start_time = str(data.get("start_time", "")).strip()
+                    end_time = str(data.get("end_time", "")).strip()
                     description = str(data.get("description", "")).strip()
                     category = str(data.get("category", "Termin")).strip()
                     reminder = str(data.get("reminder", "15 Minuten vorher")).strip()
+                    recurrence_rule = str(data.get("recurrence_rule", "NONE")).strip()
+                    reminder_strategy = data.get("reminder_strategy")
                     if title:
-                        ev = add_event_entry(title, start_time, description, category, reminder)
+                        ev = add_event_entry(
+                            title=title,
+                            start_time=start_time,
+                            end_time=end_time,
+                            description=description,
+                            category=category,
+                            reminder=reminder,
+                            recurrence_rule=recurrence_rule,
+                            reminder_strategy=reminder_strategy
+                        )
                         self.log(f"Termin '{title}' angelegt ({ev.get('start_time')}).", "SYS")
-                        broadcast({
-                            "type": "calendar_events_data",
-                            "events": get_events_list()
-                        })
 
                 elif msg_type == "delete_calendar_event":
                     eid = data.get("event_id")
@@ -575,10 +711,6 @@ class JarvisServer:
                         ok = delete_event_entry(eid)
                         if ok:
                             self.log(f"Termin #{eid} aus Kalender gelöscht.", "SYS")
-                        broadcast({
-                            "type": "calendar_events_data",
-                            "events": get_events_list()
-                        })
 
                 elif msg_type == "set_auto_briefing":
                     enabled = bool(data.get("enabled", True))

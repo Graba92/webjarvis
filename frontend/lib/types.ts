@@ -112,14 +112,28 @@ export interface BrainImportResult {
   error?: string;
 }
 
+export interface CalendarReminderRule {
+  trigger: string;
+  frequency: "once" | "daily" | string;
+}
+
+export interface CalendarReminderStrategy {
+  rules: CalendarReminderRule[];
+}
+
 export interface CalendarEvent {
-  id: number;
+  id: string | number;
   title: string;
   description: string;
   start_time: string;
   end_time?: string;
-  category: string;
-  reminder_offset_minutes: number;
-  is_completed: number;
+  category?: string;
+  is_recurring?: boolean | number;
+  recurrence_rule?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | string;
+  reminder_strategy?: string | CalendarReminderStrategy;
+  reminder_strategy_parsed?: CalendarReminderStrategy;
+  reminder_offset_minutes?: number;
+  is_completed?: number;
   created_at: string;
+  updated_at?: string;
 }

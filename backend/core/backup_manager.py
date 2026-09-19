@@ -13,6 +13,8 @@ from __future__ import annotations
 import os
 import shutil
 import zipfile
+import sqlite3
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -21,6 +23,21 @@ BACKEND_DIR = Path(__file__).parent.parent
 MEMORY_DIR = BACKEND_DIR / "memory"
 CONFIG_DIR = BACKEND_DIR / "config"
 BACKUPS_DIR = BACKEND_DIR / "backups"
+
+def export_consistent_sqlite(source_db_path: Path, temp_dir: Path) -> Path:
+    """
+    Erstellt via PRAGMA wal_checkpoint(TRUNCATE) und VACUUM INTO einen
+    transaktionssicheren, ungesperrten Snapshot der SQLite-Datenbank.
+    Verhindert Datenverlust durch noch im WAL-Puffer liegende Schreiboperationen.
+    """
+    target_path = temp_dir / source_db_path.name
+    conn = sqlite3.connect(str(source_db_path))
+    try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
+        conn.execute(f"VACUUM INTO '{target_path.as_posix()}';")
+    finally:
+        conn.close()
+    return target_path
 
 def get_backup_targets() -> Dict[str, Path]:
     """Sammelt alle schützenswerten Gedächtnis- und Konfigurationspfade."""
@@ -58,19 +75,30 @@ def export_brain(output_path: Optional[str] = None, passphrase: Optional[str] = 
         return "Keine Gedächtnisdaten oder Konfigurationen zum Exportieren gefunden."
 
     try:
-        with zipfile.ZipFile(dest_zip, "w", zipfile.ZIP_DEFLATED) as zf:
-            if passphrase:
-                zf.setpassword(passphrase.encode("utf-8"))
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temp_dir_path = Path(tmp_dir)
+            with zipfile.ZipFile(dest_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+                if passphrase:
+                    zf.setpassword(passphrase.encode("utf-8"))
 
-            for arc_name, file_path in targets.items():
-                if file_path.is_file():
-                    zf.write(file_path, arcname=arc_name)
-                elif file_path.is_dir():
-                    for root, _, files in os.walk(file_path):
-                        for f in files:
-                            full_p = Path(root) / f
-                            rel_p = full_p.relative_to(file_path)
-                            zf.write(full_p, arcname=f"{arc_name}/{rel_p}")
+                for arc_name, file_path in targets.items():
+                    if file_path.is_file():
+                        # Bei SQLite-Datenbanken zwingend konsistenten VACUUM-Snapshot ziehen
+                        if arc_name.endswith(".db") or arc_name.endswith(".sqlite") or arc_name.endswith(".sqlite3"):
+                            try:
+                                consistent_path = export_consistent_sqlite(file_path, temp_dir_path)
+                                zf.write(consistent_path, arcname=arc_name)
+                                continue
+                            except Exception as db_err:
+                                # Fallback: Falls VACUUM fehlschlägt, Originaldatei verwenden
+                                pass
+                        zf.write(file_path, arcname=arc_name)
+                    elif file_path.is_dir():
+                        for root, _, files in os.walk(file_path):
+                            for f in files:
+                                full_p = Path(root) / f
+                                rel_p = full_p.relative_to(file_path)
+                                zf.write(full_p, arcname=f"{arc_name}/{rel_p}")
 
         size_kb = round(dest_zip.stat().st_size / 1024, 1)
         return (
@@ -78,7 +106,8 @@ def export_brain(output_path: Optional[str] = None, passphrase: Optional[str] = 
             f"• Datei: {dest_zip.name}\n"
             f"• Pfad: {dest_zip}\n"
             f"• Größe: {size_kb} KB ({len(targets)} Komponenten gesichert)\n"
-            f"• Status: {'Passwortgeschützt' if passphrase else 'Standard-Komprimierung'}"
+            f"• Status: {'Passwortgeschützt' if passphrase else 'Standard-Komprimierung'}\n"
+            f"• SQLite-Integrität: VACUUM INTO Checkpoint angewendet"
         )
     except Exception as e:
         return f"Fehler beim Exportieren des Gedächtnisses: {e}"

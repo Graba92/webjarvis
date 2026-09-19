@@ -15,13 +15,20 @@ export const DevConsole: React.FC<DevConsoleProps> = ({ isOpen, onClose }) => {
   const [filter, setFilter] = useState<string>("");
   const [onlyErrors, setOnlyErrors] = useState<boolean>(false);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
+  const [aiName, setAiName] = useState<string>("CYPHER");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsub = socketManager.onDevLog((entry) => {
+    const unsubLog = socketManager.onDevLog((entry) => {
       setLogs((prev) => [...prev.slice(-250), entry]);
     });
-    return () => unsub();
+    const unsubAiName = socketManager.onAiName((name) => {
+      if (name) setAiName(name);
+    });
+    return () => {
+      unsubLog();
+      unsubAiName();
+    };
   }, []);
 
   useEffect(() => {
@@ -52,7 +59,7 @@ export const DevConsole: React.FC<DevConsoleProps> = ({ isOpen, onClose }) => {
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#1f242d] bg-[#0d1117] select-none">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-[#00d4ff]" />
-          <span className="text-xs font-bold text-white tracking-wide">CYPHER DEV-CONSOLE</span>
+          <span className="text-xs font-bold text-white tracking-wide">{aiName.toUpperCase()} DEV-CONSOLE</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#00d4ff]/10 text-[#00d4ff] font-bold">
             {logs.length} EVENTS
           </span>
