@@ -18,7 +18,7 @@
 [![MCP](https://img.shields.io/badge/Protocol-MCP%20JSON--RPC%202.0-purple)](#-mcp-ecosystem-model-context-protocol)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **J.A.R.V.I.S. (Codename: Cypher)** is an autonomous, lean, multimodal desktop AI Operating System specifically tailored for CachyOS and Arch Linux. It features bi-directional low-latency voice streaming via Gemini Live (WebSockets), dedicated PipeWire virtual audio sink routing, dynamic AI identity synchronization, full-featured relational calendar scheduling with conversational slot-filling, deterministic action-auditing with backend receipts, resilient WebSocket reconnection backoff, a hardware safety confirmation gate, consistent `VACUUM INTO` live SQLite backups, and a 3D WebGL holographic HUD (Three.js & Next.js 15).
+> **J.A.R.V.I.S. (Codename: Cypher)** is an autonomous, lean, multimodal desktop AI Operating System specifically tailored for CachyOS and Arch Linux. It features bi-directional low-latency voice streaming via Gemini Live (WebSockets), dedicated PipeWire virtual audio sink routing, dynamic AI identity synchronization, full-featured relational calendar scheduling with conversational slot-filling, deterministic action-auditing with backend receipts, resilient WebSocket reconnection backoff, a hardware safety confirmation gate, consistent `VACUUM INTO` live SQLite backups, a hermetic Bubblewrap sandbox, and a 3D WebGL holographic HUD (Three.js & Next.js 15).
 
 ---
 
@@ -28,13 +28,13 @@
 3. [Dynamic AI Identity & Live HUD Parity](#-dynamic-ai-identity--live-hud-parity)
 4. [Bidirectional Calendar Engine & Conversational Slot-Filling](#-bidirectional-calendar-engine--conversational-slot-filling)
 5. [Action-Auditing, Backend Receipts & Telemetry Throttling](#-action-auditing-backend-receipts--telemetry-throttling)
-6. [Native CachyOS Skills & Scheduler](#-native-cachyos-skills--scheduler)
+6. [Native CachyOS Skills & Tool Matrix](#-native-cachyos-skills--tool-matrix)
 7. [Performance, Audio Routing & Privacy](#-performance-audio-routing--privacy)
 8. [Data Integrity, Atomic Writes & VACUUM INTO Backups](#-data-integrity-atomic-writes--vacuum-into-backups)
 9. [Developer Tools, Live Dev-Console & Personality Wizard](#-developer-tools-live-dev-console--personality-wizard)
 10. [3D WebGL Holographic HUD & Theme Engine](#-3d-webgl-holographic-hud--theme-engine)
 11. [MCP Ecosystem (Model Context Protocol)](#-mcp-ecosystem-model-context-protocol)
-12. [Quickstart in under 2 minutes](#-quickstart-in-under-2-minutes)
+12. [Quickstart & Master Orchestrator (`start.sh`)](#-quickstart--master-orchestrator-startsh)
 13. [License & Author](#-license--author)
 
 ---
@@ -134,11 +134,23 @@ J.A.R.V.I.S. is driven by three transparent Markdown configuration documents loc
 
 ---
 
-## 🐧 Native CachyOS Skills & Scheduler
+## 🐧 Native CachyOS Skills & Tool Matrix
 
-- **CachyOS Update Agent (`backend/actions/update_agent.py`):**
+All autonomous skills are located in `backend/actions/` and registered with the Gemini Live Action Registry:
+
+- **CachyOS Update Agent (`update_agent.py`):**
   Monitors pending package upgrades via `checkupdates` and `yay -Qu`. Specifically isolates critical system components (`linux`, `linux-cachyos`, `systemd`, `glibc`, `nvidia`, `mesa`, `openssl`). Never executes unconfirmed package upgrades: strictly routes through the Hardware Confirmation Gate (`confirm.py`).
-- **Proactive Morning Briefing (`backend/core/cron_engine.py`):**
+- **Hardware Confirmation Gate (`computer_settings.py` & `core/confirm.py`):**
+  Destructive system commands (shutdown, reboot, sleep) trigger an amber confirmation banner in the HUD with a 90-second countdown, requiring deliberate physical or UI verification before execution.
+- **Hermetic Bubblewrap Sandbox (`sandboxed_shell.py` & `file_controller.py`):**
+  Executes shell operations in a strictly isolated namespace (`bwrap`), mounting system libraries read-only and scoping write access exclusively to `backend/sandbox_workspace/`.
+- **Optimistic Undo-Stack Engine (`undo_action.py` & `core/undo.py`):**
+  A 10-level transaction memory with differential snapshots allowing instant rollback (`undo_last_action`) of accidental file mutations or configuration changes.
+- **Dual-Tier Memory Search (`recall_memory.py` & `memory/memory_manager.py`):**
+  Enables on-demand fuzzy searching across the user's long-term memory archive without inflating the active LLM context window.
+- **Desktop Application Launcher (`open_app.py`):**
+  Spawns Wayland and KDE Plasma native desktop applications (e.g. Konsole, Dolphin, Kate, Brave) with proper session detachment.
+- **Proactive Morning Briefing (`core/cron_engine.py`):**
   Autonomously triggers at 08:00 or system boot, summarizing appointments, pending package updates, and system metrics via PipeWire voice playback.
 
 ---
@@ -194,7 +206,7 @@ J.A.R.V.I.S. implements standard Model Context Protocol (MCP) JSON-RPC 2.0 serve
 
 ---
 
-## ⚡ Quickstart in under 2 minutes
+## ⚡ Quickstart & Master Orchestrator (`start.sh`)
 
 ### 1. Clone & Setup
 ```bash
@@ -207,13 +219,37 @@ chmod +x setup.sh start.sh terminate_jarvis.sh
 ### 2. Configure API Key
 ```bash
 cp backend/.env.example backend/.env
-# Edit backend/.env and insert your GEMINI_API_KEY
+# Enter your GEMINI_API_KEY into backend/.env (or configure interactively via ./start.sh)
 ```
 
-### 3. Launch
+### 3. Launch Options
+
+#### Option A: Interactive Master Orchestrator
 ```bash
 ./start.sh
-# Select option 1 (Native Fullstack) or option 4 (Docker Compose)
+```
+Interactive terminal menu options:
+* `1)` **Gesamtsystem starten**: Boots Python Gemini Live WebSocket server & Next.js 15 HUD concurrently.
+* `2)` **Nur Python Backend starten**: Starts WebSocket core on `ws://127.0.0.1:8765`.
+* `3)` **Nur Next.js Frontend starten**: Starts Three.js 3D WebGL HUD on `http://localhost:3000`.
+* `4)` **Hardware- & Systemprüfung ausführen**: Verifies PipeWire, ALSA audio sinks, bubblewrap sandbox & dependencies.
+* `5)` **Gemini API Key konfigurieren**: Persistent interactive credential helper.
+* `6)` **Beenden**: Gracefully shuts down subsystems.
+
+#### Option B: Direct CLI Execution (Headless & Automation)
+```bash
+./start.sh --all        # Starts backend + frontend directly
+./start.sh --backend    # Starts backend only
+./start.sh --frontend   # Starts frontend only
+./start.sh --check      # Runs system verification gates
+./terminate_jarvis.sh   # Cleanly stops all background services and frees ports 8765 & 3000
+```
+
+#### Option C: Containerized (Docker Compose)
+```bash
+./docker-start.sh       # Builds & runs frontend + backend in isolated Docker containers
+./docker-logs.sh        # Streams live container logs
+./docker-stop.sh        # Stops all Docker containers
 ```
 
 ---

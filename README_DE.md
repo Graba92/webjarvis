@@ -18,7 +18,7 @@
 [![MCP](https://img.shields.io/badge/Protocol-MCP%20JSON--RPC%202.0-purple)](#-mcp-ökosystem-model-context-protocol)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **J.A.R.V.I.S. (Codename: Cypher)** ist ein autonomes, modulares und multimodales Desktop-KI-Betriebssystem für CachyOS und Arch Linux. Es kombiniert bidirektionales Audio-Streaming mit extrem niedriger Latenz via Gemini Live (WebSockets), dediziertes PipeWire-Audio-Routing, dynamische KI-Identitätsverwaltung, eine relationale Kalender-Engine mit Konversations-Slot-Filling, deterministisches Action-Auditing mit Backend-Empfangsbestätigungen, resilienten WebSocket-Reconnection-Backoff, ein physisches Hardware-Bestätigungs-Gate, konsistente `VACUUM INTO` Live-SQLite-Backups und ein futuristisches 3D-WebGL-Hologramm-HUD (Three.js & Next.js 15).
+> **J.A.R.V.I.S. (Codename: Cypher)** ist ein autonomes, modulares und multimodales Desktop-KI-Betriebssystem für CachyOS und Arch Linux. Es kombiniert bidirektionales Audio-Streaming mit extrem niedriger Latenz via Gemini Live (WebSockets), dediziertes PipeWire-Audio-Routing, dynamische KI-Identitätsverwaltung, eine relationale Kalender-Engine mit Konversations-Slot-Filling, deterministisches Action-Auditing mit Backend-Empfangsbestätigungen, resilienten WebSocket-Reconnection-Backoff, ein physisches Hardware-Bestätigungs-Gate, konsistente `VACUUM INTO` Live-SQLite-Backups, eine hermetische Bubblewrap-Sandbox und ein futuristisches 3D-WebGL-Hologramm-HUD (Three.js & Next.js 15).
 
 ---
 
@@ -28,13 +28,13 @@
 3. [Dynamische KI-Identität & Live-HUD-Parität](#-dynamische-ki-identität--live-hud-parität)
 4. [Bidirektionale Kalender-Engine & Dialog-Slot-Filling](#-bidirektionale-kalender-engine--dialog-slot-filling)
 5. [Action-Auditing, Backend Receipts & Telemetrie-Drosselung](#-action-auditing-backend-receipts--telemetrie-drosselung)
-6. [Native CachyOS Skills & Scheduler](#-native-cachyos-skills--scheduler)
+6. [Native CachyOS Skills & Tool-Matrix](#-native-cachyos-skills--tool-matrix)
 7. [Performance, Audio-Routing & Privatsphäre](#-performance-audio-routing--privatsphäre)
 8. [Datenintegrität, atomare Schreibvorgänge & VACUUM INTO Backups](#-datenintegrität-atomare-schreibvorgänge--vacuum-into-backups)
 9. [Entwickler-Tools, Live Dev-Konsole & Personality Wizard](#-entwickler-tools-live-dev-konsole--personality-wizard)
 10. [3D-WebGL-HUD & Theme-Engine](#-3d-webgl-hud--theme-engine)
 11. [MCP-Ökosystem (Model Context Protocol)](#-mcp-ökosystem-model-context-protocol)
-12. [Schnellstart in unter 2 Minuten](#-schnellstart-in-unter-2-minuten)
+12. [Schnellstart & Master Orchestrator (`start.sh`)](#-schnellstart--master-orchestrator-startsh)
 13. [Lizenz & Autor](#-lizenz--autor)
 
 ---
@@ -134,11 +134,23 @@ J.A.R.V.I.S. wird transparent über drei zentrale Markdown-Dokumente in `backend
 
 ---
 
-## 🐧 Native CachyOS Skills & Scheduler
+## 🐧 Native CachyOS Skills & Tool-Matrix
 
-- **CachyOS Update Agent (`backend/actions/update_agent.py`):**
+Alle autonomen Werkzeuge liegen unter `backend/actions/` und sind in der Gemini Live Action Registry verankert:
+
+- **CachyOS Update Agent (`update_agent.py`):**
   Prüft Paketupdates via `checkupdates` und `yay -Qu`. Identifiziert kritische Systemkomponenten (`linux`, `linux-cachyos`, `systemd`, `glibc`, `nvidia`, `mesa`, `openssl`). Führt Systemaktualisierungen niemals unbestätigt aus, sondern leitet sie ausnahmslos über das physische Bestätigungs-Gate (`confirm.py`).
-- **Proaktives Morning Briefing (`backend/core/cron_engine.py`):**
+- **Hardware Confirmation Gate (`computer_settings.py` & `core/confirm.py`):**
+  Destruktive Systembefehle (Herunterfahren, Reboot, Ruhezustand) triggern ein bernsteinfarbenes Bestätigungs-Banner im HUD mit einem 90-Sekunden-Countdown, das eine physische Freigabe erzwingt.
+- **Hermetische Bubblewrap Sandbox (`sandboxed_shell.py` & `file_controller.py`):**
+  Führt Shell- und Dateibefehle in einem isolierten Namespace (`bwrap`) aus, bindet das Dateisystem read-only ein und beschränkt Schreibzugriffe strikt auf `backend/sandbox_workspace/`.
+- **Optimistische Undo-Stack Engine (`undo_action.py` & `core/undo.py`):**
+  Ein 10-Ebenen-Transaktionsspeicher mit differentiellen Snapshots ermöglicht das sofortige Rückgängigmachen (`undo_last_action`) versehentlicher Dateiänderungen.
+- **Zweistufige Gedächtnissuche (`recall_memory.py` & `memory/memory_manager.py`):**
+  Erlaubt On-Demand Keyword-Recherchen im Langzeitgedächtnis, ohne das Kontextfenster des aktiven Sprachdialogs zu überlasten.
+- **Desktop Application Launcher (`open_app.py`):**
+  Startet native Desktop-Anwendungen unter Wayland und KDE Plasma (z. B. Konsole, Dolphin, Kate, Browser) in losgelösten Sessions.
+- **Proaktives Morning Briefing (`core/cron_engine.py`):**
   Triggert autonom um 08:00 Uhr oder beim Systemstart, fasst Termine des Tages, anstehende CachyOS-Paketupdates und Systemmetriken zusammen und liest sie via PipeWire vor.
 
 ---
@@ -194,7 +206,7 @@ Unterstützt standardisierte MCP JSON-RPC 2.0 Server (`backend/config/mcp_server
 
 ---
 
-## ⚡ Schnellstart in unter 2 Minuten
+## ⚡ Schnellstart & Master Orchestrator (`start.sh`)
 
 ### 1. Klonen & Setup
 ```bash
@@ -207,13 +219,37 @@ chmod +x setup.sh start.sh terminate_jarvis.sh
 ### 2. API-Key eintragen
 ```bash
 cp backend/.env.example backend/.env
-# Trage deinen GEMINI_API_KEY in backend/.env ein
+# Trage deinen GEMINI_API_KEY in backend/.env ein (oder interaktiv via ./start.sh)
 ```
 
-### 3. Starten
+### 3. Start-Optionen
+
+#### Option A: Interaktiver Master Orchestrator
 ```bash
 ./start.sh
-# Option 1 (Natives Fullstack) oder Option 4 (Docker Compose) wählen
+```
+Menü-Auswahl:
+* `1)` **Gesamtsystem starten**: Startet Backend (Python Gemini Live WebSocket) und Frontend (Next.js 15 HUD) parallel.
+* `2)` **Nur Python Backend starten**: Startet den WebSocket-Server auf `ws://127.0.0.1:8765`.
+* `3)` **Nur Next.js Frontend starten**: Startet das Three.js WebGL HUD auf `http://localhost:3000`.
+* `4)` **Hardware- & Systemprüfung ausführen**: Prüft PipeWire, ALSA, Bubblewrap Sandbox und Node/Python-Abhängigkeiten.
+* `5)` **Gemini API Key konfigurieren**: Interaktive, persistente Eingabe- und Speicherhilfe.
+* `6)` **Beenden**: Beendet alle Subsysteme geordnet.
+
+#### Option B: Direkte Befehlszeilen-Steuerung (Headless & Automatisierung)
+```bash
+./start.sh --all        # Startet Gesamtsystem direkt
+./start.sh --backend    # Startet nur das WebSocket Backend
+./start.sh --frontend   # Startet nur das Next.js Frontend
+./start.sh --check      # Führt alle Validierungs-Gates aus
+./terminate_jarvis.sh   # Stoppt alle Hintergrundprozesse sauber und gibt die Ports 8765 / 3000 frei
+```
+
+#### Option C: Docker Compose (Isolierte Container)
+```bash
+./docker-start.sh       # Baut und startet Backend & Frontend in Docker-Containern
+./docker-logs.sh        # Zeigt Live-Container-Logs an
+./docker-stop.sh        # Fährt Docker-Container herunter
 ```
 
 ---
