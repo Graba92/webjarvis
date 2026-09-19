@@ -18,21 +18,24 @@
 [![MCP](https://img.shields.io/badge/Protocol-MCP%20JSON--RPC%202.0-purple)](#-mcp-ecosystem-model-context-protocol)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **J.A.R.V.I.S. (Codename: Cypher)** is an autonomous, lean, multimodal desktop AI Operating System specifically tailored for CachyOS and Arch Linux. It features bi-directional low-latency voice streaming via Gemini Live (WebSockets), dedicated PipeWire virtual audio sink routing, a hardware safety confirmation gate, a hermetic Bubblewrap sandbox, proactive heartbeat briefings, SQLite calendar management, native CachyOS kernel/package updates, and a 3D WebGL holographic HUD (Three.js & Next.js 15).
+> **J.A.R.V.I.S. (Codename: Cypher)** is an autonomous, lean, multimodal desktop AI Operating System specifically tailored for CachyOS and Arch Linux. It features bi-directional low-latency voice streaming via Gemini Live (WebSockets), dedicated PipeWire virtual audio sink routing, dynamic AI identity synchronization, full-featured relational calendar scheduling with conversational slot-filling, deterministic action-auditing with backend receipts, resilient WebSocket reconnection backoff, a hardware safety confirmation gate, consistent `VACUUM INTO` live SQLite backups, and a 3D WebGL holographic HUD (Three.js & Next.js 15).
 
 ---
 
 ## 📑 Table of Contents
 1. [System Architecture & Data Flow](#-system-architecture--data-flow)
 2. [Identity & Configuration Triad (`SOUL.md`, `MEMORY.md`, `HEARTBEAT.md`)](#-identity--configuration-triad)
-3. [Native CachyOS Skills & Scheduler](#-native-cachyos-skills--scheduler)
-4. [Performance, Audio Routing & Privacy](#-performance-audio-routing--privacy)
-5. [Developer Tools, Backup & Personality Wizard](#-developer-tools-backup--personality-wizard)
-6. [3D WebGL Holographic HUD & Theme Engine](#-3d-webgl-holographic-hud--theme-engine)
-7. [MCP Ecosystem (Model Context Protocol)](#-mcp-ecosystem-model-context-protocol)
-8. [Quickstart in under 2 minutes](#-quickstart-in-under-2-minutes)
-9. [Master Orchestrator (`start.sh`)](#-master-orchestrator-startsh)
-10. [License & Author](#-license--author)
+3. [Dynamic AI Identity & Live HUD Parity](#-dynamic-ai-identity--live-hud-parity)
+4. [Bidirectional Calendar Engine & Conversational Slot-Filling](#-bidirectional-calendar-engine--conversational-slot-filling)
+5. [Action-Auditing, Backend Receipts & Telemetry Throttling](#-action-auditing-backend-receipts--telemetry-throttling)
+6. [Native CachyOS Skills & Scheduler](#-native-cachyos-skills--scheduler)
+7. [Performance, Audio Routing & Privacy](#-performance-audio-routing--privacy)
+8. [Data Integrity, Atomic Writes & VACUUM INTO Backups](#-data-integrity-atomic-writes--vacuum-into-backups)
+9. [Developer Tools, Live Dev-Console & Personality Wizard](#-developer-tools-live-dev-console--personality-wizard)
+10. [3D WebGL Holographic HUD & Theme Engine](#-3d-webgl-holographic-hud--theme-engine)
+11. [MCP Ecosystem (Model Context Protocol)](#-mcp-ecosystem-model-context-protocol)
+12. [Quickstart in under 2 minutes](#-quickstart-in-under-2-minutes)
+13. [License & Author](#-license--author)
 
 ---
 
@@ -57,23 +60,26 @@
                ┌───────────────────┐┌───────────────────┐┌───────────────────┐
                │ CachyOS Skills    ││  Hybrid Memory    ││  MCP Gateway      │
                │ - update_agent.py ││ - calendar.db     ││ (Brave Search,    │
-               │ - calendar_mgr.py ││ - LanceDB Vector  ││  Fetch, Custom    │
-               │ - confirm.py Gate ││ - long_term.json  ││  JSON-RPC 2.0)    │
+               │ - calendar_mgr.py ││   (WAL + Relational││  Fetch, Custom    │
+               │ - confirm.py Gate ││ - LanceDB Vector  ││  JSON-RPC 2.0)    │
+               │ - ActionDispatch  ││ - long_term.json  ││                   │
                └───────────────────┘└───────────────────┘└───────────────────┘
                          │                    │                    │
                          ▼                    ▼                    ▼
                ┌───────────────────┐┌───────────────────┐┌───────────────────┐
-               │ PipeWire Audio    ││ Proactive Cron    ││ 1-Click Backup    │
-               │ Dedicated Sink    ││ Morning Briefing  ││ ZIP Exporter /    │
+               │ PipeWire Audio    ││ Proactive Cron    ││ VACUUM INTO Backup│
+               │ Dedicated Sink    ││ Morning Briefing  ││ Online Snapshot / │
                │ Paranoia Kill     ││ Focus Mode Pause  ││ Restore Manager   │
                └───────────────────┘└───────────────────┘└───────────────────┘
                                               │
-                                              │ Real-time Telemetry, Live Audio RMS,
-                                              │ Unfiltered dev_log & Graph Events
+                                              │ 60Hz Rate-Limited Telemetry, RMS,
+                                              │ CALENDAR_SYNC, ACTION_RECEIPT,
+                                              │ SYSTEM_INIT & dev_log Events
                                               ▼
                                   ┌────────────────────────┐
                                   │   Next.js 15 App HUD   │
                                   │  Three.js WebGL Engine │
+                                  │  ActionAuditor Tracker │
                                   │  Port 3000 (React 19)  │
                                   └────────────────────────┘
 ```
@@ -93,12 +99,45 @@ J.A.R.V.I.S. is driven by three transparent Markdown configuration documents loc
 
 ---
 
+## 🎭 Dynamic AI Identity & Live HUD Parity
+
+- **Single Source of Truth (`SOUL.md` / `config.py`):**
+  The assistant identity (`ai_name`) is dynamically parsed from `SOUL.md` or the `JARVIS_AI_NAME` environment variable.
+- **Real-Time Live Synchronization:**
+  During the initial handshake (`init` / `SYSTEM_INIT`) and upon personality updates (`save_personality`), the active name is transmitted to all connected HUD instances.
+- **Reactive Visualizer & Console Binding:**
+  The central Arc-Reactor center badge (`AgentCockpit.tsx`) and the floating developer console (`DevConsole.tsx`) dynamically update their labels and font tracking in real-time without requiring frontend refreshes.
+
+---
+
+## 📅 Bidirectional Calendar Engine & Conversational Slot-Filling
+
+- **Relational SQLite Schema (`calendar_events`):**
+  Stores events with unique UUIDs, ISO-8601 timestamps, recurrence rules (`DAILY`, `WEEKLY`, `MONTHLY`), and structured multi-tier reminder strategies in JSON format (`reminder_strategy`).
+- **Conversational Slot-Filling Directives:**
+  When asking Jarvis to schedule appointments, the assistant interactively fills missing slots (date, time, recurrence, notification lead time) and summarizes all details before confirming and invoking the `create_calendar_entry` tool.
+- **Event-Driven Live-Sync (`CALENDAR_SYNC`):**
+  Database changes instantly emit `CALENDAR_SYNC` WebSocket broadcasts to all connected frontends, refreshing the calendar UI in real-time.
+- **HUD Calendar Dashboard & Shortcut (`Alt+C`):**
+  A dedicated cyber-glass modal allows full manual inspection, quick filters ("In 1h", "Morgen 09:00"), natural language inputs, and single-click event deletion.
+
+---
+
+## ⚡ Action-Auditing, Backend Receipts & Telemetry Throttling
+
+- **ActionAuditor Engine (`frontend/utils/auditLogger.ts`):**
+  Guarantees that every user interaction dispatched from the HUD (killswitch, manual calendar creation, update checks, backups) receives a verified correlation ID and is acknowledged by an `ACTION_RECEIPT` packet from the Python core. Prevents silent UI stalls or zombie button states.
+- **60 Hz Telemetry & RMS Throttling:**
+  Incoming audio RMS levels and hardware sensor data are capped to a strict 60 Hz frame budget (~16.6 ms) on the WebSocket bridge, preventing JavaScript event loop congestion and garbage-collection spikes in Three.js.
+- **Resilient Reconnection with Exponential Backoff & Jitter:**
+  Frontend reconnect logic scales gracefully (`1s * 1.8^n` up to 15s) with random jitter (0–500 ms), completely avoiding thundering-herd reconnect storms upon backend restarts.
+
+---
+
 ## 🐧 Native CachyOS Skills & Scheduler
 
 - **CachyOS Update Agent (`backend/actions/update_agent.py`):**
   Monitors pending package upgrades via `checkupdates` and `yay -Qu`. Specifically isolates critical system components (`linux`, `linux-cachyos`, `systemd`, `glibc`, `nvidia`, `mesa`, `openssl`). Never executes unconfirmed package upgrades: strictly routes through the Hardware Confirmation Gate (`confirm.py`).
-- **Calendar & Appointment Manager (`backend/actions/calendar_manager.py`):**
-  Embedded SQLite engine (`backend/memory/calendar.db`) providing full CRUD capabilities and natural-language scheduling ("Erinnere mich zwei Tage vorher an das Release").
 - **Proactive Morning Briefing (`backend/core/cron_engine.py`):**
   Autonomously triggers at 08:00 or system boot, summarizing appointments, pending package updates, and system metrics via PipeWire voice playback.
 
@@ -115,12 +154,23 @@ J.A.R.V.I.S. is driven by three transparent Markdown configuration documents loc
 
 ---
 
-## 🛠️ Developer Tools, Backup & Personality Wizard
+## 🛡️ Data Integrity, Atomic Writes & VACUUM INTO Backups
+
+- **Consistent Online SQLite Backups (`VACUUM INTO`):**
+  Before packaging `calendar.db` into a backup archive, the system flushes the Write-Ahead Log (`PRAGMA wal_checkpoint(TRUNCATE);`) and generates an atomic, lock-free snapshot using `VACUUM INTO` in a temporary directory. Eliminates backup corruption caused by active WAL transactions.
+- **SQLite Concurrency Hardening:**
+  All database connections operate with `PRAGMA journal_mode=WAL;`, `PRAGMA synchronous=NORMAL;`, and `busy_timeout=10000;`, coupled with a safe context manager (`get_db()`) to prevent resource exhaustion and connection locks.
+- **Atomic Two-Phase Memory Writes:**
+  Writes to `long_term.json` utilize temporary file buffers (`NamedTemporaryFile`), forced OS synchronization (`os.fsync`), and atomic file replacement (`os.replace`) to guarantee absolute durability against abrupt power cuts or process kills.
+
+---
+
+## 🛠️ Developer Tools, Live Dev-Console & Personality Wizard
 
 - **Live Dev-Console (`DevConsole.tsx`):**
   A collapsible floating terminal streaming unfiltered backend events, exceptions, tool invocations, and tracebacks directly over WebSockets (`dev_log`).
 - **1-Click Brain Backup (`backup_manager.py` & `BottomDock.tsx`):**
-  Exports all persistent data (`long_term.json`, `calendar.db`, LanceDB vector indices, `SOUL.md`, and `mcp_servers.json`) into a compressed `.zip` archive.
+  Exports all persistent data (`long_term.json`, `calendar.db`, LanceDB vector indices, `SOUL.md`, and `mcp_servers.json`) into an encrypted or unencrypted `.zip` archive.
 - **Personality Wizard Modal (`PersonalityWizardModal.tsx`):**
   Interactive in-HUD wizard for configuring persona tone, humor, expertise domain, and ethical guardrails with 1-click live saving to `SOUL.md`.
 
@@ -129,7 +179,7 @@ J.A.R.V.I.S. is driven by three transparent Markdown configuration documents loc
 ## 🌐 3D WebGL Holographic HUD & Theme Engine
 
 - **Three.js Knowledge Constellation (`ApexWorld.tsx`):**
-  Interactive 3D graph with multi-colored data flow particles (`0x00d4ff`, `0x00ff88`, `0xa855f7`), reactive audio pulse scale, and Bezier link routing.
+  Interactive 3D graph with multi-colored data flow particles (`0x00d4ff`, `0x00ff88`, `0xa855f7`), reactive audio pulse scale, and Bezier link routing with full `.dispose()` memory cleanup on unmount.
 - **Centralized Theme Config (`frontend/theme.json`):**
   Defines standardized color palettes and glowing borders tailored for Arch Linux and CachyOS desktop ricing.
 
