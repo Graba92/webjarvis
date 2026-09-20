@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from "react";
 import { socketManager } from "@/lib/websocket";
 import { CalendarEvent } from "@/lib/types";
 import { 
@@ -19,10 +19,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Cake,
-  Sparkles,
-  Layers,
   LayoutGrid,
-  Filter
+  AlertTriangle,
+  RotateCcw
 } from "lucide-react";
 
 interface CalendarModalProps {
@@ -32,7 +31,101 @@ interface CalendarModalProps {
 
 type ZoomHorizon = "1w" | "2w" | "1m" | "3m" | "6m" | "9m" | "12m";
 
-export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose }) => {
+// ─────────────────────────────────────────────────────────────────────────────
+// Safe Date Parser (unterstützt ISO 8601 sowie SQLite YYYY-MM-DD HH:MM Formate)
+// ─────────────────────────────────────────────────────────────────────────────
+const parseSafeDate = (dateStr?: string | null): Date | null => {
+  if (!dateStr || typeof dateStr !== "string") return null;
+  try {
+    const normalized = dateStr.trim().replace(" ", "T");
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+};
+
+const formatEventTime = (dateStr?: string | null): string => {
+  try {
+    const d = parseSafeDate(dateStr);
+    if (!d) return "";
+    return d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Error Boundary zum Absichern der Kalender-Komponente
+// ─────────────────────────────────────────────────────────────────────────────
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  onClose: () => void;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class CalendarErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("[CalendarModal] Abgefangener Render-Fehler:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="relative w-full max-w-lg rounded-2xl glass-panel border border-red-500/40 bg-[#0d1117] p-6 shadow-2xl text-center">
+            <div className="p-3 w-12 h-12 mx-auto rounded-full bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mb-3">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-white uppercase tracking-wider mb-2 font-mono">
+              Kalender-Fehler abgefangen
+            </h3>
+            <p className="text-xs text-gray-400 mb-4 leading-relaxed font-mono">
+              Ein Darstellungsfehler im Kalender-Modul wurde isoliert, ohne das System zu beeinträchtigen.
+            </p>
+            <div className="bg-black/50 p-2.5 rounded-lg border border-white/5 text-[11px] text-red-300 font-mono text-left mb-5 overflow-x-auto max-h-24">
+              {this.state.error?.message || "Unbekannte Ausnahme"}
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="px-4 py-2 rounded-xl bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] border border-[#00d4ff]/40 text-xs font-mono font-bold transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Neu laden</span>
+              </button>
+              <button
+                onClick={this.props.onClose}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 text-xs font-mono transition-all cursor-pointer"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Innere Kalender-View (Läuft nur bei geöffnetem Modal -> Strikte Hook-Konsistenz)
+// ─────────────────────────────────────────────────────────────────────────────
+const CalendarModalView: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [autoBriefing, setAutoBriefing] = useState<boolean>(true);
   
@@ -41,8 +134,8 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
   const [zoomHorizon, setZoomHorizon] = useState<ZoomHorizon>("1m");
   
   // Navigation
-  const [referenceDate, setReferenceDate] = useState<Date>(new Date());
-  const [selectedDay, setSelectedDay] = useState<Date>(new Date());
+  const [referenceDate, setReferenceDate] = useState<Date>(() => new Date());
+  const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
   
   // Form fields
   const [title, setTitle] = useState("");
@@ -57,6 +150,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
 
+  // WebSocket Live-Synchronisation & Initialisierung
   useEffect(() => {
     const unsubEvents = socketManager.onCalendarEvents((evList) => {
       setEvents(evList || []);
@@ -66,26 +160,228 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
       setAutoBriefing(enabled);
     });
 
-    if (isOpen) {
-      socketManager.requestCalendarEvents();
-      const now = new Date();
-      now.setHours(now.getHours() + 1, 0, 0, 0);
-      const tzOffset = now.getTimezoneOffset() * 60000;
-      const localISOTime = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
-      setStartTime(localISOTime);
-      setReferenceDate(new Date());
-      setSelectedDay(new Date());
-    }
+    socketManager.requestCalendarEvents();
+    
+    // Default-Startzeit auf nächste volle Stunde vorbesetzen
+    const now = new Date();
+    now.setHours(now.getHours() + 1, 0, 0, 0);
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
+    setStartTime(localISOTime);
+    setReferenceDate(new Date());
+    setSelectedDay(new Date());
 
     return () => {
       unsubEvents();
       unsubBriefing();
     };
-  }, [isOpen]);
+  }, []);
 
-  if (!isOpen) return null;
+  // Prüfen ob Termin dauerhaft / wiederkehrend oder Geburtstag ist
+  const isPersistentEvent = (ev: CalendarEvent): boolean => {
+    if (!ev) return false;
+    const cat = (ev.category || "").toLowerCase();
+    const rule = (ev.recurrence_rule || "").toUpperCase();
+    return (
+      rule === "DAILY" || 
+      rule === "WEEKLY" || 
+      rule === "MONTHLY" || 
+      rule === "YEARLY" || 
+      cat.includes("geburtstag") ||
+      cat.includes("birthday") ||
+      Boolean(ev.is_recurring)
+    );
+  };
 
-  // Form submission
+  // Wiederholungs- & Datumsprüfung für einen Kalendertag
+  const doesEventOccurOnDay = (ev: CalendarEvent, targetDay: Date): boolean => {
+    try {
+      if (!ev || !ev.start_time) return false;
+      const evDate = parseSafeDate(ev.start_time);
+      if (!evDate) return false;
+
+      const rule = (ev.recurrence_rule || "NONE").toUpperCase();
+      const cat = (ev.category || "").toLowerCase();
+      const isBirthday = cat.includes("geburtstag") || cat.includes("birthday");
+
+      const targetYear = targetDay.getFullYear();
+      const targetMonth = targetDay.getMonth();
+      const targetDate = targetDay.getDate();
+      const targetDayOfWeek = targetDay.getDay();
+
+      const evYear = evDate.getFullYear();
+      const evMonth = evDate.getMonth();
+      const evDateNum = evDate.getDate();
+      const evDayOfWeek = evDate.getDay();
+
+      const targetMidnight = new Date(targetYear, targetMonth, targetDate).getTime();
+      const evMidnight = new Date(evYear, evMonth, evDateNum).getTime();
+
+      // Einmaltermin
+      if (rule === "NONE" && !isBirthday && !ev.is_recurring) {
+        return targetYear === evYear && targetMonth === evMonth && targetDate === evDateNum;
+      }
+
+      // Wiederkehrende Termine können nicht vor dem Startdatum auftreten
+      if (targetMidnight < evMidnight) {
+        return false;
+      }
+
+      if (rule === "DAILY") return true;
+      if (rule === "WEEKLY") return targetDayOfWeek === evDayOfWeek;
+      if (rule === "MONTHLY") return targetDate === evDateNum;
+      if (rule === "YEARLY" || isBirthday) {
+        return targetMonth === evMonth && targetDate === evDateNum;
+      }
+
+      return targetYear === evYear && targetMonth === evMonth && targetDate === evDateNum;
+    } catch {
+      return false;
+    }
+  };
+
+  // Ermittelt alle Termine für ein gegebenes Datum unter Berücksichtigung des Filters
+  const getEventsForDay = (targetDay: Date): CalendarEvent[] => {
+    return events.filter((ev) => {
+      if (!ev) return false;
+      if (categoryFilter !== "ALL") {
+        if (categoryFilter === "RECURRING" && !isPersistentEvent(ev)) return false;
+        if (categoryFilter === "NORMAL" && isPersistentEvent(ev)) return false;
+        if (categoryFilter !== "RECURRING" && categoryFilter !== "NORMAL" && (ev.category || "Termin") !== categoryFilter) return false;
+      }
+      return doesEventOccurOnDay(ev, targetDay);
+    });
+  };
+
+  // Day Inspector Events (Alle Termine des selektierten Tages)
+  const selectedDayEvents = useMemo(() => {
+    return getEventsForDay(selectedDay);
+  }, [selectedDay, events, categoryFilter]);
+
+  // Generiert die Tage für 1 Woche oder 2 Wochen
+  const weekDaysList = useMemo(() => {
+    const totalDays = zoomHorizon === "1w" ? 7 : 14;
+    const start = new Date(referenceDate);
+    // Auf Montag der Woche ausrichten
+    const dayOfWeek = start.getDay();
+    const distanceToMonday = (dayOfWeek + 6) % 7;
+    start.setDate(start.getDate() - distanceToMonday);
+    start.setHours(0, 0, 0, 0);
+
+    const days: Date[] = [];
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  }, [referenceDate, zoomHorizon]);
+
+  // 42-Tage-Raster für einen Monat (6 Wochen x 7 Tage, Start Montag)
+  const getMonthDaysGrid = (baseDate: Date) => {
+    const year = baseDate.getFullYear();
+    const month = baseDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const dayOfWeek = firstDay.getDay();
+    const distanceToMonday = (dayOfWeek + 6) % 7;
+
+    const start = new Date(firstDay);
+    start.setDate(start.getDate() - distanceToMonday);
+    start.setHours(0, 0, 0, 0);
+
+    const grid: Date[] = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      grid.push(d);
+    }
+    return { grid, activeMonth: month };
+  };
+
+  // Monatsliste für 3m, 6m, 9m, 12m
+  const multiMonthsList = useMemo(() => {
+    let count = 3;
+    if (zoomHorizon === "6m") count = 6;
+    if (zoomHorizon === "9m") count = 9;
+    if (zoomHorizon === "12m") count = 12;
+
+    const list: Date[] = [];
+    for (let i = 0; i < count; i++) {
+      const d = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + i, 1);
+      list.push(d);
+    }
+    return list;
+  }, [referenceDate, zoomHorizon]);
+
+  const isSameCalendarDay = (d1: Date, d2: Date) => {
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  };
+
+  const isToday = (d: Date) => {
+    return isSameCalendarDay(d, new Date());
+  };
+
+  // Navigations-Handler
+  const handleNavigate = (delta: number) => {
+    const next = new Date(referenceDate);
+    if (zoomHorizon === "1w") {
+      next.setDate(next.getDate() + delta * 7);
+    } else if (zoomHorizon === "2w") {
+      next.setDate(next.getDate() + delta * 14);
+    } else if (zoomHorizon === "1m") {
+      next.setMonth(next.getMonth() + delta);
+    } else if (zoomHorizon === "3m") {
+      next.setMonth(next.getMonth() + delta * 3);
+    } else if (zoomHorizon === "6m") {
+      next.setMonth(next.getMonth() + delta * 6);
+    } else if (zoomHorizon === "9m") {
+      next.setMonth(next.getMonth() + delta * 9);
+    } else if (zoomHorizon === "12m") {
+      next.setFullYear(next.getFullYear() + delta);
+    }
+    setReferenceDate(next);
+  };
+
+  const handleJumpToToday = () => {
+    const now = new Date();
+    setReferenceDate(now);
+    setSelectedDay(now);
+  };
+
+  const formatHeaderTitle = () => {
+    const deMonth = referenceDate.toLocaleString("de-DE", { month: "long", year: "numeric" });
+    if (zoomHorizon === "1w" || zoomHorizon === "2w") {
+      return `Kalenderwoche • ${deMonth}`;
+    }
+    if (zoomHorizon === "1m") {
+      return deMonth;
+    }
+    if (zoomHorizon === "3m") {
+      const end = new Date(referenceDate);
+      end.setMonth(end.getMonth() + 2);
+      return `${referenceDate.toLocaleString("de-DE", { month: "short" })} – ${end.toLocaleString("de-DE", { month: "short", year: "numeric" })} (3 Monate)`;
+    }
+    if (zoomHorizon === "6m") {
+      const end = new Date(referenceDate);
+      end.setMonth(end.getMonth() + 5);
+      return `${referenceDate.toLocaleString("de-DE", { month: "short" })} – ${end.toLocaleString("de-DE", { month: "short", year: "numeric" })} (Halbjahr)`;
+    }
+    if (zoomHorizon === "9m") {
+      const end = new Date(referenceDate);
+      end.setMonth(end.getMonth() + 8);
+      return `${referenceDate.toLocaleString("de-DE", { month: "short" })} – ${end.toLocaleString("de-DE", { month: "short", year: "numeric" })} (9 Monate)`;
+    }
+    if (zoomHorizon === "12m") {
+      return `Jahresübersicht ${referenceDate.getFullYear()} / ${referenceDate.getFullYear() + 1}`;
+    }
+    return deMonth;
+  };
+
+  // Formular-Erstellung
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || isSubmitting) return;
@@ -156,237 +452,16 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
     setTimeout(() => setBriefingTriggered(false), 3000);
   };
 
-  // Check if an event is persistent / recurring or a birthday
-  const isPersistentEvent = (ev: CalendarEvent) => {
-    const cat = (ev.category || "").toLowerCase();
-    const rule = (ev.recurrence_rule || "").toUpperCase();
-    return (
-      rule === "DAILY" || 
-      rule === "WEEKLY" || 
-      rule === "MONTHLY" || 
-      rule === "YEARLY" || 
-      cat.includes("geburtstag") ||
-      cat.includes("birthday") ||
-      Boolean(ev.is_recurring)
-    );
-  };
-
-  // Recurrence Matching Logic for a given calendar day
-  const doesEventOccurOnDay = (ev: CalendarEvent, targetDay: Date) => {
-    try {
-      const evDate = new Date(ev.start_time);
-      if (isNaN(evDate.getTime())) return false;
-
-      const rule = (ev.recurrence_rule || "NONE").toUpperCase();
-      const cat = (ev.category || "").toLowerCase();
-      const isBirthday = cat.includes("geburtstag") || cat.includes("birthday");
-
-      // Normalize dates to YYYY-MM-DD
-      const targetYear = targetDay.getFullYear();
-      const targetMonth = targetDay.getMonth();
-      const targetDate = targetDay.getDate();
-      const targetDayOfWeek = targetDay.getDay(); // 0 = Sunday, 1 = Monday...
-
-      const evYear = evDate.getFullYear();
-      const evMonth = evDate.getMonth();
-      const evDateNum = evDate.getDate();
-      const evDayOfWeek = evDate.getDay();
-
-      // Check if event starts after targetDay
-      const targetMidnight = new Date(targetYear, targetMonth, targetDate).getTime();
-      const evMidnight = new Date(evYear, evMonth, evDateNum).getTime();
-
-      if (rule === "NONE" && !isBirthday && !ev.is_recurring) {
-        return targetYear === evYear && targetMonth === evMonth && targetDate === evDateNum;
-      }
-
-      // If target day is before the initial creation date, it doesn't occur yet
-      if (targetMidnight < evMidnight) {
-        return false;
-      }
-
-      if (rule === "DAILY") {
-        return true;
-      }
-
-      if (rule === "WEEKLY") {
-        return targetDayOfWeek === evDayOfWeek;
-      }
-
-      if (rule === "MONTHLY") {
-        return targetDate === evDateNum;
-      }
-
-      if (rule === "YEARLY" || isBirthday) {
-        return targetMonth === evMonth && targetDate === evDateNum;
-      }
-
-      return targetYear === evYear && targetMonth === evMonth && targetDate === evDateNum;
-    } catch {
-      return false;
-    }
-  };
-
-  // Get all events occurring on a specific date
-  const getEventsForDay = (targetDay: Date) => {
-    return events.filter((ev) => {
-      if (categoryFilter !== "ALL") {
-        if (categoryFilter === "RECURRING" && !isPersistentEvent(ev)) return false;
-        if (categoryFilter === "NORMAL" && isPersistentEvent(ev)) return false;
-        if (categoryFilter !== "RECURRING" && categoryFilter !== "NORMAL" && (ev.category || "Termin") !== categoryFilter) return false;
-      }
-      return doesEventOccurOnDay(ev, targetDay);
-    });
-  };
-
-  // Navigation handlers
-  const handleNavigate = (delta: number) => {
-    const next = new Date(referenceDate);
-    if (zoomHorizon === "1w") {
-      next.setDate(next.getDate() + delta * 7);
-    } else if (zoomHorizon === "2w") {
-      next.setDate(next.getDate() + delta * 14);
-    } else if (zoomHorizon === "1m") {
-      next.setMonth(next.getMonth() + delta);
-    } else if (zoomHorizon === "3m") {
-      next.setMonth(next.getMonth() + delta * 3);
-    } else if (zoomHorizon === "6m") {
-      next.setMonth(next.getMonth() + delta * 6);
-    } else if (zoomHorizon === "9m") {
-      next.setMonth(next.getMonth() + delta * 9);
-    } else if (zoomHorizon === "12m") {
-      next.setFullYear(next.getFullYear() + delta);
-    }
-    setReferenceDate(next);
-  };
-
-  const handleJumpToToday = () => {
-    const now = new Date();
-    setReferenceDate(now);
-    setSelectedDay(now);
-  };
-
-  // Helper formatting
-  const formatHeaderTitle = () => {
-    const deMonth = referenceDate.toLocaleString("de-DE", { month: "long", year: "numeric" });
-    if (zoomHorizon === "1w" || zoomHorizon === "2w") {
-      return `Kalenderwoche • ${deMonth}`;
-    }
-    if (zoomHorizon === "1m") {
-      return deMonth;
-    }
-    if (zoomHorizon === "3m") {
-      const end = new Date(referenceDate);
-      end.setMonth(end.getMonth() + 2);
-      return `${referenceDate.toLocaleString("de-DE", { month: "short" })} – ${end.toLocaleString("de-DE", { month: "short", year: "numeric" })} (3 Monate)`;
-    }
-    if (zoomHorizon === "6m") {
-      const end = new Date(referenceDate);
-      end.setMonth(end.getMonth() + 5);
-      return `${referenceDate.toLocaleString("de-DE", { month: "short" })} – ${end.toLocaleString("de-DE", { month: "short", year: "numeric" })} (Halbjahr)`;
-    }
-    if (zoomHorizon === "9m") {
-      const end = new Date(referenceDate);
-      end.setMonth(end.getMonth() + 8);
-      return `${referenceDate.toLocaleString("de-DE", { month: "short" })} – ${end.toLocaleString("de-DE", { month: "short", year: "numeric" })} (9 Monate)`;
-    }
-    if (zoomHorizon === "12m") {
-      return `Jahresübersicht ${referenceDate.getFullYear()} / ${referenceDate.getFullYear() + 1}`;
-    }
-    return deMonth;
-  };
-
-  const formatEventTime = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return "";
-      return d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-    } catch {
-      return "";
-    }
-  };
-
-  // Day inspector events
-  const selectedDayEvents = useMemo(() => {
-    return getEventsForDay(selectedDay);
-  }, [selectedDay, events, categoryFilter]);
-
-  // Generate Days for 1 Week / 2 Weeks
-  const weekDaysList = useMemo(() => {
-    const totalDays = zoomHorizon === "1w" ? 7 : 14;
-    const start = new Date(referenceDate);
-    // Find Monday of the reference week
-    const dayOfWeek = start.getDay();
-    const distanceToMonday = (dayOfWeek + 6) % 7;
-    start.setDate(start.getDate() - distanceToMonday);
-    start.setHours(0, 0, 0, 0);
-
-    const days: Date[] = [];
-    for (let i = 0; i < totalDays; i++) {
-      const d = new Date(start);
-      d.setDate(d.getDate() + i);
-      days.push(d);
-    }
-    return days;
-  }, [referenceDate, zoomHorizon]);
-
-  // Generate Month Grid (42 cells: 6 weeks x 7 days starting with Monday)
-  const getMonthDaysGrid = (baseDate: Date) => {
-    const year = baseDate.getFullYear();
-    const month = baseDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const dayOfWeek = firstDay.getDay();
-    const distanceToMonday = (dayOfWeek + 6) % 7;
-
-    const start = new Date(firstDay);
-    start.setDate(start.getDate() - distanceToMonday);
-
-    const grid: Date[] = [];
-    for (let i = 0; i < 42; i++) {
-      const d = new Date(start);
-      d.setDate(d.getDate() + i);
-      grid.push(d);
-    }
-    return { grid, activeMonth: month };
-  };
-
-  // Multi-Month Generator (for 3m, 6m, 9m, 12m)
-  const multiMonthsList = useMemo(() => {
-    let count = 3;
-    if (zoomHorizon === "6m") count = 6;
-    if (zoomHorizon === "9m") count = 9;
-    if (zoomHorizon === "12m") count = 12;
-
-    const list: Date[] = [];
-    for (let i = 0; i < count; i++) {
-      const d = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + i, 1);
-      list.push(d);
-    }
-    return list;
-  }, [referenceDate, zoomHorizon]);
-
-  const isSameCalendarDay = (d1: Date, d2: Date) => {
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
-  };
-
-  const isToday = (d: Date) => {
-    return isSameCalendarDay(d, new Date());
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-5 animate-in fade-in duration-200">
       
       {/* Outer Wrapper for Modal + Protruding Dock Button */}
       <div className={`relative w-full ${viewMode === "matrix" ? "max-w-7xl" : "max-w-5xl"} transition-all duration-300 flex flex-col`}>
         
-        {/* RECHTER DOCK-BUTTON (Wie im User-Screenshot markiert) */}
+        {/* RECHTER DOCK-BUTTON: Schaltet direkt in die saubere Kalender-Ansicht um */}
         <button
           onClick={() => setViewMode(viewMode === "manager" ? "matrix" : "manager")}
-          title={viewMode === "manager" ? "Vollwertige Kalender-Matrix öffnen" : "Zurück zur Terminverwaltung & Schnelleingabe"}
+          title={viewMode === "manager" ? "In die vollwertige Kalender-Matrix wechseln" : "Zurück zur Terminverwaltung & Schnelleingabe"}
           className="absolute -right-12 top-28 z-40 hidden md:flex flex-col items-center justify-center gap-2.5 py-4 px-2.5 rounded-r-2xl bg-[#0d1117]/95 border-t border-r border-b border-[#00d4ff]/50 text-[#00d4ff] hover:bg-[#00d4ff]/20 hover:text-white hover:border-[#00d4ff] shadow-[5px_0_20px_rgba(0,212,255,0.3)] transition-all cursor-pointer group"
         >
           <CalendarRange className="w-5 h-5 text-[#00d4ff] group-hover:scale-125 transition-transform" />
@@ -426,7 +501,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
               <div className="flex items-center p-1 rounded-xl bg-black/40 border border-white/10 text-xs font-mono">
                 <button
                   onClick={() => setViewMode("manager")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     viewMode === "manager"
                       ? "bg-[#00d4ff]/20 text-[#00d4ff] border border-[#00d4ff]/40 font-bold shadow-[0_0_10px_rgba(0,212,255,0.2)]"
                       : "text-gray-400 hover:text-white"
@@ -437,7 +512,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                 </button>
                 <button
                   onClick={() => setViewMode("matrix")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     viewMode === "matrix"
                       ? "bg-[#00d4ff]/20 text-[#00d4ff] border border-[#00d4ff]/40 font-bold shadow-[0_0_10px_rgba(0,212,255,0.2)]"
                       : "text-gray-400 hover:text-white"
@@ -452,6 +527,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
               <button
                 onClick={onClose}
                 className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                title="Schließen"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -564,7 +640,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                   
                   {/* Fall 1 & 2: Wochenansichten (1 Woche oder 2 Wochen) */}
                   {(zoomHorizon === "1w" || zoomHorizon === "2w") && (
-                    <div className={`grid grid-cols-1 md:grid-cols-7 gap-2 flex-1`}>
+                    <div className="grid grid-cols-1 md:grid-cols-7 gap-2 flex-1">
                       {weekDaysList.map((day, idx) => {
                         const dayEvents = getEventsForDay(day);
                         const isCurrentDay = isToday(day);
@@ -628,87 +704,83 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                   )}
 
                   {/* Fall 3: 1 Monat Vollansicht */}
-                  {zoomHorizon === "1m" && (() => {
-                    const { grid, activeMonth } = getMonthDaysGrid(referenceDate);
-                    const weekDaysHeader = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-
-                    return (
-                      <div className="flex-1 flex flex-col">
-                        {/* Wochentags-Kopfzeile */}
-                        <div className="grid grid-cols-7 gap-1.5 mb-1.5 text-center text-xs font-mono font-bold text-gray-400">
-                          {weekDaysHeader.map((w) => (
-                            <div key={w} className="py-1 bg-white/[0.03] rounded-lg border border-white/5">
-                              {w}
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* 42-Tage-Monatsraster */}
-                        <div className="grid grid-cols-7 gap-1.5 flex-1">
-                          {grid.map((day, idx) => {
-                            const dayEvents = getEventsForDay(day);
-                            const isCurrentMonth = day.getMonth() === activeMonth;
-                            const isCurrentDay = isToday(day);
-                            const isSelected = isSameCalendarDay(day, selectedDay);
-
-                            return (
-                              <div
-                                key={idx}
-                                onClick={() => setSelectedDay(day)}
-                                className={`p-1.5 rounded-xl border transition-all flex flex-col min-h-[75px] max-h-[105px] cursor-pointer ${
-                                  isSelected
-                                    ? "border-[#00d4ff] bg-[#00d4ff]/15 shadow-[0_0_15px_rgba(0,212,255,0.2)]"
-                                    : isCurrentDay
-                                    ? "border-amber-400/60 bg-amber-500/10"
-                                    : isCurrentMonth
-                                    ? "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
-                                    : "border-white/5 bg-transparent opacity-40 hover:opacity-70"
-                                }`}
-                              >
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className={`text-[11px] font-mono font-bold px-1 rounded ${
-                                    isCurrentDay ? "bg-amber-400 text-black font-bold" : "text-white"
-                                  }`}>
-                                    {day.getDate()}
-                                  </span>
-                                  {dayEvents.length > 0 && (
-                                    <span className="text-[9px] px-1 rounded-full bg-white/10 text-gray-300 font-mono">
-                                      {dayEvents.length}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Events im Tag-Feld */}
-                                <div className="space-y-1 overflow-hidden flex-1">
-                                  {dayEvents.slice(0, 2).map((ev) => {
-                                    const persistent = isPersistentEvent(ev);
-                                    return (
-                                      <div
-                                        key={ev.id}
-                                        className={`px-1 py-0.5 rounded text-[10px] truncate font-medium flex items-center gap-1 ${
-                                          persistent
-                                            ? "bg-amber-500/25 text-amber-200 border border-amber-500/40"
-                                            : "bg-[#00d4ff]/20 text-[#00d4ff] border border-[#00d4ff]/40"
-                                        }`}
-                                      >
-                                        {persistent ? <Cake className="w-2.5 h-2.5 shrink-0 text-amber-400" /> : <span className="w-1.5 h-1.5 rounded-full bg-[#00d4ff] shrink-0" />}
-                                        <span className="truncate">{ev.title}</span>
-                                      </div>
-                                    );
-                                  })}
-                                  {dayEvents.length > 2 && (
-                                    <div className="text-[9px] text-[#00d4ff] font-mono font-semibold pl-1">
-                                      +{dayEvents.length - 2} weitere
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                  {zoomHorizon === "1m" && (
+                    <div className="flex-1 flex flex-col">
+                      {/* Wochentags-Kopfzeile */}
+                      <div className="grid grid-cols-7 gap-1.5 mb-1.5 text-center text-xs font-mono font-bold text-gray-400">
+                        {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => (
+                          <div key={w} className="py-1 bg-white/[0.03] rounded-lg border border-white/5">
+                            {w}
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })()}
+
+                      {/* 42-Tage-Monatsraster */}
+                      <div className="grid grid-cols-7 gap-1.5 flex-1">
+                        {getMonthDaysGrid(referenceDate).grid.map((day, idx) => {
+                          const activeMonth = referenceDate.getMonth();
+                          const dayEvents = getEventsForDay(day);
+                          const isCurrentMonth = day.getMonth() === activeMonth;
+                          const isCurrentDay = isToday(day);
+                          const isSelected = isSameCalendarDay(day, selectedDay);
+
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => setSelectedDay(day)}
+                              className={`p-1.5 rounded-xl border transition-all flex flex-col min-h-[75px] max-h-[105px] cursor-pointer ${
+                                isSelected
+                                  ? "border-[#00d4ff] bg-[#00d4ff]/15 shadow-[0_0_15px_rgba(0,212,255,0.2)]"
+                                  : isCurrentDay
+                                  ? "border-amber-400/60 bg-amber-500/10"
+                                  : isCurrentMonth
+                                  ? "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
+                                  : "border-white/5 bg-transparent opacity-40 hover:opacity-70"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`text-[11px] font-mono font-bold px-1 rounded ${
+                                  isCurrentDay ? "bg-amber-400 text-black font-bold" : "text-white"
+                                }`}>
+                                  {day.getDate()}
+                                </span>
+                                {dayEvents.length > 0 && (
+                                  <span className="text-[9px] px-1 rounded-full bg-white/10 text-gray-300 font-mono">
+                                    {dayEvents.length}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Events im Tag-Feld */}
+                              <div className="space-y-1 overflow-hidden flex-1">
+                                {dayEvents.slice(0, 2).map((ev) => {
+                                  const persistent = isPersistentEvent(ev);
+                                  return (
+                                    <div
+                                      key={ev.id}
+                                      className={`px-1 py-0.5 rounded text-[10px] truncate font-medium flex items-center gap-1 ${
+                                        persistent
+                                          ? "bg-amber-500/25 text-amber-200 border border-amber-500/40"
+                                          : "bg-[#00d4ff]/20 text-[#00d4ff] border border-[#00d4ff]/40"
+                                      }`}
+                                    >
+                                      {persistent ? <Cake className="w-2.5 h-2.5 shrink-0 text-amber-400" /> : <span className="w-1.5 h-1.5 rounded-full bg-[#00d4ff] shrink-0" />}
+                                      <span className="truncate">{ev.title}</span>
+                                    </div>
+                                  );
+                                })}
+                                {dayEvents.length > 2 && (
+                                  <div className="text-[9px] text-[#00d4ff] font-mono font-semibold pl-1">
+                                    +{dayEvents.length - 2} weitere
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Fall 4: Multi-Monate (3, 6, 9 oder 12 Monate) */}
                   {(zoomHorizon === "3m" || zoomHorizon === "6m" || zoomHorizon === "9m" || zoomHorizon === "12m") && (
@@ -752,7 +824,6 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
 
                                 const dayEvents = getEventsForDay(day);
                                 const hasPersistent = dayEvents.some((e) => isPersistentEvent(e));
-                                const hasNormal = dayEvents.some((e) => !isPersistentEvent(e));
                                 const isSelected = isSameCalendarDay(day, selectedDay);
                                 const isCurrentDay = isToday(day);
 
@@ -823,13 +894,15 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                           <p className="text-xs text-gray-400">Keine Termine für diesen Tag hinterlegt.</p>
                           <button
                             onClick={() => {
-                              const selISO = new Date(selectedDay);
-                              selISO.setHours(10, 0, 0, 0);
-                              const tzOffset = selISO.getTimezoneOffset() * 60000;
-                              setStartTime(new Date(selISO.getTime() - tzOffset).toISOString().slice(0, 16));
+                              try {
+                                const selISO = new Date(selectedDay);
+                                selISO.setHours(10, 0, 0, 0);
+                                const tzOffset = selISO.getTimezoneOffset() * 60000;
+                                setStartTime(new Date(selISO.getTime() - tzOffset).toISOString().slice(0, 16));
+                              } catch {}
                               setViewMode("manager");
                             }}
-                            className="mt-3 px-3 py-1.5 rounded-lg bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] text-xs font-mono border border-[#00d4ff]/40 transition-colors"
+                            className="mt-3 px-3 py-1.5 rounded-lg bg-[#00d4ff]/20 hover:bg-[#00d4ff]/30 text-[#00d4ff] text-xs font-mono border border-[#00d4ff]/40 transition-colors cursor-pointer"
                           >
                             + Termin für diesen Tag eintragen
                           </button>
@@ -860,7 +933,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                                 <button
                                   onClick={() => handleDelete(ev.id)}
                                   title="Termin löschen"
-                                  className="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                  className="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -898,10 +971,12 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                   <div className="pt-2 border-t border-[#1f242d] mt-2">
                     <button
                       onClick={() => {
-                        const selISO = new Date(selectedDay);
-                        selISO.setHours(10, 0, 0, 0);
-                        const tzOffset = selISO.getTimezoneOffset() * 60000;
-                        setStartTime(new Date(selISO.getTime() - tzOffset).toISOString().slice(0, 16));
+                        try {
+                          const selISO = new Date(selectedDay);
+                          selISO.setHours(10, 0, 0, 0);
+                          const tzOffset = selISO.getTimezoneOffset() * 60000;
+                          setStartTime(new Date(selISO.getTime() - tzOffset).toISOString().slice(0, 16));
+                        } catch {}
                         setViewMode("manager");
                       }}
                       className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-[#00d4ff]/20 text-gray-300 hover:text-[#00d4ff] border border-white/10 hover:border-[#00d4ff]/40 text-xs font-mono font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -1039,8 +1114,8 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                               <div className="flex items-center gap-3 text-xs text-gray-400 mb-1 flex-wrap">
                                 <span className="flex items-center gap-1 text-[#00d4ff] font-mono">
                                   <Clock className="w-3 h-3" />
-                                  {ev.start_time}
-                                  {ev.end_time ? ` → ${ev.end_time}` : ""}
+                                  {formatEventTime(ev.start_time) || ev.start_time}
+                                  {ev.end_time ? ` → ${formatEventTime(ev.end_time) || ev.end_time}` : ""}
                                 </span>
                               </div>
 
@@ -1150,22 +1225,33 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[11px] font-mono text-gray-400 mb-1">
-                          KATEGORIE
-                        </label>
-                        <select
-                          value={category}
-                          onChange={(e) => setCategory(e.target.value)}
-                          className="w-full px-2.5 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#00d4ff] transition-colors"
-                        >
-                          <option value="Termin">Termin</option>
-                          <option value="Geburtstag">🎂 Geburtstag</option>
-                          <option value="Arbeit">Arbeit</option>
-                          <option value="Meeting">Meeting</option>
-                          <option value="Privat">Privat</option>
-                          <option value="System">System</option>
-                        </select>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-[11px] font-mono text-gray-400 mb-1">
+                            KATEGORIE
+                          </label>
+                          <select
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className="w-full px-2.5 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white focus:outline-none focus:border-[#00d4ff] transition-colors"
+                          >
+                            <option value="Termin">Termin</option>
+                            <option value="Geburtstag">🎂 Geburtstag</option>
+                            <option value="Arbeit">Arbeit</option>
+                            <option value="Meeting">Meeting</option>
+                            <option value="Privat">Privat</option>
+                            <option value="System">System</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-mono text-gray-400 mb-1">
+                            SYSTEM-PRIORITÄT
+                          </label>
+                          <div className="px-2.5 py-2 text-xs bg-black/20 border border-white/5 rounded-lg text-gray-400 font-mono">
+                            Normal (HUD-Sync)
+                          </div>
+                        </div>
                       </div>
 
                       <div>
@@ -1176,7 +1262,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
                           rows={2}
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Details, Geschenke, Vorbereitung oder Notizen..."
+                          placeholder="Details, Vorbereitung, Geschenke oder Notizen..."
                           className="w-full px-3 py-2 text-xs bg-black/40 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#00d4ff] transition-colors resize-none"
                         />
                       </div>
@@ -1206,5 +1292,18 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose })
         </div>
       </div>
     </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Äußere Haupt-Komponente (Isolierung & Error Boundary)
+// ─────────────────────────────────────────────────────────────────────────────
+export const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <CalendarErrorBoundary onClose={onClose}>
+      <CalendarModalView onClose={onClose} />
+    </CalendarErrorBoundary>
   );
 };
