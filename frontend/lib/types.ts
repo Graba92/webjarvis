@@ -104,12 +104,26 @@ export interface PersonalityConfig {
 export interface BrainExportResult {
   success: boolean;
   path?: string;
+  filename?: string;
+  size_kb?: number;
+  label?: string;
+  data_base64?: string;
+  message?: string;
   error?: string;
 }
 
 export interface BrainImportResult {
   success: boolean;
   error?: string;
+  result?: string;
+}
+
+export interface BackupEntry {
+  filename: string;
+  path: string;
+  size_kb: number;
+  created_at: string;
+  label?: string;
 }
 
 export interface CalendarReminderRule {
@@ -129,7 +143,7 @@ export interface CalendarEvent {
   end_time?: string;
   category?: string;
   is_recurring?: boolean | number;
-  recurrence_rule?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | string;
+  recurrence_rule?: "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY" | string;
   reminder_strategy?: string | CalendarReminderStrategy;
   reminder_strategy_parsed?: CalendarReminderStrategy;
   reminder_offset_minutes?: number;

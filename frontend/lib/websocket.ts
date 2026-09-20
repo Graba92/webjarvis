@@ -10,6 +10,7 @@ import {
   PersonalityConfig,
   BrainExportResult,
   BrainImportResult,
+  BackupEntry,
   CalendarEvent
 } from "./types";
 import { auditor } from "../utils/auditLogger";
@@ -40,6 +41,8 @@ class JarvisSocketManager {
   private mcpListeners: Set<Listener<MCPServerMap>> = new Set();
   private brainExportListeners: Set<Listener<BrainExportResult>> = new Set();
   private brainImportListeners: Set<Listener<BrainImportResult>> = new Set();
+  private backupsListListeners: Set<Listener<BackupEntry[]>> = new Set();
+  private backupDownloadListeners: Set<Listener<{ filename: string; data_base64: string; size_kb: number }>> = new Set();
   private personalityListeners: Set<Listener<PersonalityConfig>> = new Set();
   private calendarListeners: Set<Listener<CalendarEvent[]>> = new Set();
   private autoBriefingListeners: Set<Listener<boolean>> = new Set();
@@ -52,6 +55,7 @@ class JarvisSocketManager {
   public isFocusMode: boolean = false;
   public isAutoBriefing: boolean = true;
   public currentCalendarEvents: CalendarEvent[] = [];
+  public currentBackups: BackupEntry[] = [];
   public pendingConfirm: ConfirmRequest | null = null;
   public apiKeyStatus: { configured: boolean; masked_key: string } = { configured: false, masked_key: "" };
   public currentGraphData: GraphData | null = null;
@@ -292,18 +296,38 @@ class JarvisSocketManager {
         break;
 
       case "brain_export_result":
+        const exportData = msg.data || msg;
         this.brainExportListeners.forEach((fn) => fn({
-          success: !!msg.success,
-          path: msg.path,
-          error: msg.error
+          success: exportData.success !== undefined ? !!exportData.success : true,
+          path: exportData.path,
+          filename: exportData.filename,
+          size_kb: exportData.size_kb,
+          label: exportData.label,
+          data_base64: exportData.data_base64,
+          message: exportData.message || msg.result,
+          error: exportData.error
         }));
         break;
 
       case "brain_import_result":
         this.brainImportListeners.forEach((fn) => fn({
-          success: !!msg.success,
+          success: msg.success !== undefined ? !msg.error : true,
+          result: msg.result,
           error: msg.error
         }));
+        break;
+
+      case "backups_list_data":
+        if (msg.backups && Array.isArray(msg.backups)) {
+          this.currentBackups = msg.backups;
+          this.backupsListListeners.forEach((fn) => fn(this.currentBackups));
+        }
+        break;
+
+      case "backup_download_data":
+        if (msg.backup) {
+          this.backupDownloadListeners.forEach((fn) => fn(msg.backup));
+        }
         break;
 
       case "personality_data":
@@ -405,15 +429,52 @@ class JarvisSocketManager {
     }
   }
 
-  public exportBrain() {
+  public requestBackupsList() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: "export_brain" }));
+      this.ws.send(JSON.stringify({ type: "list_backups" }));
     }
   }
 
-  public importBrain(path: string) {
+  public exportBrain(label?: string, passphrase?: string) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: "import_brain", path }));
+      this.ws.send(JSON.stringify({ 
+        type: "export_brain",
+        label: label || undefined,
+        passphrase: passphrase || undefined
+      }));
+    }
+  }
+
+  public downloadBackup(filename: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "download_backup", filename }));
+    }
+  }
+
+  public deleteBackup(filename: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "delete_backup", filename }));
+    }
+  }
+
+  public uploadAndImportBrain(filename: string, dataBase64: string, passphrase?: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: "upload_and_import_brain",
+        filename,
+        data_base64: dataBase64,
+        passphrase: passphrase || undefined
+      }));
+    }
+  }
+
+  public importBrain(path: string, passphrase?: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ 
+        type: "import_brain", 
+        path,
+        passphrase: passphrase || undefined 
+      }));
     }
   }
 
@@ -537,6 +598,21 @@ class JarvisSocketManager {
     this.brainImportListeners.add(fn);
     return () => {
       this.brainImportListeners.delete(fn);
+    };
+  }
+
+  public onBackupsList(fn: Listener<BackupEntry[]>) {
+    this.backupsListListeners.add(fn);
+    if (this.currentBackups.length > 0) fn(this.currentBackups);
+    return () => {
+      this.backupsListListeners.delete(fn);
+    };
+  }
+
+  public onBackupDownload(fn: Listener<{ filename: string; data_base64: string; size_kb: number }>) {
+    this.backupDownloadListeners.add(fn);
+    return () => {
+      this.backupDownloadListeners.delete(fn);
     };
   }
 

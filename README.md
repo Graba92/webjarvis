@@ -120,6 +120,8 @@ J.A.R.V.I.S. is driven by three transparent Markdown configuration documents loc
   Database changes instantly emit `CALENDAR_SYNC` WebSocket broadcasts to all connected frontends, refreshing the calendar UI in real-time.
 - **HUD Calendar Dashboard & Shortcut (`Alt+C`):**
   A dedicated cyber-glass modal allows full manual inspection, quick filters ("In 1h", "Morgen 09:00"), natural language inputs, and single-click event deletion.
+- **Interactive Calendar Matrix & Horizon Dock:**
+  A prominent toggle button docked to the right edge and in the header switches instantly to the full-featured Calendar Matrix with non-overlapping scalable horizons (1 week, 2 weeks, 1 month, 3 months, 6 months, 9 months, 12-month year overview), automated recurrence projection (including `YEARLY` for birthdays), persistent event color-coding (amber/gold for repeating & birthdays vs. cyan for regular events), and a dedicated Day Inspector drawer.
 
 ---
 
@@ -181,8 +183,8 @@ All autonomous skills are located in `backend/actions/` and registered with the 
 
 - **Live Dev-Console (`DevConsole.tsx`):**
   A collapsible floating terminal streaming unfiltered backend events, exceptions, tool invocations, and tracebacks directly over WebSockets (`dev_log`).
-- **1-Click Brain Backup (`backup_manager.py` & `BottomDock.tsx`):**
-  Exports all persistent data (`long_term.json`, `calendar.db`, LanceDB vector indices, `SOUL.md`, and `mcp_servers.json`) into an encrypted or unencrypted `.zip` archive.
+- **Brain Vault Backup & Restore Modal (`BackupModal.tsx`, `backup_manager.py` & `BottomDock.tsx`):**
+  Full-featured backup vault: creates transactionally consistent backups with custom labels, triggers instant browser `.zip` downloads, allows drag-and-drop restore of older archives, and hot-reloads memory, calendar, and personality live without restarting.
 - **Personality Wizard Modal (`PersonalityWizardModal.tsx`):**
   Interactive in-HUD wizard for configuring persona tone, humor, expertise domain, and ethical guardrails with 1-click live saving to `SOUL.md`.
 

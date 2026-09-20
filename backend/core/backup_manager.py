@@ -15,6 +15,7 @@ import shutil
 import zipfile
 import sqlite3
 import tempfile
+import base64
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -58,21 +59,36 @@ def get_backup_targets() -> Dict[str, Path]:
         targets["HEARTBEAT.md"] = BACKEND_DIR / "HEARTBEAT.md"
     return targets
 
-def export_brain(output_path: Optional[str] = None, passphrase: Optional[str] = None) -> str:
-    """Exportiert das gesamte Gedächtnis in ein komprimiertes Brain-Vault ZIP-Archiv."""
+def export_brain(
+    output_path: Optional[str] = None, 
+    passphrase: Optional[str] = None, 
+    label: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Exportiert das gesamte Gedächtnis in ein komprimiertes Brain-Vault ZIP-Archiv.
+    Gibt ein Dict mit Details, Dateiname und optionalem Base64-Inhalt für den direkten Download zurück.
+    """
     BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    clean_label = ""
+    if label and label.strip():
+        # Bereinige das Label für Dateinamen
+        clean_label = "_" + "".join(c for c in label.strip() if c.isalnum() or c in ("-", "_")).strip("-_")
     
     if output_path:
         dest_zip = Path(output_path)
     else:
-        dest_zip = BACKUPS_DIR / f"jarvis_brain_backup_{timestamp}.zip"
+        dest_zip = BACKUPS_DIR / f"jarvis_brain_backup_{timestamp}{clean_label}.zip"
 
     dest_zip.parent.mkdir(parents=True, exist_ok=True)
     targets = get_backup_targets()
 
     if not targets:
-        return "Keine Gedächtnisdaten oder Konfigurationen zum Exportieren gefunden."
+        return {
+            "success": False,
+            "message": "Keine Gedächtnisdaten oder Konfigurationen zum Exportieren gefunden."
+        }
 
     try:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -89,8 +105,7 @@ def export_brain(output_path: Optional[str] = None, passphrase: Optional[str] = 
                                 consistent_path = export_consistent_sqlite(file_path, temp_dir_path)
                                 zf.write(consistent_path, arcname=arc_name)
                                 continue
-                            except Exception as db_err:
-                                # Fallback: Falls VACUUM fehlschlägt, Originaldatei verwenden
+                            except Exception:
                                 pass
                         zf.write(file_path, arcname=arc_name)
                     elif file_path.is_dir():
@@ -101,7 +116,10 @@ def export_brain(output_path: Optional[str] = None, passphrase: Optional[str] = 
                                 zf.write(full_p, arcname=f"{arc_name}/{rel_p}")
 
         size_kb = round(dest_zip.stat().st_size / 1024, 1)
-        return (
+        raw_bytes = dest_zip.read_bytes()
+        b64_content = base64.b64encode(raw_bytes).decode("ascii")
+
+        summary_msg = (
             f"1-Click Brain-Backup erfolgreich erstellt:\n"
             f"• Datei: {dest_zip.name}\n"
             f"• Pfad: {dest_zip}\n"
@@ -109,8 +127,74 @@ def export_brain(output_path: Optional[str] = None, passphrase: Optional[str] = 
             f"• Status: {'Passwortgeschützt' if passphrase else 'Standard-Komprimierung'}\n"
             f"• SQLite-Integrität: VACUUM INTO Checkpoint angewendet"
         )
+        return {
+            "success": True,
+            "message": summary_msg,
+            "filename": dest_zip.name,
+            "path": str(dest_zip),
+            "size_kb": size_kb,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "label": label.strip() if label else "",
+            "data_base64": b64_content
+        }
     except Exception as e:
-        return f"Fehler beim Exportieren des Gedächtnisses: {e}"
+        return {
+            "success": False,
+            "message": f"Fehler beim Exportieren des Gedächtnisses: {e}"
+        }
+
+def list_available_backups() -> list[dict[str, Any]]:
+    """Gibt alle vorhandenen Brain-Vault Backups sortiert nach Erstellungsdatum zurück."""
+    BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+    backups = []
+    for f in sorted(BACKUPS_DIR.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+        stat = f.stat()
+        mtime = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+        size_kb = round(stat.st_size / 1024, 1)
+        
+        # Label extrahieren: jarvis_brain_backup_YYYYMMDD_HHMMSS_Label.zip
+        parts = f.stem.split("_")
+        label = ""
+        if len(parts) >= 5 and parts[0] == "jarvis" and parts[1] == "brain" and parts[2] == "backup":
+            label = "_".join(parts[5:]) if len(parts) > 5 else ""
+
+        backups.append({
+            "filename": f.name,
+            "path": str(f),
+            "size_kb": size_kb,
+            "created_at": mtime,
+            "label": label
+        })
+    return backups
+
+def delete_backup(filename: str) -> bool:
+    """Löscht ein Backup sicher aus dem backups/-Verzeichnis."""
+    safe_name = Path(filename).name
+    target = BACKUPS_DIR / safe_name
+    if target.exists() and target.is_file() and safe_name.endswith(".zip"):
+        try:
+            target.unlink()
+            return True
+        except Exception:
+            return False
+    return False
+
+def get_backup_base64(filename: str) -> Optional[dict[str, Any]]:
+    """Liest ein existierendes Backup als Base64 ein für den direkten Browser-Download."""
+    safe_name = Path(filename).name
+    target = BACKUPS_DIR / safe_name
+    if target.exists() and target.is_file():
+        try:
+            data = target.read_bytes()
+            b64 = base64.b64encode(data).decode("ascii")
+            return {
+                "filename": safe_name,
+                "data_base64": b64,
+                "size_kb": round(len(data) / 1024, 1)
+            }
+        except Exception:
+            return None
+    return None
 
 def import_brain(archive_path: str, passphrase: Optional[str] = None) -> str:
     """Importiert und stellt ein Brain-Vault Archiv wieder her."""
@@ -143,3 +227,17 @@ def import_brain(archive_path: str, passphrase: Optional[str] = None) -> str:
         return f"Gedächtnis-Wiederherstellung aus '{archive.name}' erfolgreich abgeschlossen. Module neu synchronisiert."
     except Exception as e:
         return f"Fehler beim Importieren des Gedächtnisses: {e}"
+
+def save_and_import_brain_bytes(data_bytes: bytes, filename: str, passphrase: Optional[str] = None) -> str:
+    """Speichert ein hochgeladenes Backup-Archiv im backups/-Verzeichnis und stellt es sofort wieder her."""
+    BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+    safe_name = Path(filename).name
+    if not safe_name.endswith(".zip"):
+        safe_name = f"{safe_name}.zip"
+    
+    dest_path = BACKUPS_DIR / f"uploaded_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
+    try:
+        dest_path.write_bytes(data_bytes)
+        return import_brain(str(dest_path), passphrase=passphrase)
+    except Exception as e:
+        return f"Fehler beim Speichern oder Wiederherstellen des hochgeladenen Backups: {e}"

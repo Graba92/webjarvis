@@ -16,6 +16,7 @@ import { SkillsModal } from "@/components/SkillsModal";
 import { DevConsole } from "@/components/DevConsole";
 import { PersonalityWizardModal } from "@/components/PersonalityWizardModal";
 import { CalendarModal } from "@/components/CalendarModal";
+import { BackupModal } from "@/components/BackupModal";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -46,6 +47,7 @@ export default function Home() {
   const [isDevConsoleOpen, setIsDevConsoleOpen] = useState<boolean>(false);
   const [isPersonalityWizardOpen, setIsPersonalityWizardOpen] = useState<boolean>(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
 
@@ -160,6 +162,7 @@ export default function Home() {
         onOpenDevConsole={() => setIsDevConsoleOpen((prev) => !prev)}
         onOpenPersonalityWizard={() => setIsPersonalityWizardOpen(true)}
         onOpenCalendarModal={() => setIsCalendarOpen(true)}
+        onOpenBackupModal={() => setIsBackupModalOpen(true)}
       />
 
       {/* 5. Live Dev-Console Floating Drawer */}
@@ -178,6 +181,12 @@ export default function Home() {
       <CalendarModal
         isOpen={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
+      />
+
+      {/* 8. Brain Vault: Backup & Restore Modal */}
+      <BackupModal
+        isOpen={isBackupModalOpen}
+        onClose={() => setIsBackupModalOpen(false)}
       />
 
       {/* 8. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}

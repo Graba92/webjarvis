@@ -56,6 +56,7 @@ def _get_connection() -> sqlite3.Connection:
                 id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
                 description TEXT DEFAULT '',
+                category TEXT DEFAULT 'Termin',
                 start_time DATETIME NOT NULL,
                 end_time DATETIME DEFAULT '',
                 is_recurring BOOLEAN DEFAULT 0,
@@ -66,6 +67,15 @@ def _get_connection() -> sqlite3.Connection:
             );
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_calendar_start ON calendar_events(start_time);")
+
+        # Automatische Migration für bestehende Datenbanken (category Spalte)
+        try:
+            cur_cols = conn.execute("PRAGMA table_info(calendar_events);").fetchall()
+            existing_col_names = [col["name"] for col in cur_cols]
+            if "category" not in existing_col_names:
+                conn.execute("ALTER TABLE calendar_events ADD COLUMN category TEXT DEFAULT 'Termin';")
+        except Exception:
+            pass
 
         # 2. Migration aus bestehender legacy 'events'-Tabelle falls vorhanden
         try:
@@ -78,8 +88,8 @@ def _get_connection() -> sqlite3.Connection:
                         rem_min = r['reminder_offset_minutes'] if 'reminder_offset_minutes' in r.keys() else 15
                         strategy = json.dumps({"rules": [{"trigger": f"-{rem_min}m", "frequency": "once"}]})
                         conn.execute("""
-                            INSERT INTO calendar_events (id, title, description, start_time, end_time, is_recurring, recurrence_rule, reminder_strategy, created_at, updated_at)
-                            VALUES (?, ?, ?, ?, ?, 0, 'NONE', ?, ?, ?)
+                            INSERT INTO calendar_events (id, title, description, category, start_time, end_time, is_recurring, recurrence_rule, reminder_strategy, created_at, updated_at)
+                            VALUES (?, ?, ?, 'Termin', ?, ?, 0, 'NONE', ?, ?, ?)
                         """, (
                             str(r['id']),
                             r['title'],
@@ -260,21 +270,23 @@ def add_event_entry(
         }, ensure_ascii=False)
 
     rec_rule = (recurrence_rule or "NONE").upper()
-    if rec_rule not in ("NONE", "DAILY", "WEEKLY", "MONTHLY"):
+    if rec_rule not in ("NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"):
         rec_rule = "NONE"
     is_rec = 1 if rec_rule != "NONE" else 0
 
     new_id = f"cal_{uuid.uuid4().hex[:10]}"
     now_iso = datetime.now().isoformat()
+    cat_val = (category or "Termin").strip()
 
     with get_db() as conn:
         conn.execute("""
-            INSERT INTO calendar_events (id, title, description, start_time, end_time, is_recurring, recurrence_rule, reminder_strategy, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO calendar_events (id, title, description, category, start_time, end_time, is_recurring, recurrence_rule, reminder_strategy, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             new_id,
             title.strip(),
             description.strip(),
+            cat_val,
             start_iso,
             end_iso,
             is_rec,
@@ -313,6 +325,7 @@ def handle_create_calendar_entry(
     reminders: Optional[List[Dict[str, str]]] = None,
     end_time: str = "",
     description: str = "",
+    category: str = "Termin",
     **kwargs
 ) -> str:
     """
@@ -327,7 +340,7 @@ def handle_create_calendar_entry(
 
     rem_list = reminders or [{"trigger": "-15m", "frequency": "once"}]
     rec = (recurrence or "NONE").upper()
-    if rec not in ("NONE", "DAILY", "WEEKLY", "MONTHLY"):
+    if rec not in ("NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"):
         rec = "NONE"
 
     ev = add_event_entry(
@@ -335,6 +348,7 @@ def handle_create_calendar_entry(
         start_time=start_time,
         end_time=end_time,
         description=description,
+        category=category,
         recurrence_rule=rec,
         reminder_strategy={"rules": rem_list}
     )
@@ -344,6 +358,7 @@ def handle_create_calendar_entry(
         f"Termin '{title}' erfolgreich im Kalender angelegt:\n"
         f"• ID: {ev['id']}\n"
         f"• Start: {ev['start_time']}\n"
+        f"• Kategorie: {ev.get('category', 'Termin')}\n"
         f"• Modus: {rec}\n"
         f"• Erinnerung: {rem_summary}\n"
         f"Das HUD-Dashboard wurde via WebSocket in Echtzeit synchronisiert."
@@ -446,7 +461,7 @@ CREATE_CALENDAR_ENTRY_TOOL = {
             },
             "recurrence": {
                 "type": "STRING",
-                "enum": ["NONE", "DAILY", "WEEKLY", "MONTHLY"],
+                "enum": ["NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"],
                 "description": "Wiederholungsintervall"
             },
             "reminders": {

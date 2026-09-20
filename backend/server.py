@@ -582,10 +582,14 @@ class JarvisServer:
                             result = res
 
                         elif action_name == "TRIGGER_BACKUP":
-                            from core.backup_manager import export_brain
-                            res = await asyncio.to_thread(export_brain)
-                            self.log(res, "SYS")
+                            from core.backup_manager import export_brain, list_available_backups
+                            pwd = payload.get("passphrase") if isinstance(payload, dict) else None
+                            lbl = payload.get("label") if isinstance(payload, dict) else None
+                            res = await asyncio.to_thread(export_brain, passphrase=pwd, label=lbl)
+                            msg = res.get("message", "") if isinstance(res, dict) else str(res)
+                            self.log(msg, "SYS")
                             result = res
+                            broadcast({"type": "backups_list_data", "backups": list_available_backups()})
 
                         else:
                             self.log(f"Unbekannte ActionDispatch-Aktion: {action_name}", "WARN")
@@ -663,19 +667,77 @@ class JarvisServer:
                         self.log(f"Fehler beim Speichern der Persona: {e}", "ERR")
 
                 elif msg_type == "export_brain":
-                    from core.backup_manager import export_brain
+                    from core.backup_manager import export_brain, list_available_backups
                     pwd = data.get("passphrase")
-                    res = await asyncio.to_thread(export_brain, passphrase=pwd)
-                    self.log(res, "SYS")
-                    broadcast({"type": "brain_export_result", "result": res})
+                    lbl = data.get("label")
+                    res = await asyncio.to_thread(export_brain, passphrase=pwd, label=lbl)
+                    msg = res.get("message", "") if isinstance(res, dict) else str(res)
+                    self.log(msg, "SYS")
+                    broadcast({"type": "brain_export_result", "data": res, "result": msg})
+                    broadcast({"type": "backups_list_data", "backups": await asyncio.to_thread(list_available_backups)})
+
+                elif msg_type == "list_backups":
+                    from core.backup_manager import list_available_backups
+                    backups = await asyncio.to_thread(list_available_backups)
+                    await websocket.send(json.dumps({
+                        "type": "backups_list_data",
+                        "backups": backups
+                    }))
+
+                elif msg_type == "download_backup":
+                    from core.backup_manager import get_backup_base64
+                    fname = data.get("filename", "")
+                    bdata = await asyncio.to_thread(get_backup_base64, fname)
+                    if bdata:
+                        await websocket.send(json.dumps({
+                            "type": "backup_download_data",
+                            "backup": bdata
+                        }))
+
+                elif msg_type == "delete_backup":
+                    from core.backup_manager import delete_backup, list_available_backups
+                    fname = data.get("filename", "")
+                    ok = await asyncio.to_thread(delete_backup, fname)
+                    backups = await asyncio.to_thread(list_available_backups)
+                    broadcast({"type": "backups_list_data", "backups": backups})
 
                 elif msg_type == "import_brain":
-                    from core.backup_manager import import_brain
+                    from core.backup_manager import import_brain, list_available_backups
                     path_val = data.get("path")
                     pwd = data.get("passphrase")
                     res = await asyncio.to_thread(import_brain, path_val, passphrase=pwd)
                     self.log(res, "SYS")
                     broadcast({"type": "brain_import_result", "result": res})
+                    # Nahtloses Live-Update aller Clients mit den wiederhergestellten Daten
+                    try:
+                        broadcast({"type": "calendar_events_data", "events": get_events_list()})
+                        broadcast({"type": "all_memory_entries", "entries": all_entries_for_ui()})
+                        broadcast({"type": "personality_data", "personality": get_personality_dict()})
+                    except Exception as sync_err:
+                        self.log(f"Live-Sync nach Restore: {sync_err}", "WARN")
+
+                elif msg_type == "upload_and_import_brain":
+                    from core.backup_manager import save_and_import_brain_bytes, list_available_backups
+                    fname = data.get("filename", "uploaded_backup.zip")
+                    b64_data = data.get("data_base64", "")
+                    pwd = data.get("passphrase")
+                    try:
+                        raw_bytes = base64.b64decode(b64_data)
+                        res = await asyncio.to_thread(save_and_import_brain_bytes, raw_bytes, fname, passphrase=pwd)
+                        self.log(res, "SYS")
+                        broadcast({"type": "brain_import_result", "result": res})
+                        broadcast({"type": "backups_list_data", "backups": await asyncio.to_thread(list_available_backups)})
+                        # Nahtloses Live-Update aller Clients mit den wiederhergestellten Daten
+                        try:
+                            broadcast({"type": "calendar_events_data", "events": get_events_list()})
+                            broadcast({"type": "all_memory_entries", "entries": all_entries_for_ui()})
+                            broadcast({"type": "personality_data", "personality": get_personality_dict()})
+                        except Exception as sync_err:
+                            self.log(f"Live-Sync nach Restore: {sync_err}", "WARN")
+                    except Exception as up_err:
+                        err_msg = f"Fehler beim Verarbeiten des hochgeladenen Backups: {up_err}"
+                        self.log(err_msg, "ERR")
+                        broadcast({"type": "brain_import_result", "result": err_msg})
 
                 elif msg_type == "get_calendar_events":
                     await websocket.send(json.dumps({

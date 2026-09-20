@@ -120,6 +120,8 @@ J.A.R.V.I.S. wird transparent über drei zentrale Markdown-Dokumente in `backend
   Jede Datenbankänderung (Hinzufügen, Löschen) erzeugt einen sofortigen WebSocket-Broadcast, wodurch die Kalenderliste im HUD ohne Polling in Millisekunden aktualisiert wird.
 - **HUD-Kalender-Modal & Tastenkürzel (`Alt+C`):**
   Ein elegantes Cyber-Glass-Dashboard ermöglicht manuelle Termineingaben mit Schnellauswahl ("In 1h", "Morgen 09:00"), Filtern und Ein-Klick-Löschung.
+- **Interaktive Kalender-Matrix & Umschalt-Dock:**
+  Über einen hervorgehobenen Umschalter rechts am Fenster oder im Header wechselt das Interface nahtlos in die vollwertige Kalender-Matrix mit überlappungsfreien Zeithorizonten (1 Woche, 2 Wochen, 1 Monat, 3 Monate, 6 Monate, 9 Monate, 12 Monate/Ganzjahr), automatischer Projektion von Wiederholungen (inkl. `YEARLY` für Geburtstage) und farblicher Differenzierung (Gold/Amber für Dauertermine & Geburtstage vs. Cyan für Einmaltermine) sowie integriertem Tages-Inspektor.
 
 ---
 
@@ -181,8 +183,8 @@ Alle autonomen Werkzeuge liegen unter `backend/actions/` und sind in der Gemini 
 
 - **Live Dev-Console (`DevConsole.tsx`):**
   Einklappbares HUD-Terminal, das ungefilterte System-Logs, Fehler, Werkzeugaufrufe und Tracebacks live über WebSockets (`dev_log`) streamt.
-- **1-Click Brain Backup (`backup_manager.py` & `BottomDock.tsx`):**
-  Packt Gedächtnis (`long_term.json`, `calendar.db`, LanceDB-Vektoren, `SOUL.md` und `mcp_servers.json`) in ein verschlüsseltes oder unverschlüsseltes `.zip`-Archiv.
+- **Brain Vault Backup- & Restore-Manager (`BackupModal.tsx`, `backup_manager.py` & `BottomDock.tsx`):**
+  Vollwertiges Backup- und Restore-Center: Erstellt transaktionssichere Komplettsicherungen mit individuellen Beschriftungen (Labels), generiert Sofort-Downloads als `.zip` im Browser, ermöglicht Drag-and-Drop Wiederherstellung alter Archive und führt einen nahtlosen Live-Reload aller Gedächtnis- und Kalenderdaten ohne Systemneustart aus.
 - **Personality Wizard (`PersonalityWizardModal.tsx`):**
   Interaktiver Assistent im Frontend zur Konfiguration von Rolle, Tonfall, Humor und ethischen Grenzen mit Direktspeicherung in `SOUL.md`.
 
