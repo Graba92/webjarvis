@@ -190,8 +190,8 @@ Alle autonomen Werkzeuge liegen unter `backend/actions/` und sind in der Gemini 
 
 ## 🌐 3D-WebGL-HUD & Theme-Engine
 
-- **Three.js Wissensgraph (`ApexWorld.tsx`):**
-  Interaktiver 3D-Graph mit mehrfarbigen Datenfluss-Partikeln (`0x00d4ff`, `0x00ff88`, `0xa855f7`), reaktivem Puls und geschwungenen Bézier-Kanten inklusive sauberem `.dispose()`-Speicher-Cleanup beim Unmount.
+- **Holografischer Three.js Wissensgraph (`ApexWorld.tsx`):**
+  Cyberpunk-3D-WebGL-Visualizer mit volumetrischen Fresnel-Glow-Shadern (`pow(1.0 - dotNV, 2.3)`), strahlendem inneren Energiekern (Nucleus), rotierenden holografischen Gyroskop-Ringen (Torus-Wireframe) für Hubs und 3D-Billboard-Text-Sprites mit HUD-Eck-Brackets. Echtzeit-Datenfluss-Partikel (Flux-Pulse) strömen kontinuierlich über kontrastreiche 3D-Bézier-Bögen, um die interne Arbeitsweise ("wie es arbeitet") transparent zu visualisieren – dynamisch moduliert durch KI-Aktivitätsstatus (`THINKING`, `SPEAKING`) und Mikrofon-Pegel. Räumlich verankert durch rotierende konzentrische Radar-Ringe und Boden-Gitter mit vollständigem `.dispose()`-Speicher-Management.
 - **Zentrale Farbpalette (`frontend/theme.json`):**
   Einheitliche Design-Tokens für Arch- und CachyOS-Ricing.
 

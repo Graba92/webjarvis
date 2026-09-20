@@ -190,8 +190,8 @@ All autonomous skills are located in `backend/actions/` and registered with the 
 
 ## 🌐 3D WebGL Holographic HUD & Theme Engine
 
-- **Three.js Knowledge Constellation (`ApexWorld.tsx`):**
-  Interactive 3D graph with multi-colored data flow particles (`0x00d4ff`, `0x00ff88`, `0xa855f7`), reactive audio pulse scale, and Bezier link routing with full `.dispose()` memory cleanup on unmount.
+- **Three.js Holographic Knowledge Constellation (`ApexWorld.tsx`):**
+  High-end cyberpunk 3D WebGL knowledge graph featuring volumetric Fresnel glow shaders (`pow(1.0 - dotNV, 2.3)`), radiant inner energy nuclei, spinning holographic gyroscope rings (Torus wireframe) on hub nodes, and 3D billboard text-sprites with HUD corner brackets. Real-time animated data packets (flux pulses) continuously stream across high-visibility 3D Bézier curves to visualize live system activity ("wie es arbeitet"), dynamically accelerating and flaring with AI thought/speech state (`THINKING`, `SPEAKING`) and audio levels. Anchored by concentric holographic radar rings and ground grid with complete `.dispose()` memory management.
 - **Centralized Theme Config (`frontend/theme.json`):**
   Defines standardized color palettes and glowing borders tailored for Arch Linux and CachyOS desktop ricing.
 
