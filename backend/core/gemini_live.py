@@ -90,6 +90,10 @@ class GeminiLiveController:
         ]
 
         tools_declarations = self.registry.get_tool_declarations()
+        valid_tools = [
+            t for t in tools_declarations
+            if isinstance(t, dict) and t.get("name") and isinstance(t.get("parameters"), dict)
+        ]
 
         resumption_cfg = (
             types.SessionResumptionConfig(handle=resumption_handle)
@@ -107,7 +111,7 @@ class GeminiLiveController:
             output_audio_transcription={},
             input_audio_transcription={},
             system_instruction="\n".join(filter(None, prompt_parts)),
-            tools=[{"function_declarations": tools_declarations}],
+            tools=[{"function_declarations": valid_tools}] if valid_tools else [],
             session_resumption=resumption_cfg,
             context_window_compression=types.ContextWindowCompressionConfig(
                 sliding_window=types.SlidingWindow()

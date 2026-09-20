@@ -14,9 +14,103 @@ from pathlib import Path
 from typing import Callable, Optional, Any
 from core.json_repair import repair_and_parse_parameters
 
-_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]{0,63}$")
+_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_-]{0,63}$")
 _DEFAULT_PARAMS = {"type": "OBJECT", "properties": {}}
 _CTX_KEYS = ("player", "speak", "response", "session_memory", "ws_broadcast", "registry")
+
+def sanitize_schema_for_gemini(schema: Any, is_root: bool = False) -> dict:
+    """
+    Bereinigt und normalisiert ein Schema für die strikte Gemini Live API & Google GenAI SDK Typvalidierung.
+    Entfernt inkompatible Schema-Felder ($schema, $id, definitions, $defs, additionalProperties etc.)
+    und wandelt Typen in strikt valide OpenAPI/Gemini-Typen um (OBJECT, STRING, INTEGER, NUMBER, BOOLEAN, ARRAY).
+    """
+    if not isinstance(schema, dict):
+        return {"type": "OBJECT", "properties": {}} if is_root else {"type": "STRING"}
+
+    # Auflösen von anyOf / oneOf (häufig bei MCP Tools für optionale / typisierte Parameter)
+    variants = schema.get("anyOf") or schema.get("oneOf")
+    has_null = False
+    base_schema = dict(schema)
+
+    if isinstance(variants, list) and variants:
+        non_null_variants = []
+        for v in variants:
+            if isinstance(v, dict):
+                v_type = str(v.get("type", "")).lower()
+                if v_type == "null":
+                    has_null = True
+                else:
+                    non_null_variants.append(v)
+        if non_null_variants:
+            primary = dict(non_null_variants[0])
+            for k, val in schema.items():
+                if k not in ("anyOf", "oneOf") and k not in primary:
+                    primary[k] = val
+            base_schema = primary
+
+    raw_type = base_schema.get("type")
+    nullable = bool(base_schema.get("nullable", False) or has_null)
+
+    if isinstance(raw_type, list):
+        types_lower = [str(t).lower() for t in raw_type]
+        if "null" in types_lower:
+            nullable = True
+        non_null = [str(t).upper() for t in raw_type if str(t).lower() != "null"]
+        raw_type = non_null[0] if non_null else "STRING"
+
+    if is_root:
+        type_str = "OBJECT"
+    elif raw_type is not None:
+        type_str = str(raw_type).upper()
+    elif "properties" in base_schema:
+        type_str = "OBJECT"
+    elif "items" in base_schema:
+        type_str = "ARRAY"
+    elif "enum" in base_schema:
+        type_str = "STRING"
+    else:
+        type_str = "STRING"
+
+    if type_str not in ("STRING", "NUMBER", "INTEGER", "BOOLEAN", "ARRAY", "OBJECT"):
+        type_str = "STRING"
+
+    clean: dict[str, Any] = {"type": type_str}
+
+    if nullable:
+        clean["nullable"] = True
+
+    desc = base_schema.get("description")
+    if isinstance(desc, str) and desc.strip():
+        clean["description"] = desc.strip()
+
+    if type_str == "OBJECT":
+        clean_props = {}
+        props = base_schema.get("properties")
+        if isinstance(props, dict):
+            for k, v in props.items():
+                if isinstance(k, str) and k.strip():
+                    clean_props[k.strip()] = sanitize_schema_for_gemini(v, is_root=False)
+        clean["properties"] = clean_props
+
+        req = base_schema.get("required")
+        if isinstance(req, list):
+            clean_req = [r for r in req if isinstance(r, str) and r in clean_props]
+            if clean_req:
+                clean["required"] = clean_req
+
+    elif type_str == "ARRAY":
+        items = base_schema.get("items")
+        if isinstance(items, dict):
+            clean["items"] = sanitize_schema_for_gemini(items, is_root=False)
+        else:
+            clean["items"] = {"type": "STRING"}
+
+    if "enum" in base_schema and isinstance(base_schema["enum"], list):
+        clean_enum = [str(e) for e in base_schema["enum"] if e is not None]
+        if clean_enum:
+            clean["enum"] = clean_enum
+
+    return clean
 
 @dataclass
 class ActionRecord:
@@ -35,10 +129,17 @@ class ActionRegistry:
         self._logger = logger
 
     def get_tool_declarations(self) -> list[dict]:
-        return [
-            {"name": rec.name, "description": rec.description, "parameters": rec.parameters}
-            for rec in self._actions.values()
-        ]
+        declarations = []
+        for rec in self._actions.values():
+            if not rec.valid or not rec.name:
+                continue
+            clean_params = sanitize_schema_for_gemini(rec.parameters, is_root=True)
+            declarations.append({
+                "name": rec.name,
+                "description": rec.description or f"Tool {rec.name}",
+                "parameters": clean_params
+            })
+        return declarations
 
     def has(self, name: str) -> bool:
         return name in self._actions
@@ -112,11 +213,18 @@ def _validate_single(tool: dict, filename: str) -> ActionRecord:
         return ActionRecord(name=Path(filename).stem, file=filename, error="TOOL ist kein Dictionary.")
     name = tool.get("name")
     if not isinstance(name, str) or not _NAME_RE.match(name):
-        return ActionRecord(name=str(name or Path(filename).stem), file=filename, error="Ungültiger Identifier.")
+        return ActionRecord(name=str(name or Path(filename).stem), file=filename, error=f"Ungültiger Identifier '{name}'.")
     description = tool.get("description", "").strip()
     if not description:
         return ActionRecord(name=name, file=filename, error="Fehlende Beschreibung.")
-    parameters = tool.get("parameters", _DEFAULT_PARAMS)
+    raw_params = tool.get("parameters")
+    if raw_params is None:
+        raw_params = _DEFAULT_PARAMS
+    try:
+        parameters = sanitize_schema_for_gemini(raw_params, is_root=True)
+    except Exception as e:
+        return ActionRecord(name=name, file=filename, error=f"Schema-Validierung fehlgeschlagen: {e}")
+
     handler = tool.get("handler")
     if not callable(handler):
         return ActionRecord(name=name, file=filename, error="Handler ist nicht callable.")

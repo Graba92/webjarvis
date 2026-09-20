@@ -197,12 +197,13 @@ Alle autonomen Werkzeuge liegen unter `backend/actions/` und sind in der Gemini 
 
 ---
 
-## 🔌 MCP-Ökosystem (Model Context Protocol)
+## 🔌 MCP-Ökosystem & Robuste Schema-Sanitization
 
 Unterstützt standardisierte MCP JSON-RPC 2.0 Server (`backend/config/mcp_servers.json`):
 - **`brave_search`:** Datenschutzfreundliche Websuche als Ersatz für Legacy-Scraper.
 - **`fetch`:** Schneller Webseitenabruf und automatische Markdown-Konvertierung.
 - **MCP GUI:** Ein- und Ausschalten von MCP-Werkzeugen direkt im HUD über die Skills-Matrix.
+- **Fehlerfreie Gemini Live Schema-Bereinigung (`sanitize_schema_for_gemini`):** Normalisiert und bereinigt OpenAPI-Schemas nativer Actions und dynamischer MCP-Server vollautomatisch. Löst `anyOf`/`oneOf`-Konstrukte auf, entfernt inkompatible JSON-Schema-Draft-Felder (`$schema`, `$id`, `additionalProperties`, `$defs`), garantiert standardkonforme OpenAPI-Typen (`OBJECT`, `STRING`, `INTEGER` etc.) und schützt den `LiveConnectConfig`-Handshake zuverlässig vor Pydantic-Validierungsabstürzen.
 
 ---
 

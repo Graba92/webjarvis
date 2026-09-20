@@ -197,12 +197,13 @@ All autonomous skills are located in `backend/actions/` and registered with the 
 
 ---
 
-## 🔌 MCP Ecosystem (Model Context Protocol)
+## 🔌 MCP Ecosystem & Resilient Schema Sanitization
 
 J.A.R.V.I.S. implements standard Model Context Protocol (MCP) JSON-RPC 2.0 servers configured in `backend/config/mcp_servers.json`:
 - **`brave_search`:** Privacy-focused web search replacing legacy scrapers.
 - **`fetch`:** Efficient web content retrieval and markdown conversion.
 - **Dynamic MCP GUI:** Toggle and configure new MCP servers directly in the HUD via the Skills Matrix.
+- **Zero-Failure Gemini Live Schema Sanitization (`sanitize_schema_for_gemini`):** Fully normalizes and sanitizes OpenAPI schemas from both native actions and dynamic MCP servers. Automatically resolves `anyOf`/`oneOf` constructs, strips incompatible JSON Schema draft fields (`$schema`, `$id`, `additionalProperties`, `$defs`), guarantees uppercase OpenAPI types (`OBJECT`, `STRING`, `INTEGER`, etc.), and guards `LiveConnectConfig` handshake against Pydantic validation crashes.
 
 ---
 
