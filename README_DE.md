@@ -184,7 +184,7 @@ Alle autonomen Werkzeuge liegen unter `backend/actions/` und sind in der Gemini 
 - **Live Dev-Console (`DevConsole.tsx`):**
   Einklappbares HUD-Terminal, das ungefilterte System-Logs, Fehler, Werkzeugaufrufe und Tracebacks live über WebSockets (`dev_log`) streamt.
 - **Brain Vault Backup- & Restore-Manager (`BackupModal.tsx`, `backup_manager.py` & `BottomDock.tsx`):**
-  Vollwertiges Backup- und Restore-Center: Erstellt transaktionssichere Komplettsicherungen mit individuellen Beschriftungen (Labels), generiert Sofort-Downloads als `.zip` im Browser, ermöglicht Drag-and-Drop Wiederherstellung alter Archive und führt einen nahtlosen Live-Reload aller Gedächtnis- und Kalenderdaten ohne Systemneustart aus.
+  Vollwertiges Backup- und Restore-Center: Erstellt transaktionssichere Komplettsicherungen mit individuellen Beschriftungen (Labels), generiert Sofort-Downloads als `.zip` im Browser, sichert alle Langzeitfakten, SQLite-Kalender, Vektordatenbank und den 3D-Knotengraphen (`knowledge_base/graph_nodes.json`), ermöglicht Drag-and-Drop Wiederherstellung alter Archive und führt einen nahtlosen Live-Reload aller Gedächtnis-, Graph- und Kalenderdaten ohne Systemneustart aus.
 - **Personality Wizard (`PersonalityWizardModal.tsx`):**
   Interaktiver Assistent im Frontend zur Konfiguration von Rolle, Tonfall, Humor und ethischen Grenzen mit Direktspeicherung in `SOUL.md`.
 

@@ -4,6 +4,7 @@ Exportiert und importiert das vollständige Systemgedächtnis:
 - long_term.json (Langzeitfakten)
 - calendar.db (Termine & Erinnerungen)
 - lancedb_data/ (Vektordatenbank)
+- knowledge_base/graph_nodes.json (Interaktiver 3D-Knotengraph & Relationen)
 - mcp_servers.json (MCP-Schnittstellenkonfiguration)
 - SOUL.md, MEMORY.md, HEARTBEAT.md (Agenten-Kernidentität)
 Unterstützt komprimierte ZIP-Archive mit optionaler Passphrase / Verschlüsselung.
@@ -23,6 +24,7 @@ from typing import Optional, Dict, Any
 BACKEND_DIR = Path(__file__).parent.parent
 MEMORY_DIR = BACKEND_DIR / "memory"
 CONFIG_DIR = BACKEND_DIR / "config"
+KNOWLEDGE_DIR = BACKEND_DIR / "knowledge_base"
 BACKUPS_DIR = BACKEND_DIR / "backups"
 
 def export_consistent_sqlite(source_db_path: Path, temp_dir: Path) -> Path:
@@ -41,7 +43,7 @@ def export_consistent_sqlite(source_db_path: Path, temp_dir: Path) -> Path:
     return target_path
 
 def get_backup_targets() -> Dict[str, Path]:
-    """Sammelt alle schützenswerten Gedächtnis- und Konfigurationspfade."""
+    """Sammelt alle schützenswerten Gedächtnis-, Wissensgraph- und Konfigurationspfade."""
     targets = {}
     if (MEMORY_DIR / "long_term.json").exists():
         targets["long_term.json"] = MEMORY_DIR / "long_term.json"
@@ -49,6 +51,10 @@ def get_backup_targets() -> Dict[str, Path]:
         targets["calendar.db"] = MEMORY_DIR / "calendar.db"
     if (MEMORY_DIR / "lancedb_data").exists():
         targets["lancedb_data"] = MEMORY_DIR / "lancedb_data"
+    if (KNOWLEDGE_DIR / "graph_nodes.json").exists():
+        targets["knowledge_base/graph_nodes.json"] = KNOWLEDGE_DIR / "graph_nodes.json"
+    elif KNOWLEDGE_DIR.exists():
+        targets["knowledge_base"] = KNOWLEDGE_DIR
     if (CONFIG_DIR / "mcp_servers.json").exists():
         targets["mcp_servers.json"] = CONFIG_DIR / "mcp_servers.json"
     if (BACKEND_DIR / "SOUL.md").exists():
@@ -223,6 +229,12 @@ def import_brain(archive_path: str, passphrase: Optional[str] = None) -> str:
                 elif name.startswith("lancedb_data/"):
                     MEMORY_DIR.mkdir(parents=True, exist_ok=True)
                     zf.extract(item, path=MEMORY_DIR, pwd=pwd)
+                elif name in ("graph_nodes.json", "knowledge_base/graph_nodes.json") or name.startswith("knowledge_base/"):
+                    KNOWLEDGE_DIR.mkdir(parents=True, exist_ok=True)
+                    if name == "graph_nodes.json":
+                        zf.extract(item, path=KNOWLEDGE_DIR, pwd=pwd)
+                    else:
+                        zf.extract(item, path=BACKEND_DIR, pwd=pwd)
 
         return f"Gedächtnis-Wiederherstellung aus '{archive.name}' erfolgreich abgeschlossen. Module neu synchronisiert."
     except Exception as e:

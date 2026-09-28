@@ -184,7 +184,7 @@ All autonomous skills are located in `backend/actions/` and registered with the 
 - **Live Dev-Console (`DevConsole.tsx`):**
   A collapsible floating terminal streaming unfiltered backend events, exceptions, tool invocations, and tracebacks directly over WebSockets (`dev_log`).
 - **Brain Vault Backup & Restore Modal (`BackupModal.tsx`, `backup_manager.py` & `BottomDock.tsx`):**
-  Full-featured backup vault: creates transactionally consistent backups with custom labels, triggers instant browser `.zip` downloads, allows drag-and-drop restore of older archives, and hot-reloads memory, calendar, and personality live without restarting.
+  Full-featured backup vault: creates transactionally consistent backups with custom labels, triggers instant browser `.zip` downloads, captures long-term facts, SQLite calendar, vector DB, and the 3D knowledge graph (`knowledge_base/graph_nodes.json`), allows drag-and-drop restore of older archives, and hot-reloads memory, graph, calendar, and personality live without restarting.
 - **Personality Wizard Modal (`PersonalityWizardModal.tsx`):**
   Interactive in-HUD wizard for configuring persona tone, humor, expertise domain, and ethical guardrails with 1-click live saving to `SOUL.md`.
 

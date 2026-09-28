@@ -727,6 +727,7 @@ class JarvisServer:
                         broadcast({"type": "calendar_events_data", "events": get_events_list()})
                         broadcast({"type": "all_memory_entries", "entries": all_entries_for_ui()})
                         broadcast({"type": "personality_data", "personality": get_personality_dict()})
+                        broadcast({"type": "graph_sync", "data": get_full_graph_data()})
                     except Exception as sync_err:
                         self.log(f"Live-Sync nach Restore: {sync_err}", "WARN")
 
@@ -746,6 +747,7 @@ class JarvisServer:
                             broadcast({"type": "calendar_events_data", "events": get_events_list()})
                             broadcast({"type": "all_memory_entries", "entries": all_entries_for_ui()})
                             broadcast({"type": "personality_data", "personality": get_personality_dict()})
+                            broadcast({"type": "graph_sync", "data": get_full_graph_data()})
                         except Exception as sync_err:
                             self.log(f"Live-Sync nach Restore: {sync_err}", "WARN")
                     except Exception as up_err:

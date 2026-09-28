@@ -237,11 +237,11 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                   Brain Vault — 1-Click Backup & Restore
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#22c55e]/20 text-[#22c55e] font-mono border border-[#22c55e]/30">
-                  SQLite VACUUM + LanceDB
+                  SQLite VACUUM + LanceDB + 3D-Graph
                 </span>
               </div>
               <p className="text-xs text-gray-400">
-                Sichere oder stelle Gedächtnis, Kalender, SOUL.md & Vektordatenbank nahtlos wieder her.
+                Sichere oder stelle Gedächtnis, 3D-Knotengraph, Kalender, SOUL.md & Vektordatenbank nahtlos wieder her.
               </p>
             </div>
           </div>
@@ -318,7 +318,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({ isOpen, onClose }) => 
                   <ShieldCheck className="w-4 h-4 text-[#22c55e]" />
                   Konsistente Komplettsicherung des KI-Gedächtnisses
                 </div>
-                Das Archiv sichert alle Langzeitfakten (<code className="text-gray-400">long_term.json</code>), den SQLite-Kalender (<code className="text-gray-400">calendar.db</code> via VACUUM INTO), Vektordatenbank (<code className="text-gray-400">lancedb_data/</code>), MCP-Tools und die Identitätsdateien (<code className="text-gray-400">SOUL.md</code>).
+                Das Archiv sichert alle Langzeitfakten (<code className="text-gray-400">long_term.json</code>), den SQLite-Kalender (<code className="text-gray-400">calendar.db</code> via VACUUM INTO), den interaktiven 3D-Knotengraphen (<code className="text-gray-400">graph_nodes.json</code>), die Vektordatenbank (<code className="text-gray-400">lancedb_data/</code>), MCP-Tools und die Identitätsdateien (<code className="text-gray-400">SOUL.md</code>).
               </div>
 
               <div>

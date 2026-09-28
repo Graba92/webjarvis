@@ -14,7 +14,10 @@ def backup_agent(action: str = "export", path: str = "", passphrase: str = "", *
     act = (action or "export").strip().lower()
 
     if act in ("export", "backup", "save"):
-        return export_brain(output_path=path or None, passphrase=passphrase or None)
+        res = export_brain(output_path=path or None, passphrase=passphrase or None)
+        if isinstance(res, dict):
+            return res.get("message", str(res))
+        return str(res)
     elif act in ("import", "restore", "load"):
         if not path:
             return "Fehler: Für den Import muss ein Pfad zum ZIP-Archiv angegeben werden."
@@ -25,7 +28,7 @@ TOOL = {
     "name": "backup_agent",
     "description": (
         "Erstellt ein 1-Click Backup des gesamten KI-Gedächtnisses (Langzeit-Fakten, Termine, "
-        "Vektor-Datenbank, MCP-Server, SOUL.md) als ZIP-Archiv oder stellt ein vorhandenes Backup wieder her."
+        "3D-Knotengraph, Vektor-Datenbank, MCP-Server, SOUL.md) als ZIP-Archiv oder stellt ein vorhandenes Backup wieder her."
     ),
     "parameters": {
         "type": "OBJECT",
