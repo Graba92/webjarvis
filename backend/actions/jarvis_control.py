@@ -54,7 +54,8 @@ def _check_and_apply_git_update() -> str:
             short_rev = head_rev[:7]
             return f"J.A.R.V.I.S. ist bereits auf dem neuesten Stand von GitHub (Commit {short_rev}). Keine Updates ausstehend."
 
-        # 3. Pull Updates
+        # 3. Stash & Pull Updates
+        subprocess.run(["git", "stash", "push", "-m", "jarvis_voice_autostash"], cwd=str(REPO_DIR), capture_output=True, text=True)
         pull_res = subprocess.run(
             ["git", "pull", "--ff-only", "origin", "main"],
             cwd=str(REPO_DIR),
@@ -63,7 +64,19 @@ def _check_and_apply_git_update() -> str:
             timeout=30
         )
         if pull_res.returncode != 0:
-            return f"Update heruntergeladen, aber Zusammenführung fehlgeschlagen:\n{pull_res.stderr.strip() or pull_res.stdout.strip()}"
+            reset_res = subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=str(REPO_DIR), capture_output=True, text=True)
+            if reset_res.returncode != 0:
+                return f"Update heruntergeladen, aber Zusammenführung fehlgeschlagen:\n{reset_res.stderr.strip() or reset_res.stdout.strip()}"
+
+        stash_list = subprocess.run(["git", "stash", "list"], cwd=str(REPO_DIR), capture_output=True, text=True).stdout
+        if "jarvis_voice_autostash" in stash_list:
+            subprocess.run(["git", "stash", "pop"], cwd=str(REPO_DIR), capture_output=True, text=True)
+
+        for sh_file in REPO_DIR.glob("*.sh"):
+            try:
+                sh_file.chmod(sh_file.stat().st_mode | 0o755)
+            except Exception:
+                pass
 
         new_rev = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=str(REPO_DIR), capture_output=True, text=True, timeout=5).stdout.strip()
         log_res = subprocess.run(["git", "log", "-1", "--pretty=%B"], cwd=str(REPO_DIR), capture_output=True, text=True, timeout=5).stdout.strip()

@@ -106,23 +106,66 @@ class PerformUpdateThread(QThread):
     def run(self):
         try:
             self.log_line.emit("[*] Starte Selbst-Aktualisierung von GitHub...")
-            self.log_line.emit(f"[*] Ziel: {GITHUB_REPO_URL}")
+            self.log_line.emit(f"[*] Repository: {GITHUB_REPO_URL}")
 
-            # 1. Git pull
-            p_pull = subprocess.Popen(
-                ["git", "-C", str(APP_DIR), "pull", "--rebase", "origin", "main"],
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            # 1. Lokale Arbeitskopie absichern (stash) gegen modifizierte Caches oder Dateien
+            self.log_line.emit("[*] Sichere lokale Arbeitskopie (git stash)...")
+            subprocess.run(
+                ["git", "-C", str(APP_DIR), "stash", "push", "-m", "jarvis_manager_autostash"],
+                capture_output=True, text=True
             )
-            for line in iter(p_pull.stdout.readline, ""):
-                if line:
-                    self.log_line.emit(line.strip())
-            p_pull.wait()
 
+            # 2. Neueste Commits von GitHub abrufen
+            self.log_line.emit("[*] Hole neueste Commits via git fetch...")
+            p_fetch = subprocess.run(
+                ["git", "-C", str(APP_DIR), "fetch", "origin", "main"],
+                capture_output=True, text=True
+            )
+            if p_fetch.returncode != 0:
+                err_msg = p_fetch.stderr.strip() or p_fetch.stdout.strip()
+                self.log_line.emit(f"[✗] GitHub Fetch fehlgeschlagen:\n{err_msg}")
+                self.update_finished.emit(False, f"GitHub nicht erreichbar:\n{err_msg}")
+                return
+
+            # 3. Pull / Fast-Forward Merge
+            self.log_line.emit("[*] Aktualisiere lokale Code-Basis...")
+            p_pull = subprocess.run(
+                ["git", "-C", str(APP_DIR), "pull", "--ff-only", "origin", "main"],
+                capture_output=True, text=True
+            )
             if p_pull.returncode != 0:
-                self.log_line.emit("[!] Rebase fehlgeschlagen. Versuche git pull Standard...")
-                subprocess.run(["git", "-C", str(APP_DIR), "pull", "origin", "main"], check=False)
+                self.log_line.emit("[!] Fast-Forward nicht möglich. Führe saubere Aktualisierung durch...")
+                p_reset = subprocess.run(
+                    ["git", "-C", str(APP_DIR), "reset", "--hard", "origin/main"],
+                    capture_output=True, text=True
+                )
+                self.log_line.emit(p_reset.stdout.strip() or p_reset.stderr.strip())
+            else:
+                self.log_line.emit(p_pull.stdout.strip())
 
-            # 2. Setup Update ausführen
+            # 4. Gestashte User-Dateien wiederherstellen
+            stash_list = subprocess.run(
+                ["git", "-C", str(APP_DIR), "stash", "list"],
+                capture_output=True, text=True
+            ).stdout
+            if "jarvis_manager_autostash" in stash_list:
+                self.log_line.emit("[*] Stelle ungetrackte Anpassungen wieder her...")
+                subprocess.run(
+                    ["git", "-C", str(APP_DIR), "stash", "pop"],
+                    capture_output=True, text=True
+                )
+
+            # 5. Ausführungsrechte für Shell-Skripte sicherstellen
+            for sh_file in APP_DIR.glob("*.sh"):
+                try:
+                    sh_file.chmod(sh_file.stat().st_mode | 0o755)
+                except Exception:
+                    pass
+
+            new_sha = get_local_commit()
+            self.log_line.emit(f"[✓] Code erfolgreich aktualisiert auf Commit: {new_sha[:7]}")
+
+            # 6. Setup Update ausführen
             self.log_line.emit("\n[*] Führe Paket- & Komponenten-Update aus (setup.sh -u)...")
             setup_script = APP_DIR / "setup.sh"
             if setup_script.exists():
@@ -135,7 +178,7 @@ class PerformUpdateThread(QThread):
                         self.log_line.emit(line.strip())
                 p_setup.wait()
 
-            self.update_finished.emit(True, "Update erfolgreich abgeschlossen!")
+            self.update_finished.emit(True, f"Update auf Commit {new_sha[:7]} erfolgreich abgeschlossen!")
         except Exception as e:
             self.log_line.emit(f"\n[✗] Fehler während der Aktualisierung: {e}")
             self.update_finished.emit(False, str(e))
