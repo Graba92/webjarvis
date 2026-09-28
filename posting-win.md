@@ -4,10 +4,11 @@ Das **J.A.R.V.I.S. AI OS** bringt das Sci-Fi-Feeling auf deinen Linux-Desktop! M
 
 ### 🎮 Features auf einen Blick
 - **⚡ Voice-First mit Gemini Live:** Schnelle Sprachein- und -ausgabe ohne spürbare Verzögerung.
+- **🎙️ Dedizierte Voice Commands:** 'jarvis neustart' (sicherer Tool-Neustart ohne OS-Reboot), 'jarvis stop', 'jarvis mute' (Paranoia-Killswitch) und 'jarvis update' (GitHub Self-Update).
 - **🪐 3D WebGL Hologramm-HUD:** Visuell beeindruckender Three.js Force-Graph mit futuristischen Cyber-Effekten.
-- **🛡️ Sandbox-Sicherheit:** Isolierte Befehlsausführung über Bubblewrap (bwrap) schützt dein System.
+- **🛡️ Sandbox-Sicherheit:** Isolierte Befehlsausführung über Bubblewrap (bwrap) schützt dein System; konfigurierbarer OS-Vollzugriff mit Unicode-NFC-Normalisierung.
 - **🖥️ Desktop Manager GUI:** Schnelle Kontrolle über ein natives PyQt6-Fenster mit Update- und Status-Prüfung.
-- **📅 Kalender & Vault-Backups:** Behalte alle Termine und Wissensstände im Blick.
+- **📅 Kalender & Vault-Backups:** 1-Click Brain Vault sichert Termine, Langzeitfakten, Vektordatenbank und 3D-Knotengraph (graph_nodes.json) mit sofortigem Live-HUD-Sync.
 
 ### Installation
 ```bash

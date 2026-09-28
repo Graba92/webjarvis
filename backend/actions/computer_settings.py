@@ -94,6 +94,12 @@ def computer_settings(parameters: dict, **kwargs) -> str:
             return f"Fehler bei WLAN-Abfrage via nmcli: {e}"
 
     elif action in ("reboot", "neustart", "restart", "rebooten", "sys_reboot"):
+        # Sicherheitsprüfung: Wenn der Nutzer das Tool/Jarvis meint, nicht das Host-OS rebooten!
+        target_entity = str(parameters.get("target", "")).lower()
+        if "jarvis" in target_entity or "tool" in target_entity or "app" in target_entity:
+            from actions.jarvis_control import jarvis_control
+            return jarvis_control(action="restart_tool", **kwargs)
+
         def _do_reboot():
             subprocess.run(["systemctl", "reboot"], timeout=5)
             return "System fährt herunter zum Neustart."
@@ -131,8 +137,9 @@ TOOL = {
     "description": (
         "Steuert CachyOS/Arch Linux Systemeinstellungen: Audio (Lautstärke, Mute über PipeWire/pactl), "
         "Display-Helligkeit (brightnessctl), WLAN-Netzwerke (nmcli) sowie irreversible System-Power-Befehle "
-        "(Shutdown / Herunterfahren / Ausschalten, Reboot / Neustart, Sperren). "
-        "WICHTIG: Rufe diese Funktion IMMER sofort auf, wenn der Benutzer den PC/das System herunterfahren, ausschalten oder neu starten möchte!"
+        "(Shutdown / Herunterfahren / Ausschalten, Reboot / PC-Neustart, Sperren). "
+        "ACHTUNG: Rufe 'reboot' NUR auf, wenn der physische Computer/das Betriebssystem neu gestartet werden soll! "
+        "Wenn der Benutzer 'Jarvis neustart' oder 'Tool neustarten' sagt, rufe ZWINGEND das Tool jarvis_control mit action='restart_tool' auf!"
     ),
     "parameters": {
         "type": "OBJECT",
