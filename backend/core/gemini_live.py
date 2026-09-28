@@ -269,10 +269,18 @@ class GeminiLiveController:
                                 if part.text:
                                     out_transcript.append(part.text)
 
+                        # Output audio transcription von Gemini Live (Sprachausgabe)
+                        if getattr(server_content, "output_transcription", None):
+                            ot = server_content.output_transcription
+                            if getattr(ot, "text", None):
+                                txt = str(ot.text).strip()
+                                if txt and txt not in out_transcript:
+                                    out_transcript.append(txt)
+
                         # Nutzer-Sprachtranskription
                         if server_content.input_transcription and server_content.input_transcription.text:
                             txt = server_content.input_transcription.text.strip()
-                            if txt:
+                            if txt and txt not in in_transcript:
                                 in_transcript.append(txt)
 
                         # Turn abgeschlossen
@@ -287,11 +295,23 @@ class GeminiLiveController:
                             full_user = " ".join(in_transcript).strip()
                             if full_user:
                                 self.log(full_user, "YOU")
+                                self.broadcast({
+                                    "type": "chat_message",
+                                    "speaker": "YOU",
+                                    "text": full_user,
+                                    "ts": datetime.now().strftime("%H:%M:%S")
+                                })
                                 in_transcript.clear()
 
                             full_ai = " ".join(out_transcript).strip()
                             if full_ai:
                                 self.log(full_ai, "JARVIS")
+                                self.broadcast({
+                                    "type": "chat_message",
+                                    "speaker": "JARVIS",
+                                    "text": full_ai,
+                                    "ts": datetime.now().strftime("%H:%M:%S")
+                                })
                                 out_transcript.clear()
 
                             self.set_state("ONLINE")
@@ -341,6 +361,12 @@ class GeminiLiveController:
             return
         try:
             self.log(text, "YOU")
+            self.broadcast({
+                "type": "chat_message",
+                "speaker": "YOU",
+                "text": text,
+                "ts": datetime.now().strftime("%H:%M:%S")
+            })
             self.set_state("THINKING")
             await self.session.send_client_content(
                 turns={"role": "user", "parts": [{"text": text}]},

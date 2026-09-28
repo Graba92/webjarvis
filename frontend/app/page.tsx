@@ -14,9 +14,11 @@ import { ContentStudio } from "@/components/ContentStudio";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
 import { SkillsModal } from "@/components/SkillsModal";
 import { DevConsole } from "@/components/DevConsole";
+import { JarvisChatWindow } from "@/components/JarvisChatWindow";
 import { PersonalityWizardModal } from "@/components/PersonalityWizardModal";
 import { CalendarModal } from "@/components/CalendarModal";
 import { BackupModal } from "@/components/BackupModal";
+import { SandboxModal } from "@/components/SandboxModal";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -45,9 +47,11 @@ export default function Home() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState<boolean>(false);
   const [isDevConsoleOpen, setIsDevConsoleOpen] = useState<boolean>(false);
+  const [isChatWindowOpen, setIsChatWindowOpen] = useState<boolean>(false);
   const [isPersonalityWizardOpen, setIsPersonalityWizardOpen] = useState<boolean>(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
+  const [isSandboxModalOpen, setIsSandboxModalOpen] = useState<boolean>(false);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
 
@@ -152,6 +156,7 @@ export default function Home() {
         categoryCounts={categoryCounts}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
         onOpenCalendarModal={() => setIsCalendarOpen(true)}
+        onOpenSandboxModal={() => setIsSandboxModalOpen(true)}
       />
 
       {/* 4. Untere Steuerungsleiste: Terminal-Bubble, Prompt-Input & Tool-Dock */}
@@ -160,12 +165,21 @@ export default function Home() {
         onOpenContentStudio={() => setIsContentStudioOpen(true)}
         onOpenSkillsModal={() => setIsSkillsModalOpen(true)}
         onOpenDevConsole={() => setIsDevConsoleOpen((prev) => !prev)}
+        onOpenChatWindow={() => setIsChatWindowOpen((prev) => !prev)}
         onOpenPersonalityWizard={() => setIsPersonalityWizardOpen(true)}
         onOpenCalendarModal={() => setIsCalendarOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
+        onOpenSandboxModal={() => setIsSandboxModalOpen(true)}
       />
 
-      {/* 5. Live Dev-Console Floating Drawer */}
+      {/* 5. Jarvis Live Chat Window (verschiebbar & in der Größe anpassbar) */}
+      <JarvisChatWindow
+        isOpen={isChatWindowOpen}
+        onClose={() => setIsChatWindowOpen(false)}
+        onOpenDevConsole={() => setIsDevConsoleOpen(true)}
+      />
+
+      {/* 6. Live Dev-Console Floating Drawer (verschiebbar & in der Größe anpassbar) */}
       <DevConsole
         isOpen={isDevConsoleOpen}
         onClose={() => setIsDevConsoleOpen(false)}
@@ -189,10 +203,16 @@ export default function Home() {
         onClose={() => setIsBackupModalOpen(false)}
       />
 
-      {/* 8. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}
+      {/* 9. Sandbox & OS-Vollzugriff Modal */}
+      <SandboxModal
+        isOpen={isSandboxModalOpen}
+        onClose={() => setIsSandboxModalOpen(false)}
+      />
+
+      {/* 10. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}
       <ConfirmBanner />
 
-      {/* 9. Modals */}
+      {/* 11. Modals */}
       <DeviceControlPanel
         isOpen={isDevicePanelOpen}
         onClose={() => setIsDevicePanelOpen(false)}

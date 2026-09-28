@@ -5,6 +5,9 @@ import * as THREE from "three";
 import { GraphData, GraphNode, NodeCategory, AssistantState } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/graphData";
 import { socketManager } from "@/lib/websocket";
+import { 
+  Move, X, ChevronDown, ChevronUp, Terminal, ExternalLink, Sparkles, Trash2, Crosshair 
+} from "lucide-react";
 
 export interface ApexWorldHandle {
   fitToView: () => void;
@@ -183,6 +186,29 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<{ node: GraphNode; x: number; y: number } | null>(null);
   const [modalNode, setModalNode] = useState<{ node: GraphNode; x: number; y: number } | null>(null);
+  const [modalPos, setModalPos] = useState<{ x: number; y: number } | null>(null);
+  const [modalSize, setModalSize] = useState<{ width: number; height: number }>({ width: 330, height: 320 });
+  const [isModalMinimized, setIsModalMinimized] = useState<boolean>(false);
+  const modalDraggingRef = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(null);
+  const modalResizingRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
+
+  useEffect(() => {
+    if (modalNode) {
+      setModalPos((prev) => {
+        if (!prev) {
+          const w = modalSize.width;
+          const h = modalSize.height;
+          return {
+            x: Math.max(15, Math.min(modalNode.x + 20, window.innerWidth - w - 20)),
+            y: Math.max(15, Math.min(modalNode.y - 20, window.innerHeight - h - 20)),
+          };
+        }
+        return prev;
+      });
+    } else {
+      setModalPos(null);
+    }
+  }, [modalNode?.node.id]);
 
   // Three.js State Refs
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -998,10 +1024,11 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         highlightedPathRef.current = new Set(path);
         if (onPathFound) onPathFound(path);
       } else {
-        // Normaler Klick: Fokussieren & Isolieren
+        // Normaler Klick: Fokussieren, Isolieren & Modal öffnen
         selectedNodeRef.current = clickedNode;
         highlightedPathRef.current.clear();
         onNodeSelect(clickedNode);
+        setModalNode({ node: clickedNode, x: e.clientX, y: e.clientY });
       }
     } else {
       // Klick in den leeren Raum -> Deselektieren
@@ -1059,6 +1086,70 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     }
   };
 
+  // --- Modal Dragging & Resizing Handlers ---
+  const handleModalHeaderMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("input") || (e.target as HTMLElement).closest("a")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const currentX = modalPos ? modalPos.x : (modalNode ? Math.min(modalNode.x + 20, window.innerWidth - modalSize.width - 20) : 100);
+    const currentY = modalPos ? modalPos.y : (modalNode ? Math.min(modalNode.y - 20, window.innerHeight - modalSize.height - 20) : 100);
+    modalDraggingRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: currentX,
+      posY: currentY,
+    };
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!modalDraggingRef.current) return;
+      const dx = ev.clientX - modalDraggingRef.current.startX;
+      const dy = ev.clientY - modalDraggingRef.current.startY;
+      setModalPos({
+        x: Math.max(10, Math.min(window.innerWidth - 80, modalDraggingRef.current.posX + dx)),
+        y: Math.max(10, Math.min(window.innerHeight - 50, modalDraggingRef.current.posY + dy)),
+      });
+    };
+
+    const handleMouseUp = () => {
+      modalDraggingRef.current = null;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleModalResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    modalResizingRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startW: modalSize.width,
+      startH: modalSize.height,
+    };
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!modalResizingRef.current) return;
+      const dw = ev.clientX - modalResizingRef.current.startX;
+      const dh = ev.clientY - modalResizingRef.current.startY;
+      setModalSize({
+        width: Math.max(280, Math.min(window.innerWidth - 30, modalResizingRef.current.startW + dw)),
+        height: Math.max(180, Math.min(window.innerHeight - 40, modalResizingRef.current.startH + dh)),
+      });
+    };
+
+    const handleMouseUp = () => {
+      modalResizingRef.current = null;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -1093,112 +1184,180 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         </div>
       )}
 
-      {/* Rechtsklick Flyout Inspector Modal mit interaktiven Cockpit-Aktionen */}
+      {/* Interaktives Node Inspector Fenster (Verschiebbar & Resizable) */}
       {modalNode && (
         <div
-          className="absolute z-50 w-80 rounded-lg bg-[#060c18]/95 border border-[#00f0ff]/50 backdrop-blur-xl p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
           style={{
-            left: Math.min(modalNode.x, window.innerWidth - 330),
-            top: Math.min(modalNode.y, window.innerHeight - 290)
+            position: "fixed",
+            left: modalPos ? `${modalPos.x}px` : `${Math.min(modalNode.x + 20, window.innerWidth - modalSize.width - 20)}px`,
+            top: modalPos ? `${modalPos.y}px` : `${Math.min(modalNode.y - 20, window.innerHeight - modalSize.height - 20)}px`,
+            width: isModalMinimized ? "280px" : `${modalSize.width}px`,
+            height: isModalMinimized ? "44px" : `${modalSize.height}px`,
+            zIndex: 50,
           }}
+          className="rounded-2xl glass-panel-glow border border-[#00f0ff]/50 shadow-2xl bg-[#060c18]/95 backdrop-blur-xl flex flex-col overflow-hidden select-none animate-in fade-in duration-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-start justify-between border-b border-[#1f2d40] pb-2 mb-2">
-            <div>
-              <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                <span
-                  className="w-2.5 h-2.5 rounded-full inline-block shadow-[0_0_8px_currentColor]"
-                  style={{
-                    backgroundColor: CATEGORY_COLORS[modalNode.node.category],
-                    color: CATEGORY_COLORS[modalNode.node.category]
-                  }}
-                />
+          {/* Draggable Header */}
+          <div
+            onMouseDown={handleModalHeaderMouseDown}
+            className="flex items-center justify-between px-3.5 py-2.5 border-b border-[#1f2d40] bg-[#0b1424] cursor-grab active:cursor-grabbing shrink-0"
+          >
+            <div className="flex items-center gap-2 pointer-events-none truncate pr-2">
+              <span
+                className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-[0_0_8px_currentColor]"
+                style={{
+                  backgroundColor: CATEGORY_COLORS[modalNode.node.category],
+                  color: CATEGORY_COLORS[modalNode.node.category]
+                }}
+              />
+              <span className="font-bold text-xs text-white truncate tracking-wide">
                 {modalNode.node.name}
-              </h3>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] uppercase tracking-wider text-[#00f0ff] font-mono">
-                  {modalNode.node.category} · {modalNode.node.connections} CONNECTIONS
-                </span>
+              </span>
+              <span className="text-[9px] uppercase tracking-wider text-[#00f0ff] font-mono px-1.5 py-0.5 rounded bg-[#00f0ff]/10 border border-[#00f0ff]/20 shrink-0">
+                {modalNode.node.category}
+              </span>
+            </div>
+
+            {/* Header Window Controls */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsModalMinimized(!isModalMinimized)}
+                title={isModalMinimized ? "Maximieren" : "Minimieren"}
+                className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                {isModalMinimized ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalNode(null)}
+                title="Schließen"
+                className="p-1 rounded text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {!isModalMinimized && (
+            <>
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-2.5 select-text text-xs">
+                {/* Meta info & Connections */}
+                <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono">
+                  <span className="text-[#00f0ff] font-bold">
+                    {modalNode.node.connections} CONNECTIONS
+                  </span>
+                  {modalNode.node.id && (
+                    <span className="text-gray-500 truncate max-w-[140px]">
+                      ID: {modalNode.node.id}
+                    </span>
+                  )}
+                </div>
+
+                {/* Path indicator */}
+                {modalNode.node.path && (
+                  <div className="px-2.5 py-1.5 rounded-lg bg-[#0b1424] border border-[#1f2d40] text-[10px] font-mono text-cyan-300 truncate">
+                    <span className="text-gray-400">PFAD: </span>{modalNode.node.path}
+                  </div>
+                )}
+
+                {/* Description */}
+                <p className="text-xs text-gray-300 leading-relaxed font-sans select-text">
+                  {modalNode.node.description || "Keine Beschreibung hinterlegt."}
+                </p>
+
+                {/* Actions */}
+                <div className="pt-2 border-t border-[#1f2d40]/60 flex flex-col gap-1.5 mt-auto">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => {
+                        socketManager.executeNodeAction(modalNode.node.id, modalNode.node.path, modalNode.node.category, "open");
+                        setModalNode(null);
+                      }}
+                      className="px-2 py-1.5 text-[11px] font-mono rounded-lg bg-[#00f0ff]/15 hover:bg-[#00f0ff]/30 text-[#00f0ff] border border-[#00f0ff]/40 transition-colors flex items-center justify-center gap-1 font-semibold cursor-pointer"
+                      title="Im Standard-Editor oder Anwendungsstarter öffnen"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Öffnen</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        socketManager.executeNodeAction(modalNode.node.id, modalNode.node.path, modalNode.node.category, "terminal");
+                        setModalNode(null);
+                      }}
+                      className="px-2 py-1.5 text-[11px] font-mono rounded-lg bg-[#2979ff]/15 hover:bg-[#2979ff]/30 text-[#2979ff] border border-[#2979ff]/40 transition-colors flex items-center justify-center gap-1 font-semibold cursor-pointer"
+                      title="Im Terminal (Konsole) am Pfad starten"
+                    >
+                      <Terminal className="w-3 h-3" />
+                      <span>Im Terminal</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => {
+                        socketManager.executeNodeAction(modalNode.node.id, modalNode.node.path, modalNode.node.category, "summarize");
+                        setModalNode(null);
+                      }}
+                      className="px-2 py-1.5 text-[11px] font-mono rounded-lg bg-[#ff9100]/15 hover:bg-[#ff9100]/30 text-[#ff9100] border border-[#ff9100]/40 transition-colors flex items-center justify-center gap-1 font-semibold cursor-pointer"
+                      title="Zusammenfassung durch Gemini anfordern"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Zusammenfassen</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        socketManager.deleteNode(modalNode.node.id);
+                        setModalNode(null);
+                      }}
+                      className="px-2 py-1.5 text-[11px] font-mono rounded-lg bg-red-500/15 hover:bg-red-500/30 text-red-400 border border-red-500/40 transition-colors flex items-center justify-center gap-1 font-semibold cursor-pointer"
+                      title="Knoten aus Graph löschen (mit Undo-Schutz)"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Löschen</span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      selectedNodeRef.current = modalNode.node;
+                      onNodeSelect(modalNode.node);
+                      setModalNode(null);
+                    }}
+                    className="mt-0.5 w-full py-1.5 text-[11px] font-mono rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 border border-white/15 transition-colors text-center cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Crosshair className="w-3 h-3 text-[#00f0ff]" />
+                    <span>Fokussieren & Isolieren</span>
+                  </button>
+                </div>
               </div>
-            </div>
-            <button
-              onClick={() => setModalNode(null)}
-              className="text-gray-400 hover:text-white text-xs px-1.5 py-0.5 rounded border border-transparent hover:border-[#1f2d40]"
-            >
-              ✕
-            </button>
-          </div>
 
-          {modalNode.node.path && (
-            <div className="mb-2 px-2 py-1 rounded bg-[#0b1424] border border-[#1f2d40] text-[10px] font-mono text-cyan-300 truncate">
-              <span className="text-gray-400">PFAD: </span>{modalNode.node.path}
-            </div>
+              {/* Footer bar with drag hint & Resize Handle */}
+              <div className="flex items-center justify-between px-3 py-1.5 border-t border-[#1f2d40]/60 bg-[#080d16] text-[10px] text-gray-500 font-mono shrink-0 select-none">
+                <span className="flex items-center gap-1 text-[9px] text-gray-400">
+                  <Move className="w-2.5 h-2.5" />
+                  <span>Verschiebbar</span>
+                </span>
+
+                {/* Resize Handle unten rechts */}
+                <div
+                  onMouseDown={handleModalResizeMouseDown}
+                  className="w-4 h-4 cursor-se-resize flex items-center justify-center text-gray-400 hover:text-[#00f0ff] transition-colors"
+                  title="Klicken & Ziehen zum Ändern der Fenstergröße"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                    <circle cx="8" cy="8" r="1.2" />
+                    <circle cx="8" cy="4" r="1.2" />
+                    <circle cx="4" cy="8" r="1.2" />
+                  </svg>
+                </div>
+              </div>
+            </>
           )}
-
-          <p className="text-xs text-gray-300 leading-relaxed font-sans mb-3">
-            {modalNode.node.description}
-          </p>
-
-          <div className="pt-2 border-t border-[#1f2d40]/60 flex flex-col gap-1.5">
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={() => {
-                  socketManager.executeNodeAction(modalNode.node.id, modalNode.node.path, modalNode.node.category, "open");
-                  setModalNode(null);
-                }}
-                className="px-2 py-1.5 text-[11px] font-mono rounded bg-[#00f0ff]/15 hover:bg-[#00f0ff]/30 text-[#00f0ff] border border-[#00f0ff]/40 transition-colors flex items-center justify-center gap-1 font-semibold"
-                title="Im Standard-Editor oder Anwendungsstarter öffnen"
-              >
-                <span>Öffnen</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  socketManager.executeNodeAction(modalNode.node.id, modalNode.node.path, modalNode.node.category, "terminal");
-                  setModalNode(null);
-                }}
-                className="px-2 py-1.5 text-[11px] font-mono rounded bg-[#2979ff]/15 hover:bg-[#2979ff]/30 text-[#2979ff] border border-[#2979ff]/40 transition-colors flex items-center justify-center gap-1 font-semibold"
-                title="Im Terminal (Konsole) am Pfad starten"
-              >
-                <span>Im Terminal</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={() => {
-                  socketManager.executeNodeAction(modalNode.node.id, modalNode.node.path, modalNode.node.category, "summarize");
-                  setModalNode(null);
-                }}
-                className="px-2 py-1.5 text-[11px] font-mono rounded bg-[#ff9100]/15 hover:bg-[#ff9100]/30 text-[#ff9100] border border-[#ff9100]/40 transition-colors flex items-center justify-center gap-1 font-semibold"
-                title="Zusammenfassung durch Gemini anfordern"
-              >
-                <span>Zusammenfassen</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  socketManager.deleteNode(modalNode.node.id);
-                  setModalNode(null);
-                }}
-                className="px-2 py-1.5 text-[11px] font-mono rounded bg-red-500/15 hover:bg-red-500/30 text-red-400 border border-red-500/40 transition-colors flex items-center justify-center gap-1 font-semibold"
-                title="Knoten aus Graph löschen (mit Undo-Schutz)"
-              >
-                <span>Löschen</span>
-              </button>
-            </div>
-
-            <button
-              onClick={() => {
-                selectedNodeRef.current = modalNode.node;
-                onNodeSelect(modalNode.node);
-                setModalNode(null);
-              }}
-              className="mt-0.5 w-full py-1 text-[11px] font-mono rounded bg-white/5 hover:bg-white/10 text-gray-300 border border-white/15 transition-colors text-center"
-            >
-              Fokussieren & Isolieren
-            </button>
-          </div>
         </div>
       )}
     </div>

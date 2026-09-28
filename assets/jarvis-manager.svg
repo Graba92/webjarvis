@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0e1726" />
+      <stop offset="100%" stop-color="#050811" />
+    </radialGradient>
+    <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#00f0ff" />
+      <stop offset="70%" stop-color="#0066cc" />
+      <stop offset="100%" stop-color="#001833" />
+    </radialGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff" />
+      <stop offset="50%" stop-color="#2979ff" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Circle with tech border -->
+  <circle cx="256" cy="256" r="248" fill="url(#bgGrad)" stroke="#1a273f" stroke-width="8" />
+
+  <!-- Outer Gear Ring / Stator -->
+  <g stroke="url(#ringGrad)" stroke-width="6" fill="none" opacity="0.85">
+    <circle cx="256" cy="256" r="210" stroke-dasharray="16 12" />
+    <circle cx="256" cy="256" r="180" stroke-width="4" stroke-dasharray="8 6" />
+    <circle cx="256" cy="256" r="140" stroke-width="3" />
+  </g>
+
+  <!-- 12 Arc Reactor Coils -->
+  <g fill="url(#ringGrad)" opacity="0.9">
+    <rect x="246" y="58" width="20" height="36" rx="4" />
+    <rect x="246" y="418" width="20" height="36" rx="4" />
+    <rect x="58" y="246" width="36" height="20" rx="4" />
+    <rect x="418" y="246" width="36" height="20" rx="4" />
+    
+    <rect x="113" y="113" width="22" height="30" rx="4" transform="rotate(-45 124 128)" />
+    <rect x="377" y="113" width="22" height="30" rx="4" transform="rotate(45 388 128)" />
+    <rect x="113" y="369" width="22" height="30" rx="4" transform="rotate(45 124 384)" />
+    <rect x="377" y="369" width="22" height="30" rx="4" transform="rotate(-45 388 384)" />
+
+    <rect x="175" y="75" width="18" height="28" rx="4" transform="rotate(-22.5 184 89)" />
+    <rect x="319" y="75" width="18" height="28" rx="4" transform="rotate(22.5 328 89)" />
+    <rect x="175" y="409" width="18" height="28" rx="4" transform="rotate(22.5 184 423)" />
+    <rect x="319" y="409" width="18" height="28" rx="4" transform="rotate(-22.5 328 423)" />
+  </g>
+
+  <!-- Glowing Core -->
+  <circle cx="256" cy="256" r="105" fill="url(#coreGrad)" filter="url(#glow)" />
+  <circle cx="256" cy="256" r="85" fill="#070c18" stroke="#00f0ff" stroke-width="4" />
+  <circle cx="256" cy="256" r="55" fill="url(#coreGrad)" filter="url(#glow)" />
+
+  <!-- Center Hologram Triangle / Logo -->
+  <polygon points="256,220 286,274 226,274" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" />
+  <circle cx="256" cy="256" r="12" fill="#ffffff" filter="url(#glow)" />
+</svg>

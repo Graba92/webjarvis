@@ -185,14 +185,6 @@
       "path": "backend/core/gemini_live.py"
     },
     {
-      "id": "notes-root-dominanz-matze-vs-cypher",
-      "name": "Root-Dominanz: Matze vs. Cypher",
-      "category": "Notes",
-      "connections": 5,
-      "description": "Matze hat im sarkastischen Duell um Lisas Geheimhaltung eindeutig gewonnen und seine Dominanz im 'eigenjarv'-Betriebssystem gegenüber Cypher behauptet. Matze bleibt Boss mit Root-Rechten.",
-      "path": ""
-    },
-    {
       "id": "tools-spotify",
       "name": "Spotify",
       "category": "Tools",
@@ -213,7 +205,7 @@
       "name": "cachyos-rice-architect",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes kachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum kachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
       "path": "tools/cachyos-rice-architect"
     },
     {
@@ -221,7 +213,7 @@
       "name": "jarvis-spatial-shell",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
       "path": "tools/Jarv-orb/fin/jarvis-spatial-shell"
     },
     {
@@ -229,7 +221,7 @@
       "name": "cachyos-control-center",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes cachyos-control-center Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum cachyos-control-center Repository. Teil seiner GitHub Uploads.",
       "path": "tools/cachyos-control-center"
     },
     {
@@ -237,7 +229,7 @@
       "name": "textual-tui-creator",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes textual-tui-creator Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum textual-tui-creator Repository. Teil seiner GitHub Uploads.",
       "path": "tools/textual-tui-creator"
     },
     {
@@ -245,7 +237,7 @@
       "name": "upgit",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes upgit Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum upgit Repository. Teil seiner GitHub Uploads.",
       "path": "tools/upgit"
     },
     {
@@ -253,7 +245,7 @@
       "name": "upgit",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes upgit Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum upgit Repository. Teil seiner GitHub Uploads.",
       "path": "tools/upgit"
     },
     {
@@ -261,7 +253,7 @@
       "name": "cachyos-control-center",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes cachyos-control-center Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum cachyos-control-center Repository. Teil seiner GitHub Uploads.",
       "path": "tools/cachyos-control-center"
     },
     {
@@ -269,7 +261,7 @@
       "name": "cachyos-rice-architect",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes cachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum cachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
       "path": "tools/cachyos-rice-architect"
     },
     {
@@ -277,7 +269,7 @@
       "name": "jarvis-spatial-shell",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
       "path": "tools/Jarv-orb/fin/jarvis-spatial-shell"
     },
     {
@@ -285,8 +277,24 @@
       "name": "textual-tui-creator",
       "category": "Files",
       "connections": 1,
-      "description": "Lokaler Pfad zu Matzes textual-tui-creator Repository. Teil seiner GitHub Uploads.",
+      "description": "Lokaler Pfad zum textual-tui-creator Repository. Teil seiner GitHub Uploads.",
       "path": "tools/textual-tui-creator"
+    },
+    {
+      "id": "notes-jarvis-manager-desktop-entry-draft",
+      "name": "Jarvis Manager Desktop Entry (Draft)",
+      "category": "Notes",
+      "connections": 1,
+      "description": "[Desktop Entry]\nName=Jarvis Manager\nComment=Control Jarvis AI OS (Start, Stop, Status, Autostart)\nExec=bash -c 'echo \"Optionen: Starten, Beenden, Status, Autostart Toggle\" | zenity --list --title=\"Jarvis Manager\" --column=\"Aktion\"'\nIcon=system-run\nTerminal=false\nType=Application\nCategories=System;Utility;\n\n# Anleitung: Diesen Inhalt in eine Datei namens 'jarvis-manager.desktop' kopieren.\n# Danach im Terminal 'sudo mv jarvis-manager.desktop /usr/share/applications/' ausführen.",
+      "path": ""
+    },
+    {
+      "id": "tools-jarvis-control-center-modern-gui",
+      "name": "Jarvis Control Center (Modern GUI)",
+      "category": "Tools",
+      "connections": 1,
+      "description": "Python-Skript (in Entwicklung) zur Steuerung des J.A.R.V.I.S. Core über ein grafisches Menü im Web-Style. Nutzt start.sh Befehle.",
+      "path": ""
     }
   ],
   "links": [
@@ -387,10 +395,6 @@
       "target": "tool-zapier"
     },
     {
-      "source": "hub-ai-workshop",
-      "target": "notes-root-dominanz-matze-vs-cypher"
-    },
-    {
       "source": "hub-skill-suites",
       "target": "tools-spotify"
     },
@@ -437,6 +441,14 @@
     {
       "source": "hub-gemini-live",
       "target": "files-textual-tui-creator-468f"
+    },
+    {
+      "source": "hub-ai-workshop",
+      "target": "notes-jarvis-manager-desktop-entry-draft"
+    },
+    {
+      "source": "hub-skill-suites",
+      "target": "tools-jarvis-control-center-modern-gui"
     }
   ]
 }

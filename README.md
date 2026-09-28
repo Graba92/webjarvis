@@ -227,32 +227,38 @@ cp backend/.env.example backend/.env
 
 ### 3. Launch Options
 
-#### Option A: Interactive Master Orchestrator
+#### Option A: PyQt6 Desktop Orchestration Manager (GUI)
 ```bash
-./start.sh
+./manager.sh
+# or python3 manager.py
+```
+* **Status Cockpit**: Real-time service status (Backend, Frontend, Voice Stream).
+* **1-Click Control**: Start, stop, or restart individual subsystems or the full stack.
+* **Autostart Integration**: Enable/disable desktop autostart via standard XDG entries.
+* **Update Sentinel**: Autonomous checks against GitHub releases (`Graba92/webjarvis`).
+* **Health Check**: Validates Python venv, Node.js, PipeWire audio, and Bubblewrap.
+
+#### Option B: Ergonomic 1-Click Launcher & Master Orchestrator
+```bash
+./run.sh
+# or ./start.sh
 ```
 Interactive terminal menu options:
 * `1)` **Gesamtsystem starten**: Boots Python Gemini Live WebSocket server & Next.js 15 HUD concurrently.
 * `2)` **Nur Python Backend starten**: Starts WebSocket core on `ws://127.0.0.1:8765`.
 * `3)` **Nur Next.js Frontend starten**: Starts Three.js 3D WebGL HUD on `http://localhost:3000`.
-* `4)` **Hardware- & Systemprüfung ausführen**: Verifies PipeWire, ALSA audio sinks, bubblewrap sandbox & dependencies.
-* `5)` **Gemini API Key konfigurieren**: Persistent interactive credential helper.
-* `6)` **Beenden**: Gracefully shuts down subsystems.
+* `4)` **Sandbox-Arbeitsbereich festlegen / anpassen**: Configure allowed Bubblewrap workspace directories.
+* `5)` **Hardware- & Systemprüfung ausführen**: Verifies PipeWire, ALSA audio sinks, bubblewrap sandbox & dependencies.
+* `6)` **Gemini API Key konfigurieren**: Persistent interactive credential helper.
+* `7)` **Beenden**: Gracefully shuts down subsystems.
 
-#### Option B: Direct CLI Execution (Headless & Automation)
+#### Option C: Direct CLI Execution (Headless & Automation)
 ```bash
 ./start.sh --all        # Starts backend + frontend directly
 ./start.sh --backend    # Starts backend only
 ./start.sh --frontend   # Starts frontend only
 ./start.sh --check      # Runs system verification gates
-./terminate_jarvis.sh   # Cleanly stops all background services and frees ports 8765 & 3000
-```
-
-#### Option C: Containerized (Docker Compose)
-```bash
-./docker-start.sh       # Builds & runs frontend + backend in isolated Docker containers
-./docker-logs.sh        # Streams live container logs
-./docker-stop.sh        # Stops all Docker containers
+./stop.sh               # Cleanly stops all background services and frees ports 8765 & 3000
 ```
 
 ---

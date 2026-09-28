@@ -54,21 +54,11 @@ class AudioStreamer:
         self.on_level_change: Optional[Callable[[float], None]] = None
         self.on_log: Optional[Callable[[str], None]] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
-        self.ensure_pipewire_sink()
 
     @staticmethod
     def ensure_pipewire_sink():
-        """Richtet bei Bedarf einen eigenen virtuellen PipeWire/PulseAudio Audio-Knoten ein."""
-        try:
-            res = subprocess.run(["pactl", "list", "short", "sinks"], capture_output=True, text=True, timeout=2)
-            if res.returncode == 0 and "cypher_ai_sink" not in res.stdout:
-                subprocess.run([
-                    "pactl", "load-module", "module-null-sink",
-                    "sink_name=cypher_ai_sink",
-                    "sink_properties=device.description=\"Cypher_AI_Audio\""
-                ], capture_output=True, timeout=2)
-        except Exception:
-            pass
+        """Stellt sicher, dass Standard-Audiogeräte verwendet werden."""
+        pass
 
     def set_loop(self, loop: asyncio.AbstractEventLoop):
         self._loop = loop

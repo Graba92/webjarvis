@@ -11,7 +11,9 @@ import {
   BrainExportResult,
   BrainImportResult,
   BackupEntry,
-  CalendarEvent
+  CalendarEvent,
+  SandboxConfig,
+  ChatMessage
 } from "./types";
 import { auditor } from "../utils/auditLogger";
 
@@ -29,6 +31,7 @@ class JarvisSocketManager {
   // Event Listeners
   private stateListeners: Set<Listener<AssistantState>> = new Set();
   private logListeners: Set<Listener<LogMessage>> = new Set();
+  private chatListeners: Set<Listener<ChatMessage>> = new Set();
   private devLogListeners: Set<Listener<DevLogEntry>> = new Set();
   private telemetryListeners: Set<Listener<TelemetryData>> = new Set();
   private audioLevelListeners: Set<Listener<number>> = new Set();
@@ -47,6 +50,7 @@ class JarvisSocketManager {
   private calendarListeners: Set<Listener<CalendarEvent[]>> = new Set();
   private autoBriefingListeners: Set<Listener<boolean>> = new Set();
   private aiNameListeners: Set<Listener<string>> = new Set();
+  private sandboxListeners: Set<Listener<SandboxConfig>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public currentAiName: string = "Cypher";
@@ -56,11 +60,16 @@ class JarvisSocketManager {
   public isAutoBriefing: boolean = true;
   public currentCalendarEvents: CalendarEvent[] = [];
   public currentBackups: BackupEntry[] = [];
+  public currentChatMessages: ChatMessage[] = [];
   public pendingConfirm: ConfirmRequest | null = null;
   public apiKeyStatus: { configured: boolean; masked_key: string } = { configured: false, masked_key: "" };
   public currentGraphData: GraphData | null = null;
   public currentMcpServers: MCPServerMap = {};
   public currentPersonality: PersonalityConfig | null = null;
+  public currentSandboxConfig: SandboxConfig = {
+    allowed_paths: [],
+    full_os_access: false
+  };
 
   constructor() {}
 
@@ -190,6 +199,15 @@ class JarvisSocketManager {
           this.isAutoBriefing = !!msg.auto_briefing;
           this.autoBriefingListeners.forEach((fn) => fn(this.isAutoBriefing));
         }
+        const initialSb = msg.sandbox_config || msg.data?.sandbox_config;
+        if (initialSb) {
+          this.currentSandboxConfig = {
+            allowed_paths: Array.isArray(initialSb.allowed_paths) ? initialSb.allowed_paths : this.currentSandboxConfig.allowed_paths,
+            full_os_access: initialSb.full_os_access !== undefined ? !!initialSb.full_os_access : this.currentSandboxConfig.full_os_access,
+            default_dir: initialSb.default_dir || this.currentSandboxConfig.default_dir
+          };
+          this.sandboxListeners.forEach((fn) => fn(this.currentSandboxConfig));
+        }
         break;
 
       case "dev_log":
@@ -217,12 +235,49 @@ class JarvisSocketManager {
         if (msg.state) this.setState(msg.state);
         break;
 
-      case "log":
-        this.notifyLog({
-          speaker: msg.speaker || "SYS",
+      case "chat_message":
+        const cMsg: ChatMessage = {
+          speaker: msg.speaker === "YOU" ? "YOU" : "JARVIS",
           text: msg.text || "",
           ts: msg.ts || new Date().toLocaleTimeString()
+        };
+        // Duplikate vermeiden
+        const lastChat = this.currentChatMessages[this.currentChatMessages.length - 1];
+        if (!lastChat || lastChat.text !== cMsg.text || lastChat.speaker !== cMsg.speaker) {
+          this.currentChatMessages.push(cMsg);
+          this.chatListeners.forEach((fn) => fn(cMsg));
+        }
+        break;
+
+      case "log":
+        const spk = msg.speaker || "SYS";
+        const txt = msg.text || "";
+        const tsVal = msg.ts || new Date().toLocaleTimeString();
+
+        this.notifyLog({
+          speaker: spk,
+          text: txt,
+          ts: tsVal
         });
+
+        if (spk === "YOU" || spk === "JARVIS" || spk === "Cypher" || spk === "Friday") {
+          const chatMsg: ChatMessage = {
+            speaker: spk === "YOU" ? "YOU" : "JARVIS",
+            text: txt,
+            ts: tsVal
+          };
+          const last = this.currentChatMessages[this.currentChatMessages.length - 1];
+          if (!last || last.text !== chatMsg.text || last.speaker !== chatMsg.speaker) {
+            this.currentChatMessages.push(chatMsg);
+            this.chatListeners.forEach((fn) => fn(chatMsg));
+          }
+        } else {
+          this.devLogListeners.forEach((fn) => fn({
+            speaker: spk,
+            text: txt,
+            ts: tsVal
+          }));
+        }
         break;
 
       case "telemetry":
@@ -368,6 +423,19 @@ class JarvisSocketManager {
         if (msg.enabled !== undefined) {
           this.isAutoBriefing = !!msg.enabled;
           this.autoBriefingListeners.forEach((fn) => fn(this.isAutoBriefing));
+        }
+        break;
+
+      case "sandbox_config":
+      case "SANDBOX_CONFIG":
+        const sbData = msg.data || msg.config || msg;
+        if (sbData) {
+          this.currentSandboxConfig = {
+            allowed_paths: Array.isArray(sbData.allowed_paths) ? sbData.allowed_paths : this.currentSandboxConfig.allowed_paths,
+            full_os_access: sbData.full_os_access !== undefined ? !!sbData.full_os_access : this.currentSandboxConfig.full_os_access,
+            default_dir: sbData.default_dir || this.currentSandboxConfig.default_dir
+          };
+          this.sandboxListeners.forEach((fn) => fn(this.currentSandboxConfig));
         }
         break;
     }
@@ -532,6 +600,17 @@ class JarvisSocketManager {
     return () => {
       this.logListeners.delete(fn);
     };
+  }
+
+  public onChat(fn: Listener<ChatMessage>) {
+    this.chatListeners.add(fn);
+    return () => {
+      this.chatListeners.delete(fn);
+    };
+  }
+
+  public getChatHistory(): ChatMessage[] {
+    return [...this.currentChatMessages];
   }
 
   public onDevLog(fn: Listener<DevLogEntry>) {
@@ -799,6 +878,44 @@ class JarvisSocketManager {
   public triggerBriefingNow() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "trigger_briefing" }));
+    }
+  }
+
+  // --- Sandbox & OS Access Control ---
+  public onSandboxConfig(fn: Listener<SandboxConfig>) {
+    this.sandboxListeners.add(fn);
+    fn(this.currentSandboxConfig);
+    return () => {
+      this.sandboxListeners.delete(fn);
+    };
+  }
+
+  public requestSandboxConfig() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "get_sandbox_config" }));
+    }
+  }
+
+  public setFullOsAccess(enabled: boolean) {
+    this.currentSandboxConfig = {
+      ...this.currentSandboxConfig,
+      full_os_access: enabled
+    };
+    this.sandboxListeners.forEach((fn) => fn(this.currentSandboxConfig));
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "set_full_os_access", enabled }));
+    }
+  }
+
+  public addSandboxPath(path: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "add_sandbox_path", path }));
+    }
+  }
+
+  public removeSandboxPath(path: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "remove_sandbox_path", path }));
     }
   }
 }

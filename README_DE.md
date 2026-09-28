@@ -227,32 +227,38 @@ cp backend/.env.example backend/.env
 
 ### 3. Start-Optionen
 
-#### Option A: Interaktiver Master Orchestrator
+#### Option A: PyQt6 Desktop Orchestration Manager (Grafisches Menü)
 ```bash
-./start.sh
+./manager.sh
+# oder python3 manager.py
+```
+* **Status-Cockpit**: Echtzeit-Dienstestatus für Backend, Frontend und Voice-Stream.
+* **1-Klick-Steuerung**: Subsysteme oder den gesamten Stack mit einem Klick starten, stoppen oder neustarten.
+* **Autostart-Integration**: Desktop-Autostart via standardkonforme XDG-Einträge aktivieren/deaktivieren.
+* **Update-Sentinel**: Automatische Abfrage neuer Releases auf GitHub (`Graba92/webjarvis`).
+* **Health-Check**: Integrierte Systemdiagnose für Python-Venv, Node.js, PipeWire-Audio und Bubblewrap.
+
+#### Option B: Ergonomischer 1-Klick-Starter & Master Orchestrator
+```bash
+./run.sh
+# oder ./start.sh
 ```
 Menü-Auswahl:
 * `1)` **Gesamtsystem starten**: Startet Backend (Python Gemini Live WebSocket) und Frontend (Next.js 15 HUD) parallel.
 * `2)` **Nur Python Backend starten**: Startet den WebSocket-Server auf `ws://127.0.0.1:8765`.
 * `3)` **Nur Next.js Frontend starten**: Startet das Three.js WebGL HUD auf `http://localhost:3000`.
-* `4)` **Hardware- & Systemprüfung ausführen**: Prüft PipeWire, ALSA, Bubblewrap Sandbox und Node/Python-Abhängigkeiten.
-* `5)` **Gemini API Key konfigurieren**: Interaktive, persistente Eingabe- und Speicherhilfe.
-* `6)` **Beenden**: Beendet alle Subsysteme geordnet.
+* `4)` **Sandbox-Arbeitsbereich festlegen / anpassen**: Erlaubte Bubblewrap-Arbeitsverzeichnisse konfigurieren.
+* `5)` **Hardware- & Systemprüfung ausführen**: Prüft PipeWire, ALSA, Bubblewrap Sandbox und Node/Python-Abhängigkeiten.
+* `6)` **Gemini API Key konfigurieren**: Interaktive, persistente Eingabe- und Speicherhilfe.
+* `7)` **Beenden**: Beendet alle Subsysteme geordnet.
 
-#### Option B: Direkte Befehlszeilen-Steuerung (Headless & Automatisierung)
+#### Option C: Direkte Befehlszeilen-Steuerung (Headless & Automatisierung)
 ```bash
 ./start.sh --all        # Startet Gesamtsystem direkt
 ./start.sh --backend    # Startet nur das WebSocket Backend
 ./start.sh --frontend   # Startet nur das Next.js Frontend
 ./start.sh --check      # Führt alle Validierungs-Gates aus
-./terminate_jarvis.sh   # Stoppt alle Hintergrundprozesse sauber und gibt die Ports 8765 / 3000 frei
-```
-
-#### Option C: Docker Compose (Isolierte Container)
-```bash
-./docker-start.sh       # Baut und startet Backend & Frontend in Docker-Containern
-./docker-logs.sh        # Zeigt Live-Container-Logs an
-./docker-stop.sh        # Fährt Docker-Container herunter
+./stop.sh               # Stoppt alle Hintergrundprozesse sauber und gibt die Ports 8765 / 3000 frei
 ```
 
 ---

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { AssistantState, NodeCategory } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/graphData";
 import { socketManager } from "@/lib/websocket";
-import { Eye, Radio, Grid, Crosshair, KeyRound, Mic, MicOff, ShieldAlert, Sunrise, Calendar } from "lucide-react";
+import { Eye, Radio, Grid, Crosshair, KeyRound, Mic, MicOff, ShieldAlert, ShieldCheck, Sunrise, Calendar } from "lucide-react";
 
 interface AgentCockpitProps {
   state: AssistantState;
@@ -14,6 +14,7 @@ interface AgentCockpitProps {
   categoryCounts: Record<NodeCategory, number>;
   onOpenApiKeyModal: () => void;
   onOpenCalendarModal?: () => void;
+  onOpenSandboxModal?: () => void;
 }
 
 export const AgentCockpit: React.FC<AgentCockpitProps> = ({
@@ -24,6 +25,7 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
   categoryCounts,
   onOpenApiKeyModal,
   onOpenCalendarModal,
+  onOpenSandboxModal,
 }) => {
   const [sensorEyes, setSensorEyes] = useState(false);
   const [sensorWatch, setSensorWatch] = useState(false);
@@ -31,6 +33,7 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
   const [focusMode, setFocusMode] = useState(false);
   const [autoBriefing, setAutoBriefing] = useState(true);
   const [paranoiaMuted, setParanoiaMuted] = useState(false);
+  const [fullOsAccess, setFullOsAccess] = useState(false);
   const [aiName, setAiName] = useState<string>("CYPHER");
   const [angle, setAngle] = useState(0);
 
@@ -58,11 +61,15 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
     const unsubAiName = socketManager.onAiName((name) => {
       if (name) setAiName(name);
     });
+    const unsubSandbox = socketManager.onSandboxConfig((cfg) => {
+      if (cfg) setFullOsAccess(!!cfg.full_os_access);
+    });
     return () => {
       unsubParanoia();
       unsubFocus();
       unsubBriefing();
       unsubAiName();
+      unsubSandbox();
     };
   }, []);
 
@@ -326,6 +333,35 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
               <span className="text-[10px] text-[#00d4ff] font-mono">open</span>
             </button>
           )}
+
+          {/* OS-Vollzugriff & Sandbox Matrix Button */}
+          <button
+            onClick={() => {
+              if (onOpenSandboxModal) {
+                onOpenSandboxModal();
+              } else {
+                socketManager.setFullOsAccess(!fullOsAccess);
+              }
+            }}
+            className={`col-span-2 flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
+              fullOsAccess
+                ? "bg-red-500/20 border-red-500/60 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)] animate-pulse"
+                : "bg-[#080a0f]/60 border-[#1f242d] text-gray-400 hover:text-white"
+            }`}
+            title={
+              fullOsAccess
+                ? "⚠️ VOLLER OS-ZUGRIFF AKTIV: Klicken zum Verwalten / Deaktivieren"
+                : "Sandbox-Sicherheit: Pfade verwalten oder OS-Vollzugriff aktivieren"
+            }
+          >
+            <span className="flex items-center gap-1.5">
+              {fullOsAccess ? <ShieldAlert className="w-3.5 h-3.5 text-red-400" /> : <ShieldCheck className="w-3.5 h-3.5 text-[#00d4ff]" />}
+              <span className="font-bold">OS-ZUGRIFF:</span>
+            </span>
+            <span className={`text-[10px] font-mono font-black ${fullOsAccess ? "text-red-400 tracking-wider" : "text-[#22c55e]"}`}>
+              {fullOsAccess ? "UNRESTRICTED (HOST)" : "SANDBOX (ISOLIERT)"}
+            </span>
+          </button>
         </div>
 
         {/* Paranoia Quick Action */}

@@ -54,6 +54,12 @@ export interface LogMessage {
   ts: string;
 }
 
+export interface ChatMessage {
+  speaker: "YOU" | "JARVIS";
+  text: string;
+  ts: string;
+}
+
 export interface DevLogEntry {
   speaker: string;
   text: string;
@@ -150,4 +156,10 @@ export interface CalendarEvent {
   is_completed?: number;
   created_at: string;
   updated_at?: string;
+}
+
+export interface SandboxConfig {
+  allowed_paths: string[];
+  full_os_access: boolean;
+  default_dir?: string;
 }

@@ -40,6 +40,10 @@ from core.config import (
     USER_NAME, save_gemini_api_key, is_api_key_configured, get_masked_api_key, get_gemini_api_key,
     get_personality_dict, format_soul_md, get_ai_name
 )
+from core.sandbox import (
+    get_allowed_paths, is_full_os_access, set_full_os_access,
+    add_allowed_path, remove_allowed_path, DEFAULT_SANDBOX_DIR
+)
 from core.action_loader import discover_actions
 from core.audio_streamer import AudioStreamer
 from core.gemini_live import GeminiLiveController
@@ -249,14 +253,24 @@ class JarvisServer:
             "paranoia_muted": self.audio.is_paranoia_muted(),
             "personality": get_personality_dict(),
             "calendar_events": get_events_list(),
-            "auto_briefing": getattr(self.cron_engine, "auto_briefing", True)
+            "auto_briefing": getattr(self.cron_engine, "auto_briefing", True),
+            "sandbox_config": {
+                "allowed_paths": get_allowed_paths(),
+                "full_os_access": is_full_os_access(),
+                "default_dir": str(DEFAULT_SANDBOX_DIR)
+            }
         }
         await websocket.send(json.dumps(welcome_payload))
         await websocket.send(json.dumps({
             "type": "SYSTEM_INIT",
             "data": {
                 "ai_name": ai_name,
-                "personality": get_personality_dict()
+                "personality": get_personality_dict(),
+                "sandbox_config": {
+                    "allowed_paths": get_allowed_paths(),
+                    "full_os_access": is_full_os_access(),
+                    "default_dir": str(DEFAULT_SANDBOX_DIR)
+                }
             }
         }))
 
@@ -780,6 +794,59 @@ class JarvisServer:
 
                 elif msg_type == "trigger_briefing":
                     await self.cron_engine.trigger_briefing_now()
+
+                elif msg_type == "get_sandbox_config":
+                    await websocket.send(json.dumps({
+                        "type": "sandbox_config",
+                        "data": {
+                            "allowed_paths": get_allowed_paths(),
+                            "full_os_access": is_full_os_access(),
+                            "default_dir": str(DEFAULT_SANDBOX_DIR)
+                        }
+                    }))
+
+                elif msg_type == "set_full_os_access":
+                    enabled = bool(data.get("enabled", False))
+                    set_full_os_access(enabled)
+                    cfg_payload = {
+                        "type": "sandbox_config",
+                        "data": {
+                            "allowed_paths": get_allowed_paths(),
+                            "full_os_access": is_full_os_access(),
+                            "default_dir": str(DEFAULT_SANDBOX_DIR)
+                        }
+                    }
+                    broadcast(cfg_payload)
+                    status_text = "AKTIVIERT (Unbeschränkter Lese-, Schreib- & Systemzugriff)" if enabled else "DEAKTIVIERT (Sandbox-Schutz aktiv)"
+                    self.log(f"OS-Vollzugriff wurde {status_text}.", "WARN" if enabled else "SYS")
+
+                elif msg_type == "add_sandbox_path":
+                    path_val = str(data.get("path", "")).strip()
+                    if path_val:
+                        ok, msg = add_allowed_path(path_val)
+                        broadcast({
+                            "type": "sandbox_config",
+                            "data": {
+                                "allowed_paths": get_allowed_paths(),
+                                "full_os_access": is_full_os_access(),
+                                "default_dir": str(DEFAULT_SANDBOX_DIR)
+                            }
+                        })
+                        self.log(msg, "SYS" if ok else "ERR")
+
+                elif msg_type == "remove_sandbox_path":
+                    path_val = str(data.get("path", "")).strip()
+                    if path_val:
+                        ok, msg = remove_allowed_path(path_val)
+                        broadcast({
+                            "type": "sandbox_config",
+                            "data": {
+                                "allowed_paths": get_allowed_paths(),
+                                "full_os_access": is_full_os_access(),
+                                "default_dir": str(DEFAULT_SANDBOX_DIR)
+                            }
+                        })
+                        self.log(msg, "SYS" if ok else "ERR")
 
         except websockets.exceptions.ConnectionClosed:
             pass

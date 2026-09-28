@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 from send2trash import send2trash
 from core.undo import push_undo
+from core.sandbox import is_path_allowed, is_full_os_access, get_allowed_paths
 
 def _resolve_path(p: str) -> Path:
     expanded = os.path.expanduser(p)
@@ -24,6 +25,17 @@ def file_controller(parameters: dict, **kwargs) -> str:
         return "Pfad muss angegeben werden."
 
     target = _resolve_path(path_str) if path_str else Path.home() / "Schreibtisch"
+
+    # Sandbox-Rechteprüfung
+    if action != "organize_desktop" and not is_path_allowed(target):
+        allowed = get_allowed_paths()
+        return (
+            f"⛔ Sandbox-Schutz aktiv: Zugriff verweigert auf '{target}'.\n"
+            f"Dieser Pfad liegt außerhalb der freigegebenen Sandbox-Arbeitsbereiche:\n"
+            f"{', '.join(allowed)}\n"
+            f"Tipp: Du kannst diesen Pfad über das Web-HUD (Sandbox-Button) freigeben "
+            f"oder temporär den 'Vollen OS-Zugriff' aktivieren."
+        )
 
     if action in ("read", "lesen", "cat"):
         if not target.exists():
@@ -76,6 +88,8 @@ def file_controller(parameters: dict, **kwargs) -> str:
         if not dest_str:
             return "Zielpfad (destination) erforderlich."
         dest = _resolve_path(dest_str)
+        if not is_path_allowed(dest):
+            return f"⛔ Sandbox-Schutz aktiv: Zielpfad '{dest}' liegt außerhalb der freigegebenen Sandbox-Arbeitsbereiche."
         if not target.exists():
             return f"Quelldatei {target} existiert nicht."
         try:
@@ -101,6 +115,8 @@ def file_controller(parameters: dict, **kwargs) -> str:
             desktop_dir = Path.home() / "Desktop"
         if not desktop_dir.exists():
             return "Schreibtisch-Verzeichnis nicht gefunden."
+        if not is_path_allowed(desktop_dir):
+            return "⛔ Sandbox-Schutz aktiv: Schreibtisch-Verzeichnis ist nicht in den erlaubten Sandbox-Pfaden. Bitte Pfad freigeben oder OS-Vollzugriff aktivieren."
 
         categories = {
             "Bilder": {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"},

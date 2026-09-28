@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { LogMessage } from "@/lib/types";
+import { LogMessage, ChatMessage } from "@/lib/types";
 import { socketManager } from "@/lib/websocket";
 import { 
   Send, Ear, Feather, Folder, Bell, Lightbulb, RefreshCw, 
-  ChevronUp, ChevronDown, Terminal, Sparkles, Puzzle, Archive, UserCheck, ShieldCheck,
-  Calendar
+  ChevronUp, ChevronDown, Terminal, Sparkles, Puzzle, Archive, UserCheck, ShieldCheck, ShieldAlert,
+  Calendar, MessageSquare
 } from "lucide-react";
 
 interface BottomDockProps {
@@ -14,9 +14,11 @@ interface BottomDockProps {
   onOpenContentStudio: () => void;
   onOpenSkillsModal?: () => void;
   onOpenDevConsole?: () => void;
+  onOpenChatWindow?: () => void;
   onOpenPersonalityWizard?: () => void;
   onOpenCalendarModal?: () => void;
   onOpenBackupModal?: () => void;
+  onOpenSandboxModal?: () => void;
 }
 
 export const BottomDock: React.FC<BottomDockProps> = ({
@@ -24,37 +26,47 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   onOpenContentStudio,
   onOpenSkillsModal,
   onOpenDevConsole,
+  onOpenChatWindow,
   onOpenPersonalityWizard,
   onOpenCalendarModal,
   onOpenBackupModal,
+  onOpenSandboxModal,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
-  const [logs, setLogs] = useState<LogMessage[]>([
-    {
-      speaker: "JARVIS",
-      text: "Cypher online. CachyOS-Subsysteme nominal, PipeWire Audio geroutet. Bereit für Instruktionen, Operator.",
-      ts: ""
-    }
-  ]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    const history = socketManager.getChatHistory();
+    if (history && history.length > 0) return history;
+    return [
+      {
+        speaker: "JARVIS",
+        text: "Cypher online. CachyOS-Subsysteme nominal, PipeWire Audio geroutet. Bereit für Instruktionen, Operator.",
+        ts: ""
+      }
+    ];
+  });
   const [showLogDrawer, setShowLogDrawer] = useState(false);
   const [isHandsfree, setIsHandsfree] = useState(true);
   const [backupFeedback, setBackupFeedback] = useState<string | null>(null);
+  const [sandboxConfig, setSandboxConfig] = useState(socketManager.currentSandboxConfig);
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
-    setLogs((prev) =>
+    setChatMessages((prev) =>
       prev.map((l) => (l.ts ? l : { ...l, ts: new Date().toLocaleTimeString() }))
     );
   }, []);
 
   useEffect(() => {
-    const unsubLog = socketManager.onLog((newLog) => {
-      setLogs((prev) => [...prev.slice(-40), newLog]);
+    const unsubChat = socketManager.onChat((newChat) => {
+      setChatMessages((prev) => [...prev.slice(-50), newChat]);
     });
     const unsubMute = socketManager.onMute((muted) => {
       setIsHandsfree(!muted);
+    });
+    const unsubSandbox = socketManager.onSandboxConfig((cfg) => {
+      if (cfg) setSandboxConfig(cfg);
     });
     const unsubExport = socketManager.onBrainExport((res) => {
       if (res.success) {
@@ -66,8 +78,9 @@ export const BottomDock: React.FC<BottomDockProps> = ({
     });
 
     return () => {
-      unsubLog();
+      unsubChat();
       unsubMute();
+      unsubSandbox();
       unsubExport();
     };
   }, []);
@@ -76,7 +89,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
-  }, [logs, showLogDrawer]);
+  }, [chatMessages, showLogDrawer]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +113,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
     }
   };
 
-  const lastMessage = logs[logs.length - 1];
+  const lastMessage = chatMessages[chatMessages.length - 1];
 
   return (
     <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-3xl lg:max-w-4xl px-4 flex flex-col items-center gap-2 pointer-events-auto">
@@ -112,12 +125,12 @@ export const BottomDock: React.FC<BottomDockProps> = ({
         </div>
       )}
 
-      {/* 1. System Terminal Bubble */}
+      {/* 1. System Terminal / Chat Bubble */}
       <div className="w-full">
         <div className="relative rounded-2xl glass-panel bg-[#0d1117]/90 border border-[#1f242d] p-3 shadow-2xl transition-all">
           <div className="flex items-center justify-between border-b border-[#1f242d]/60 pb-1.5 mb-1.5 text-[10px] text-gray-400">
             <span className="flex items-center gap-1.5">
-              <Terminal className="w-3 h-3 text-[#00d4ff]" />
+              <MessageSquare className="w-3 h-3 text-[#00d4ff]" />
               <span className="font-bold uppercase tracking-wider text-white">
                 {lastMessage ? lastMessage.speaker : "JARVIS CORE"}
               </span>
@@ -130,17 +143,28 @@ export const BottomDock: React.FC<BottomDockProps> = ({
                 <button
                   type="button"
                   onClick={onOpenDevConsole}
-                  className="flex items-center gap-1 text-[10px] text-[#00d4ff] hover:text-white transition-colors"
-                  title="Live Dev-Console mit ungefilterten Systemlogs öffnen"
+                  className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-[#00d4ff] transition-colors"
+                  title="Live Dev-Console mit ungefilterten Systemlogs öffnen (verschiebbar & skalierbar)"
                 >
-                  <Terminal className="w-2.5 h-2.5" />
+                  <Terminal className="w-2.5 h-2.5 text-[#00d4ff]" />
                   <span>Dev-Console</span>
+                </button>
+              )}
+              {onOpenChatWindow && (
+                <button
+                  type="button"
+                  onClick={onOpenChatWindow}
+                  className="flex items-center gap-1 text-[10px] text-[#00d4ff] hover:text-white transition-colors"
+                  title="Echtes Jarvis Chat-Fenster öffnen (verschiebbar & skalierbar)"
+                >
+                  <MessageSquare className="w-2.5 h-2.5" />
+                  <span>Chat-Fenster</span>
                 </button>
               )}
               <button
                 onClick={() => setShowLogDrawer(!showLogDrawer)}
                 className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
-                title={showLogDrawer ? "Logs einklappen" : "Vollständigen Chatverlauf anzeigen"}
+                title={showLogDrawer ? "Chat einklappen" : "Vollständigen Dialogverlauf anzeigen"}
               >
                 <span>{showLogDrawer ? "Schließen" : "Historie"}</span>
                 {showLogDrawer ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
@@ -154,25 +178,21 @@ export const BottomDock: React.FC<BottomDockProps> = ({
               ref={logContainerRef}
               className="max-h-56 overflow-y-auto flex flex-col gap-1.5 text-xs font-mono pr-1"
             >
-              {logs.map((l, i) => (
+              {chatMessages.map((m, i) => (
                 <div key={i} className="flex items-start gap-2 leading-relaxed">
                   <span className="text-[10px] text-gray-500 shrink-0 select-none" suppressHydrationWarning>
-                    {mounted && l.ts ? `[${l.ts}]` : ""}
+                    {mounted && m.ts ? `[${m.ts}]` : ""}
                   </span>
                   <span
                     className={`font-bold shrink-0 text-[11px] ${
-                      l.speaker === "YOU"
+                      m.speaker === "YOU"
                         ? "text-[#22c55e]"
-                        : l.speaker === "JARVIS"
-                        ? "text-[#00d4ff]"
-                        : l.speaker === "ERR"
-                        ? "text-red-400"
-                        : "text-[#a855f7]"
+                        : "text-[#00d4ff]"
                     }`}
                   >
-                    {l.speaker}:
+                    {m.speaker}:
                   </span>
-                  <span className="text-gray-200">{l.text}</span>
+                  <span className="text-gray-200">{m.text}</span>
                 </div>
               ))}
             </div>
@@ -218,6 +238,30 @@ export const BottomDock: React.FC<BottomDockProps> = ({
           >
             <Folder className="w-4 h-4" />
           </button>
+
+          {/* Sandbox & OS Access Matrix */}
+          {onOpenSandboxModal && (
+            <button
+              type="button"
+              onClick={onOpenSandboxModal}
+              className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center transition-all cursor-pointer ${
+                sandboxConfig.full_os_access
+                  ? "bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.5)] animate-pulse"
+                  : "text-gray-400 hover:text-[#00d4ff] hover:bg-white/5"
+              }`}
+              title={
+                sandboxConfig.full_os_access
+                  ? "⚠️ VOLLER OS-ZUGRIFF AKTIV: Klicken zur Verwaltung der Sandbox & Arbeitsverzeichnisse"
+                  : "Sandbox & OS-Berechtigungen: Freigegebene Pfade verwalten oder OS-Vollzugriff aktivieren"
+              }
+            >
+              {sandboxConfig.full_os_access ? (
+                <ShieldAlert className="w-4 h-4 text-red-400" />
+              ) : (
+                <ShieldCheck className="w-4 h-4 text-[#00d4ff]" />
+              )}
+            </button>
+          )}
 
           {/* MCP Skill Matrix */}
           {onOpenSkillsModal && (

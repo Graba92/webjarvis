@@ -19,6 +19,12 @@ backend/config/api_keys.json
 config/contacts.json
 backend/config/contacts.json
 !backend/config/contacts.example.json
+backend/config/sandbox_config.json
+!backend/config/sandbox_config.example.json
+
+# ── Lokale Backups & Archive ──────────────────────────────────────────────────
+backend/backups/
+*.zip
 
 # ── Python Virtual Environments & Bytecode ───────────────────────────────────
 .venv/

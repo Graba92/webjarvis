@@ -1,6 +1,0 @@
-data/
-.git/
-node_modules/
-.next/
-__pycache__/
-*.pyc

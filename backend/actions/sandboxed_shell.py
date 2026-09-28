@@ -6,7 +6,7 @@ gehärteten CachyOS Bubblewrap Sandbox (bwrap).
 
 from __future__ import annotations
 from typing import Optional
-from core.sandbox import execute_sandboxed, is_bubblewrap_available
+from core.sandbox import execute_sandboxed, is_bubblewrap_available, is_full_os_access
 
 def sandboxed_shell_handler(parameters: dict, **kwargs) -> str:
     command = str(parameters.get("command", "")).strip()
@@ -19,10 +19,11 @@ def sandboxed_shell_handler(parameters: dict, **kwargs) -> str:
 
     broadcast_fn = kwargs.get("ws_broadcast")
     if broadcast_fn:
+        prefix = "[OS ROOT EXEC]" if is_full_os_access() else "[SANDBOX EXEC]"
         broadcast_fn({
             "type": "log",
             "speaker": "SYS",
-            "text": f"[SANDBOX EXEC] Starte isolierten Befehl: {command[:60]}..."
+            "text": f"{prefix} Starte Befehl: {command[:60]}..."
         })
 
     exit_code, stdout, stderr, was_sandboxed = execute_sandboxed(
@@ -32,7 +33,12 @@ def sandboxed_shell_handler(parameters: dict, **kwargs) -> str:
         timeout=timeout
     )
 
-    status_tag = "✓ BWRAP SANDBOX" if was_sandboxed else "! UNGESANDBOXED (Fallback)"
+    if is_full_os_access():
+        status_tag = "⚡ VOLLER OS-ZUGRIFF (Host-Ausführung)"
+    elif was_sandboxed:
+        status_tag = "✓ BWRAP SANDBOX (Isoliert)"
+    else:
+        status_tag = "! UNGESANDBOXED (Fallback)"
     out_lines = []
     out_lines.append(f"[{status_tag}] Exit-Code: {exit_code}")
 
