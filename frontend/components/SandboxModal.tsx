@@ -38,10 +38,11 @@ export const SandboxModal: React.FC<SandboxModalProps> = ({ isOpen, onClose }) =
 
   const handleToggleFullOs = () => {
     const nextState = !config.full_os_access;
+    setConfig((prev) => ({ ...prev, full_os_access: nextState }));
     socketManager.setFullOsAccess(nextState);
     setFeedback(
       nextState
-        ? "⚠️ Voller OS-Zugriff aktiviert! (Aktiv bis zum nächsten Klick oder Jarvis-Neustart)"
+        ? "⚠️ Uneingeschränkter OS-Vollzugriff aktiviert!"
         : "🛡️ Sandbox-Schutz wiederhergestellt. Jarvis arbeitet wieder isoliert."
     );
     setTimeout(() => setFeedback(null), 4000);

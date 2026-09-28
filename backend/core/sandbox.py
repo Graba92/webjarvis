@@ -59,9 +59,25 @@ def set_full_os_access(enabled: bool) -> bool:
     global _FULL_OS_ACCESS
     _FULL_OS_ACCESS = bool(enabled)
     try:
-        cfg = load_sandbox_config()
-        cfg["full_os_access"] = _FULL_OS_ACCESS
-        save_sandbox_config(cfg)
+        clean_paths = []
+        if SANDBOX_CONFIG_FILE.exists():
+            try:
+                data = json.loads(SANDBOX_CONFIG_FILE.read_text(encoding="utf-8"))
+                for p in data.get("allowed_paths", []):
+                    np = normalize_path(p)
+                    if np and np not in clean_paths:
+                        clean_paths.append(np)
+            except Exception:
+                pass
+
+        if not clean_paths:
+            clean_paths = [str(DEFAULT_SANDBOX_DIR.resolve())]
+
+        payload = {
+            "allowed_paths": clean_paths,
+            "full_os_access": _FULL_OS_ACCESS
+        }
+        SANDBOX_CONFIG_FILE.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     except Exception as e:
         print(f"[Sandbox] Fehler beim Persistieren von full_os_access: {e}")
     return _FULL_OS_ACCESS
@@ -73,7 +89,7 @@ def load_sandbox_config() -> dict:
         "allowed_paths": [
             str(DEFAULT_SANDBOX_DIR.resolve())
         ],
-        "full_os_access": False
+        "full_os_access": _FULL_OS_ACCESS
     }
 
     # Falls Umgebungsvariable gesetzt ist, diese einbeziehen
@@ -105,8 +121,9 @@ def load_sandbox_config() -> dict:
 
         data["allowed_paths"] = normalized_paths
 
-        # Full OS Access synchronisieren
-        _FULL_OS_ACCESS = bool(data.get("full_os_access", False))
+        # Full OS Access synchronisieren (aus Datei)
+        if "full_os_access" in data:
+            _FULL_OS_ACCESS = bool(data["full_os_access"])
         data["full_os_access"] = _FULL_OS_ACCESS
 
         return data
