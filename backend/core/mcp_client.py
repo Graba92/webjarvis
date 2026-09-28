@@ -238,9 +238,22 @@ class MCPManager:
                 continue
 
             cmd = s_data.get("command")
-            args = s_data.get("args", [])
+            args = list(s_data.get("args", []))
             if not cmd:
                 continue
+
+            # Dynamische Pfadübergabe an MCP Filesystem Server
+            if s_name == "filesystem" or any("@modelcontextprotocol/server-filesystem" in str(a) for a in args):
+                try:
+                    from core.sandbox import get_allowed_paths, is_full_os_access
+                    base_args = [a for a in args if not str(a).startswith("/") and not str(a).startswith(".") and not str(a).startswith("~")]
+                    if is_full_os_access():
+                        dyn_paths = ["/"]
+                    else:
+                        dyn_paths = list(get_allowed_paths())
+                    args = base_args + dyn_paths
+                except Exception as e:
+                    self.logger(f"[MCPManager] Warnung bei dynamischen Filesystem-Pfaden: {e}")
 
             server = MCPStdioServer(
                 name=s_name,

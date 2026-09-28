@@ -9,11 +9,11 @@ import shutil
 from pathlib import Path
 from send2trash import send2trash
 from core.undo import push_undo
-from core.sandbox import is_path_allowed, is_full_os_access, get_allowed_paths
+from core.sandbox import is_path_allowed, is_full_os_access, get_allowed_paths, normalize_path
 
 def _resolve_path(p: str) -> Path:
-    expanded = os.path.expanduser(p)
-    return Path(expanded).resolve()
+    norm = normalize_path(p)
+    return Path(norm)
 
 def file_controller(parameters: dict, **kwargs) -> str:
     action = str(parameters.get("action", "")).lower().strip()

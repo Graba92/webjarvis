@@ -1,5 +1,6 @@
 {
   "allowed_paths": [
     "./sandbox_workspace"
-  ]
+  ],
+  "full_os_access": false
 }
