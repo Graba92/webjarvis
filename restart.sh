@@ -20,7 +20,7 @@ fi
 
 sleep 1
 
-# 2. Starte J.A.R.V.I.S. neu
-nohup bash "$SCRIPT_DIR/run.sh" >/dev/null 2>&1 &
+# 2. Starte J.A.R.V.I.S. neu (Backend & Frontend via -a)
+nohup bash "$SCRIPT_DIR/start.sh" -a >/dev/null 2>&1 &
 
 echo "[✓] J.A.R.V.I.S. AI OS Neustart initiiert."
