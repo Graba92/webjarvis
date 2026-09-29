@@ -52,10 +52,12 @@ class JarvisSocketManager {
   private aiNameListeners: Set<Listener<string>> = new Set();
   private sandboxListeners: Set<Listener<SandboxConfig>> = new Set();
   private voiceListeners: Set<Listener<string>> = new Set();
+  private desktopPetListeners: Set<Listener<boolean>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public currentAiName: string = "Cypher";
   public currentVoice: string = "Puck";
+  public desktopPetRunning: boolean = false;
   public isMuted: boolean = false;
   public isParanoiaMuted: boolean = false;
   public isFocusMode: boolean = false;
@@ -156,6 +158,10 @@ class JarvisSocketManager {
         if (initVoice && typeof initVoice === "string") {
           this.currentVoice = initVoice;
           this.voiceListeners.forEach((fn) => fn(this.currentVoice));
+        }
+        if (msg.desktop_pet_running !== undefined || msg.data?.desktop_pet_running !== undefined) {
+          this.desktopPetRunning = !!(msg.desktop_pet_running ?? msg.data?.desktop_pet_running);
+          this.desktopPetListeners.forEach((fn) => fn(this.desktopPetRunning));
         }
         if (msg.api_key_status) {
           this.apiKeyStatus = msg.api_key_status;
@@ -438,6 +444,13 @@ class JarvisSocketManager {
         if (msg.voice && typeof msg.voice === "string") {
           this.currentVoice = msg.voice;
           this.voiceListeners.forEach((fn) => fn(this.currentVoice));
+        }
+        break;
+
+      case "desktop_pet_status":
+        if (msg.running !== undefined) {
+          this.desktopPetRunning = !!msg.running;
+          this.desktopPetListeners.forEach((fn) => fn(this.desktopPetRunning));
         }
         break;
 
@@ -950,6 +963,18 @@ class JarvisSocketManager {
     this.voiceListeners.add(listener);
     listener(this.currentVoice);
     return () => this.voiceListeners.delete(listener);
+  }
+
+  public toggleDesktopPet() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "toggle_desktop_pet" }));
+    }
+  }
+
+  public onDesktopPetStatus(listener: Listener<boolean>): () => void {
+    this.desktopPetListeners.add(listener);
+    listener(this.desktopPetRunning);
+    return () => this.desktopPetListeners.delete(listener);
   }
 }
 
