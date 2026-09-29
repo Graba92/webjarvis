@@ -697,12 +697,15 @@ class JarvisServer:
                         
                         if pet_script:
                             try:
+                                env = dict(os.environ)
+                                env["QT_QPA_PLATFORM"] = "xcb"
                                 self.desktop_pet_process = subprocess.Popen(
                                     [sys.executable, str(pet_script)],
                                     stdout=subprocess.DEVNULL,
-                                    stderr=subprocess.DEVNULL
+                                    stderr=subprocess.DEVNULL,
+                                    env=env
                                 )
-                                self.log(f"Desktop Pet (Yuyu Chibi) gestartet: {pet_script}", "SYS")
+                                self.log(f"Desktop Pet (Yuyu Chibi) gestartet (XWayland xcb): {pet_script}", "SYS")
                                 broadcast({"type": "desktop_pet_status", "running": True})
                             except Exception as e:
                                 self.log(f"Fehler beim Starten des Desktop Pets: {e}", "ERR")
