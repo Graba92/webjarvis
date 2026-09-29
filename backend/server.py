@@ -38,7 +38,7 @@ import websockets
 from core.config import (
     WS_HOST, WS_PORT, AUDIO_SAMPLE_RATE_INPUT, AUDIO_SAMPLE_RATE_OUTPUT,
     USER_NAME, save_gemini_api_key, is_api_key_configured, get_masked_api_key, get_gemini_api_key,
-    get_personality_dict, format_soul_md, get_ai_name
+    get_personality_dict, format_soul_md, get_ai_name, get_voice_name, save_voice_name
 )
 from core.sandbox import (
     get_allowed_paths, is_full_os_access, set_full_os_access,
@@ -252,6 +252,7 @@ class JarvisServer:
             "focus_mode": getattr(self.cron_engine, "focus_mode", False),
             "paranoia_muted": self.audio.is_paranoia_muted(),
             "personality": get_personality_dict(),
+            "voice_name": get_voice_name(),
             "calendar_events": get_events_list(),
             "auto_briefing": getattr(self.cron_engine, "auto_briefing", True),
             "sandbox_config": {
@@ -265,6 +266,7 @@ class JarvisServer:
             "type": "SYSTEM_INIT",
             "data": {
                 "ai_name": ai_name,
+                "voice_name": get_voice_name(),
                 "personality": get_personality_dict(),
                 "sandbox_config": {
                     "allowed_paths": get_allowed_paths(),
@@ -634,6 +636,19 @@ class JarvisServer:
                     self.audio.set_paranoia_mute(active)
                     broadcast({"type": "paranoia_mute_status", "active": active, "muted": active})
                     broadcast({"type": "paranoia_mute_state", "active": active, "muted": active})
+
+                elif msg_type == "set_voice":
+                    target_voice = str(data.get("voice", "Puck")).strip() or "Puck"
+                    new_voice = save_voice_name(target_voice)
+                    self.log(f"Jarvis KI-Stimme umgestellt auf: {new_voice}", "SYS")
+                    broadcast({"type": "voice_updated", "voice": new_voice})
+                    broadcast({"type": "voice_status", "voice": new_voice})
+
+                elif msg_type == "get_voice":
+                    await websocket.send(json.dumps({
+                        "type": "voice_status",
+                        "voice": get_voice_name()
+                    }))
 
                 elif msg_type == "get_personality":
                     p = get_personality_dict()

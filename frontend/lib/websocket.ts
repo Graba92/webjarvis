@@ -51,9 +51,11 @@ class JarvisSocketManager {
   private autoBriefingListeners: Set<Listener<boolean>> = new Set();
   private aiNameListeners: Set<Listener<string>> = new Set();
   private sandboxListeners: Set<Listener<SandboxConfig>> = new Set();
+  private voiceListeners: Set<Listener<string>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public currentAiName: string = "Cypher";
+  public currentVoice: string = "Puck";
   public isMuted: boolean = false;
   public isParanoiaMuted: boolean = false;
   public isFocusMode: boolean = false;
@@ -149,6 +151,11 @@ class JarvisSocketManager {
         if (initName && typeof initName === "string") {
           this.currentAiName = initName;
           this.aiNameListeners.forEach((fn) => fn(this.currentAiName));
+        }
+        const initVoice = msg.voice_name || msg.data?.voice_name;
+        if (initVoice && typeof initVoice === "string") {
+          this.currentVoice = initVoice;
+          this.voiceListeners.forEach((fn) => fn(this.currentVoice));
         }
         if (msg.api_key_status) {
           this.apiKeyStatus = msg.api_key_status;
@@ -423,6 +430,14 @@ class JarvisSocketManager {
         if (msg.enabled !== undefined) {
           this.isAutoBriefing = !!msg.enabled;
           this.autoBriefingListeners.forEach((fn) => fn(this.isAutoBriefing));
+        }
+        break;
+
+      case "voice_updated":
+      case "voice_status":
+        if (msg.voice && typeof msg.voice === "string") {
+          this.currentVoice = msg.voice;
+          this.voiceListeners.forEach((fn) => fn(this.currentVoice));
         }
         break;
 
@@ -917,6 +932,24 @@ class JarvisSocketManager {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "remove_sandbox_path", path }));
     }
+  }
+
+  public setVoice(voice: string) {
+    this.currentVoice = voice;
+    this.voiceListeners.forEach((fn) => fn(this.currentVoice));
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "set_voice", voice }));
+    }
+  }
+
+  public getVoice(): string {
+    return this.currentVoice;
+  }
+
+  public onVoiceChange(listener: Listener<string>): () => void {
+    this.voiceListeners.add(listener);
+    listener(this.currentVoice);
+    return () => this.voiceListeners.delete(listener);
   }
 }
 

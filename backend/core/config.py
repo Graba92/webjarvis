@@ -114,7 +114,25 @@ WS_PORT = int(os.getenv("JARVIS_WS_PORT", "8765"))
 
 # Modell- und Sprachparameter
 LIVE_MODEL = os.getenv("JARVIS_MODEL", "models/gemini-3.1-flash-live-preview")
-VOICE_NAME = _persisted.get("voice_name", "Puck")  # Puck, Charon, Kore, Fenrir, Aoede
+VOICE_NAME = _persisted.get("voice_name", "Puck")  # Puck (Männlich), Aoede (Weiblich), Charon, Kore, Fenrir
+
+def get_voice_name() -> str:
+    """Gibt die aktuell konfigurierte Stimme zurück."""
+    return str(_persisted.get("voice_name", VOICE_NAME))
+
+def save_voice_name(voice: str) -> str:
+    """Speichert die gewählte Stimme persistent."""
+    global VOICE_NAME
+    clean_voice = str(voice).strip()
+    if clean_voice:
+        VOICE_NAME = clean_voice
+        _persisted["voice_name"] = clean_voice
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(_persisted, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            sys.stderr.write(f"[WARNUNG] Konnte voice_name nicht in api_keys.json speichern: {e}\n")
+    return VOICE_NAME
 
 USER_NAME = os.getenv("JARVIS_USER_NAME", "Operator")
 

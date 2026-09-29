@@ -19,6 +19,7 @@ import { PersonalityWizardModal } from "@/components/PersonalityWizardModal";
 import { CalendarModal } from "@/components/CalendarModal";
 import { BackupModal } from "@/components/BackupModal";
 import { SandboxModal } from "@/components/SandboxModal";
+import { JarvisPet } from "@/components/JarvisPet";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -52,8 +53,18 @@ export default function Home() {
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
   const [isSandboxModalOpen, setIsSandboxModalOpen] = useState<boolean>(false);
+  const [isPetOpen, setIsPetOpen] = useState<boolean>(false);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedPet = localStorage.getItem("jarvis_pet_active");
+      if (savedPet === "true") {
+        setIsPetOpen(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // WebSocket Bridge initialisieren
@@ -170,6 +181,16 @@ export default function Home() {
         onOpenCalendarModal={() => setIsCalendarOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenSandboxModal={() => setIsSandboxModalOpen(true)}
+        isPetActive={isPetOpen}
+        onTogglePet={() => {
+          setIsPetOpen((prev) => {
+            const next = !prev;
+            if (typeof window !== "undefined") {
+              localStorage.setItem("jarvis_pet_active", next ? "true" : "false");
+            }
+            return next;
+          });
+        }}
       />
 
       {/* 5. Jarvis Live Chat Window (verschiebbar & in der Größe anpassbar) */}
@@ -217,6 +238,16 @@ export default function Home() {
         isOpen={isDevicePanelOpen}
         onClose={() => setIsDevicePanelOpen(false)}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        isPetActive={isPetOpen}
+        onTogglePet={() => {
+          setIsPetOpen((prev) => {
+            const next = !prev;
+            if (typeof window !== "undefined") {
+              localStorage.setItem("jarvis_pet_active", next ? "true" : "false");
+            }
+            return next;
+          });
+        }}
       />
 
       <ContentStudio
@@ -232,6 +263,17 @@ export default function Home() {
       <SkillsModal
         isOpen={isSkillsModalOpen}
         onClose={() => setIsSkillsModalOpen(false)}
+      />
+
+      {/* 12. Jarvis Pet Companion (Yuyu Chibi - OpenPets Mini Core) */}
+      <JarvisPet
+        isOpen={isPetOpen}
+        onClose={() => {
+          setIsPetOpen(false);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("jarvis_pet_active", "false");
+          }
+        }}
       />
     </main>
   );

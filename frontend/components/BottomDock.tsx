@@ -6,7 +6,7 @@ import { socketManager } from "@/lib/websocket";
 import { 
   Send, Ear, Feather, Folder, Bell, Lightbulb, RefreshCw, 
   ChevronUp, ChevronDown, Terminal, Sparkles, Puzzle, Archive, UserCheck, ShieldCheck, ShieldAlert,
-  Calendar, MessageSquare
+  Calendar, MessageSquare, Cat
 } from "lucide-react";
 
 interface BottomDockProps {
@@ -19,6 +19,8 @@ interface BottomDockProps {
   onOpenCalendarModal?: () => void;
   onOpenBackupModal?: () => void;
   onOpenSandboxModal?: () => void;
+  isPetActive?: boolean;
+  onTogglePet?: () => void;
 }
 
 export const BottomDock: React.FC<BottomDockProps> = ({
@@ -31,6 +33,8 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   onOpenCalendarModal,
   onOpenBackupModal,
   onOpenSandboxModal,
+  isPetActive,
+  onTogglePet,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
@@ -296,6 +300,26 @@ export const BottomDock: React.FC<BottomDockProps> = ({
               title="Terminkalender & Tagesbriefing verwalten"
             >
               <Calendar className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Jarvis Pet Addon Toggle */}
+          {onTogglePet && (
+            <button
+              type="button"
+              onClick={onTogglePet}
+              className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center transition-all cursor-pointer ${
+                isPetActive
+                  ? "bg-pink-500/25 text-pink-400 border border-pink-500/50 shadow-[0_0_12px_rgba(244,114,182,0.6)] animate-pulse"
+                  : "text-gray-400 hover:text-pink-400 hover:bg-white/5"
+              }`}
+              title={
+                isPetActive
+                  ? "🐾 Jarvis Pet (Yuyu Chibi) aktiv: Klicken zum Deaktivieren"
+                  : "🐾 Jarvis Pet (Yuyu Chibi) aktivieren: Interaktiver animierter Companion"
+              }
+            >
+              <Cat className="w-4 h-4" />
             </button>
           )}
         </div>
