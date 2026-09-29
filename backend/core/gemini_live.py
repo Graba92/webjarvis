@@ -17,7 +17,8 @@ import websockets.exceptions
 
 from core.config import (
     get_gemini_api_key, LIVE_MODEL, VOICE_NAME, SYSTEM_PROMPT,
-    load_soul_instructions, load_memory_md_content, load_heartbeat_checklist
+    load_soul_instructions, load_memory_md_content, load_heartbeat_checklist,
+    get_voice_name
 )
 from core.action_loader import ActionRegistry
 from memory.memory_manager import load_memory, format_memory_for_prompt
@@ -71,6 +72,23 @@ class GeminiLiveController:
             except Exception:
                 pass
 
+    def trigger_voice_change(self, new_voice: str):
+        """Etabliert die Live-Session dynamisch neu mit der neuen Stimme, ohne Serverneustart."""
+        self.log(f"Dynamischer Stimmenwechsel zu '{new_voice}'. Erneuere Live-Sitzung nahtlos...", "SYS")
+        self._resumption_handle = None
+        for t in self._tasks:
+            if not t.done():
+                t.cancel()
+        if self.session:
+            try:
+                if self._loop and self._loop.is_running():
+                    self._loop.create_task(self.session.close())
+            except Exception:
+                pass
+
+    def is_session_ready(self) -> bool:
+        return bool(self.session is not None)
+
     def _build_config(self, resumption_handle: Optional[str] = None) -> types.LiveConnectConfig:
         memory = load_memory()
         mem_str = format_memory_for_prompt(memory)
@@ -101,11 +119,12 @@ class GeminiLiveController:
             else types.SessionResumptionConfig()
         )
 
+        current_voice = get_voice_name()
         return types.LiveConnectConfig(
             response_modalities=["AUDIO"],
             speech_config=types.SpeechConfig(
                 voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=VOICE_NAME)
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=current_voice)
                 )
             ),
             output_audio_transcription={},

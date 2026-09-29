@@ -646,9 +646,27 @@ class JarvisServer:
                 elif msg_type == "set_voice":
                     target_voice = str(data.get("voice", "Puck")).strip() or "Puck"
                     new_voice = save_voice_name(target_voice)
-                    self.log(f"Jarvis KI-Stimme umgestellt auf: {new_voice}", "SYS")
+                    self.log(f"Jarvis KI-Stimme live umgestellt auf: {new_voice}", "SYS")
+                    # Dynamischer Reconnect ohne Serverneustart
+                    if hasattr(self.controller, "trigger_voice_change"):
+                        self.controller.trigger_voice_change(new_voice)
                     broadcast({"type": "voice_updated", "voice": new_voice})
                     broadcast({"type": "voice_status", "voice": new_voice})
+
+                elif msg_type == "pet_moved":
+                    # Reagiere darauf, wenn der Nutzer das Pet auf dem Desktop verschiebt
+                    px = data.get("x", 0)
+                    py = data.get("y", 0)
+                    pet_responses = [
+                        "Hui! Neuer Aussichtspunkt auf deinem Desktop.",
+                        "Rundflug über CachyOS beendet. Von hier aus hat Yuyu den vollen Überblick!",
+                        "Positionswechsel registriert. Ich behalte die Sensor-Matrix im Auge.",
+                        "Neuer Landeplatz für Yuyu bestätigt, Operator."
+                    ]
+                    import random
+                    chosen_msg = random.choice(pet_responses)
+                    self.log(f"Yuyu Chibi verschoben nach ({px}, {py}): {chosen_msg}", "SYS")
+                    broadcast({"type": "chat", "speaker": "JARVIS", "text": chosen_msg})
 
                 elif msg_type == "get_voice":
                     await websocket.send(json.dumps({
@@ -670,25 +688,27 @@ class JarvisServer:
                         self.log("Desktop Pet beendet.", "SYS")
                         broadcast({"type": "desktop_pet_status", "running": False})
                     else:
-                        pet_script = Path("/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis_petaddon/pet_desktop.py")
-                        if not pet_script.exists():
-                            # Fallback lokaler Pfad falls im Projekt
-                            pet_script = Path(__file__).resolve().parent.parent.parent / "webjarvis_petaddon" / "pet_desktop.py"
+                        candidate_paths = [
+                            Path.home() / ".local" / "share" / "webjarvis_petaddon" / "pet_desktop.py",
+                            Path("/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis_petaddon/pet_desktop.py"),
+                            Path(__file__).resolve().parent.parent.parent / "webjarvis_petaddon" / "pet_desktop.py"
+                        ]
+                        pet_script = next((p for p in candidate_paths if p.exists()), None)
                         
-                        if pet_script.exists():
+                        if pet_script:
                             try:
                                 self.desktop_pet_process = subprocess.Popen(
                                     [sys.executable, str(pet_script)],
                                     stdout=subprocess.DEVNULL,
                                     stderr=subprocess.DEVNULL
                                 )
-                                self.log("Desktop Pet (Yuyu Chibi) auf Linux Desktop gestartet.", "SYS")
+                                self.log(f"Desktop Pet (Yuyu Chibi) gestartet: {pet_script}", "SYS")
                                 broadcast({"type": "desktop_pet_status", "running": True})
                             except Exception as e:
                                 self.log(f"Fehler beim Starten des Desktop Pets: {e}", "ERR")
                                 broadcast({"type": "desktop_pet_status", "running": False})
                         else:
-                            self.log(f"Desktop Pet Skript nicht gefunden: {pet_script}", "ERR")
+                            self.log("Desktop Pet Skript nicht gefunden.", "ERR")
                             broadcast({"type": "desktop_pet_status", "running": False})
 
                 elif msg_type == "get_desktop_pet_status":
