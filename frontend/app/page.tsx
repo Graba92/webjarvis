@@ -52,18 +52,8 @@ export default function Home() {
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
   const [isSandboxModalOpen, setIsSandboxModalOpen] = useState<boolean>(false);
-  const [isPetOpen, setIsPetOpen] = useState<boolean>(false);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedPet = localStorage.getItem("jarvis_pet_active");
-      if (savedPet === "true") {
-        setIsPetOpen(true);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     // WebSocket Bridge initialisieren
@@ -72,7 +62,6 @@ export default function Home() {
     const unsubState = socketManager.onState(setAssistantState);
     const unsubAudio = socketManager.onAudioLevel(setAudioLevel);
     const unsubGraph = socketManager.onGraphUpdate(setData);
-    const unsubPet = socketManager.onDesktopPetStatus(setIsPetOpen);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && (e.key === "c" || e.key === "C")) {
@@ -86,7 +75,6 @@ export default function Home() {
       unsubState();
       unsubAudio();
       unsubGraph();
-      unsubPet();
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
@@ -182,8 +170,6 @@ export default function Home() {
         onOpenCalendarModal={() => setIsCalendarOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenSandboxModal={() => setIsSandboxModalOpen(true)}
-        isPetActive={isPetOpen}
-        onTogglePet={() => socketManager.toggleDesktopPet()}
       />
 
       {/* 5. Jarvis Live Chat Window (verschiebbar & in der Größe anpassbar) */}
@@ -231,8 +217,6 @@ export default function Home() {
         isOpen={isDevicePanelOpen}
         onClose={() => setIsDevicePanelOpen(false)}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
-        isPetActive={isPetOpen}
-        onTogglePet={() => socketManager.toggleDesktopPet()}
       />
 
       <ContentStudio

@@ -135,9 +135,6 @@ class JarvisServer:
         except Exception as e:
             self._log(f"Warnung: Kalender-Sync-Binding fehlgeschlagen: {e}")
 
-        # Desktop Pet Companion Prozessverwaltung (PyQt6 OpenPets Core)
-        self.desktop_pet_process: Optional[subprocess.Popen] = None
-
     def _log(self, msg: str):
         print(f"[JarvisServer] {msg}")
         ts = datetime.now().strftime("%H:%M:%S")
@@ -257,7 +254,6 @@ class JarvisServer:
             "paranoia_muted": self.audio.is_paranoia_muted(),
             "personality": get_personality_dict(),
             "voice_name": get_voice_name(),
-            "desktop_pet_running": bool(self.desktop_pet_process and self.desktop_pet_process.poll() is None),
             "calendar_events": get_events_list(),
             "auto_briefing": getattr(self.cron_engine, "auto_briefing", True),
             "sandbox_config": {
@@ -272,7 +268,6 @@ class JarvisServer:
             "data": {
                 "ai_name": ai_name,
                 "voice_name": get_voice_name(),
-                "desktop_pet_running": bool(self.desktop_pet_process and self.desktop_pet_process.poll() is None),
                 "personality": get_personality_dict(),
                 "sandbox_config": {
                     "allowed_paths": get_allowed_paths(),
@@ -653,72 +648,10 @@ class JarvisServer:
                     broadcast({"type": "voice_updated", "voice": new_voice})
                     broadcast({"type": "voice_status", "voice": new_voice})
 
-                elif msg_type == "pet_moved":
-                    # Reagiere darauf, wenn der Nutzer das Pet auf dem Desktop verschiebt
-                    px = data.get("x", 0)
-                    py = data.get("y", 0)
-                    pet_responses = [
-                        "Hui! Neuer Aussichtspunkt auf deinem Desktop.",
-                        "Rundflug über CachyOS beendet. Von hier aus hat Yuyu den vollen Überblick!",
-                        "Positionswechsel registriert. Ich behalte die Sensor-Matrix im Auge.",
-                        "Neuer Landeplatz für Yuyu bestätigt, Operator."
-                    ]
-                    import random
-                    chosen_msg = random.choice(pet_responses)
-                    self.log(f"Yuyu Chibi verschoben nach ({px}, {py}): {chosen_msg}", "SYS")
-                    broadcast({"type": "chat", "speaker": "JARVIS", "text": chosen_msg})
-
                 elif msg_type == "get_voice":
                     await websocket.send(json.dumps({
                         "type": "voice_status",
                         "voice": get_voice_name()
-                    }))
-
-                elif msg_type == "toggle_desktop_pet":
-                    if self.desktop_pet_process and self.desktop_pet_process.poll() is None:
-                        try:
-                            self.desktop_pet_process.terminate()
-                            self.desktop_pet_process.wait(timeout=1.5)
-                        except Exception:
-                            try:
-                                self.desktop_pet_process.kill()
-                            except Exception:
-                                pass
-                        self.desktop_pet_process = None
-                        self.log("Desktop Pet beendet.", "SYS")
-                        broadcast({"type": "desktop_pet_status", "running": False})
-                    else:
-                        candidate_paths = [
-                            Path.home() / ".local" / "share" / "webjarvis_petaddon" / "pet_desktop.py",
-                            Path("/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis_petaddon/pet_desktop.py"),
-                            Path(__file__).resolve().parent.parent.parent / "webjarvis_petaddon" / "pet_desktop.py"
-                        ]
-                        pet_script = next((p for p in candidate_paths if p.exists()), None)
-                        
-                        if pet_script:
-                            try:
-                                env = dict(os.environ)
-                                env["QT_QPA_PLATFORM"] = "xcb"
-                                self.desktop_pet_process = subprocess.Popen(
-                                    [sys.executable, str(pet_script)],
-                                    stdout=subprocess.DEVNULL,
-                                    stderr=subprocess.DEVNULL,
-                                    env=env
-                                )
-                                self.log(f"Desktop Pet (Yuyu Chibi) gestartet (XWayland xcb): {pet_script}", "SYS")
-                                broadcast({"type": "desktop_pet_status", "running": True})
-                            except Exception as e:
-                                self.log(f"Fehler beim Starten des Desktop Pets: {e}", "ERR")
-                                broadcast({"type": "desktop_pet_status", "running": False})
-                        else:
-                            self.log("Desktop Pet Skript nicht gefunden.", "ERR")
-                            broadcast({"type": "desktop_pet_status", "running": False})
-
-                elif msg_type == "get_desktop_pet_status":
-                    is_running = bool(self.desktop_pet_process and self.desktop_pet_process.poll() is None)
-                    await websocket.send(json.dumps({
-                        "type": "desktop_pet_status",
-                        "running": is_running
                     }))
 
                 elif msg_type == "get_personality":

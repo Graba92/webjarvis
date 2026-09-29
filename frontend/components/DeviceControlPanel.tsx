@@ -6,23 +6,19 @@ import { TelemetryData } from "@/lib/types";
 import { 
   Laptop, Volume2, Sun, Wifi, RotateCcw, FolderCheck, 
   Terminal, AppWindow, Cpu, HardDrive, Thermometer, ShieldAlert, X, KeyRound,
-  Cat, Mic, Sparkles
+  Mic, Sparkles
 } from "lucide-react";
 
 interface DeviceControlPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenApiKeyModal?: () => void;
-  isPetActive?: boolean;
-  onTogglePet?: () => void;
 }
 
 export const DeviceControlPanel: React.FC<DeviceControlPanelProps> = ({ 
   isOpen, 
   onClose, 
-  onOpenApiKeyModal,
-  isPetActive,
-  onTogglePet
+  onOpenApiKeyModal
 }) => {
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
   const [volume, setVolume] = useState(50);
@@ -186,31 +182,6 @@ export const DeviceControlPanel: React.FC<DeviceControlPanelProps> = ({
               <span>Weiblich (Aoede / Sanft)</span>
             </button>
           </div>
-
-          {/* Jarvis Pet Companion Schnellschalter */}
-          {onTogglePet && (
-            <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Cat className="w-4 h-4 text-pink-400" />
-                <div>
-                  <div className="text-xs font-semibold text-white">Yuyu Chibi Pet Companion</div>
-                  <div className="text-[10px] text-gray-400">Interaktiver animierter Desktop- & Web-Begleiter</div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onTogglePet}
-                className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  isPetActive
-                    ? "bg-pink-500/25 border-pink-500 text-pink-300 shadow-[0_0_12px_rgba(244,114,182,0.4)] animate-pulse"
-                    : "bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{isPetActive ? "Aktiviert 🐾" : "Aktivieren"}</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Anwendungsstarter & System-Aktionen */}
