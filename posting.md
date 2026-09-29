@@ -69,6 +69,9 @@ Here is a quick overview of what I’ve built so far:
 * **[J.A.R.V.I.S. AI OS (WebGL)](https://github.com/Graba92/webjarvis)**:
   A full-scale 3D WebGL desktop AI operating system built with Next.js 15, Three.js holographic knowledge constellation (volumetric Fresnel glow shaders, gyroscope rings & live traffic pulses), native PyQt6 Cyberpunk HUD Manager (system tray / start menu control center with live status, autostart toggle & non-destructive GitHub update auditor), draggable & resizable DevConsole and Chat Windows, Gemini Live WebSocket voice engine with dedicated voice commands ('jarvis neustart' for tool restart without OS reboot, 'jarvis stop', 'jarvis mute' paranoia killswitch, 'jarvis update' GitHub self-updater), zero-failure OpenAPI schema sanitization (`sanitize_schema_for_gemini`), Model Context Protocol (MCP JSON-RPC 2.0) dynamic tool bridge, dynamic AI identity synchronization & live persona hot-reloading, full-featured interactive Calendar Matrix, Brain Vault modal (1-click backups including 3D knowledge graph nodes `graph_nodes.json`, browser ZIP download, drag-and-drop restore), and PipeWire virtual audio routing.
 
+* **[WebJarvis Desktop Pet (OpenPets Mini Core)](https://github.com/Graba92/webjarvis_petaddon)**:
+  Native Linux/CachyOS Desktop Companion for WebJarvis built with PyQt6. Features OpenPets V2 spritesheets, silky anti-aliased scaling, 16-sector cursor gaze, dynamic audio-RMS bounce, drag-and-drop relocation with live Jarvis voice reaction, and live voice switching (Male Puck / Female Aoede) via context menu without restarting the server. Includes persistent OS installation to `~/.local/share/webjarvis_petaddon`.
+
 * **[Jarvis Spatial Shell / Particle Launcher](https://github.com/Graba92/kde-plasma6-3d-particle-launcher)**:
   A futuristic 3D particle app launcher for KDE Plasma 6 Wayland with PipeWire real-time FFT audio visualizer.
 
@@ -149,6 +152,10 @@ Full-Stack Next.js 15 & Three.js 3D-Interface mit holografischem Wissensgraphen 
 ### 8. 🔮 Jarvis Spatial Shell / Particle Launcher
 Experimenteller 3D-Partikel App-Launcher für KDE Plasma 6 Wayland mit PipeWire Realtime-Audio FFT-Reaktivität.
 🔗 [GitHub: kde-plasma6-3d-particle-launcher](https://github.com/Graba92/kde-plasma6-3d-particle-launcher)
+
+### 9. 🐾 WebJarvis Desktop Pet (OpenPets Mini Core)
+Nativer Linux/CachyOS Desktop-Begleiter für WebJarvis (PyQt6). OpenPets V2 Spritesheet, seidenweiches Anti-Aliasing (SmoothTransformation), 16-Sektoren Blickverfolgung, Audio-RMS Bounce bei Sprache, Drag & Drop-Reaktion via Jarvis-Stimme, Live-Stimmenwechsel (Männlich/Weiblich) ohne Neustart per Rechtsklick und dauerhafter OS-Installer nach `~/.local/share/webjarvis_petaddon`.
+🔗 [GitHub: webjarvis_petaddon](https://github.com/Graba92/webjarvis_petaddon)
 
 ---
 
