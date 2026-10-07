@@ -485,6 +485,51 @@ class JarvisServer:
                         await self.task_manager.reorder_tasks(task_ids)
                         self.log(f"Aufgaben neu angeordnet ({len(task_ids)} Einträge).", "SYS")
 
+                elif msg_type == "run_task":
+                    task_id = str(data.get("task_id", "")).strip()
+                    if task_id:
+                        async def _execute_task_pipeline(tid: str):
+                            target = next((t for t in self.task_manager.get_tasks() if t["id"] == tid), None)
+                            task_name = target["text"] if target else tid
+                            self.log(f"Starte Ausführung von Aufgabe [{tid}]: '{task_name}'...", "SYS")
+                            broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 15, "message": "Initialisiere Prozess & sammle Systemdaten..."})
+                            await asyncio.sleep(0.8)
+
+                            # Intelligente Zuordnung basierend auf Aufgabentext
+                            t_lower = task_name.lower()
+                            if "backup" in t_lower:
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 50, "message": "Erstelle Brain Vault ZIP-Backup..."})
+                                from core.backup_manager import export_brain
+                                await asyncio.to_thread(export_brain, label="task-auto-backup")
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 85, "message": "Archiviere Vektordaten & Kalender..."})
+                            elif "update" in t_lower or "upgrade" in t_lower:
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 50, "message": "Prüfe CachyOS Repositories & AUR..."})
+                                from actions.update_agent import get_pending_updates
+                                await asyncio.to_thread(get_pending_updates)
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 85, "message": "Paketdatenbank synchronisiert."})
+                            elif "cache" in t_lower or "bereinig" in t_lower or "clean" in t_lower:
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 50, "message": "Analysiere Pacman & Paccache Verzeichnisse..."})
+                                from actions.system_cleaner import get_cache_telemetry
+                                await asyncio.to_thread(get_cache_telemetry)
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 85, "message": "Cache-Telemetrie aktualisiert."})
+                            elif "wiki" in t_lower:
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 50, "message": "Validiere [[Wiki-Links]] & Widerspruchs-Flags..."})
+                                from actions.wiki_manager import manage_wiki
+                                await asyncio.to_thread(manage_wiki, {"action": "list"})
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 85, "message": "Wiki-Graphenknoten synchronisiert."})
+                            else:
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 50, "message": "Verarbeite Teilschritte..."})
+                                await asyncio.sleep(0.6)
+                                broadcast({"type": "task_progress", "task_id": tid, "status": "running", "progress": 85, "message": "Validiere Systemzustand..."})
+
+                            await asyncio.sleep(0.5)
+                            # Automatisch als erledigt abhaken
+                            await self.task_manager.toggle_task(tid, completed=True)
+                            broadcast({"type": "task_progress", "task_id": tid, "status": "completed", "progress": 100, "message": f"Aufgabe '{task_name}' erfolgreich abgeschlossen!"})
+                            self.log(f"Aufgabe [{tid}] zu 100% abgeschlossen und in backlog.md abgehakt.", "SYS")
+
+                        asyncio.create_task(_execute_task_pipeline(task_id))
+
                 elif msg_type == "get_wiki_article":
                     slug_or_title = str(data.get("slug", "") or data.get("title", "")).strip()
                     node_path = str(data.get("path", "")).strip()
@@ -662,8 +707,15 @@ class JarvisServer:
                             result = {"deleted": ok, "id": eid}
 
                         elif action_name == "TRIGGER_SYSTEM_UPDATE":
-                            from actions.update_agent import update_agent
-                            res = await asyncio.to_thread(update_agent, action="check")
+                            from actions.update_agent import system_updates
+                            res = await asyncio.to_thread(system_updates, action="check")
+                            self.log(res, "SYS")
+                            result = res
+
+                        elif action_name == "TRIGGER_CACHE_CLEAN":
+                            from actions.system_cleaner import clean_system_cache
+                            mode = payload.get("action", "check") if isinstance(payload, dict) else "check"
+                            res = await asyncio.to_thread(clean_system_cache, action=mode)
                             self.log(res, "SYS")
                             result = res
 

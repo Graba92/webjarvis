@@ -175,6 +175,9 @@ export interface TaskItem {
   completed: boolean;
   line_index: number;
   priority?: "high" | "normal" | "low";
+  progress?: number;
+  status?: "idle" | "running" | "completed" | "failed";
+  status_message?: string;
 }
 
 export interface WikiArticle {

@@ -162,7 +162,7 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({ onClose }) => {
                     )}
                   </button>
 
-                  <div className="flex flex-col min-w-0">
+                  <div className="flex flex-col min-w-0 flex-1">
                     <span
                       className={`text-sm break-words ${
                         t.completed ? "line-through text-gray-500" : "text-gray-100 font-medium"
@@ -170,13 +170,46 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({ onClose }) => {
                     >
                       {t.text}
                     </span>
-                    <span className="text-[10px] text-gray-500 font-mono mt-0.5">
-                      ID: {t.id}
-                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-gray-500 font-mono">
+                        ID: {t.id}
+                      </span>
+                      {t.status === "running" && (
+                        <span className="text-[10px] text-cyan-400 font-bold animate-pulse flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                          Läuft: {t.status_message || `${t.progress || 0}%`}
+                        </span>
+                      )}
+                    </div>
+                    {/* Fortschrittsbalken bei Ausführung */}
+                    {typeof t.progress === "number" && t.status === "running" && (
+                      <div className="w-full bg-gray-800 h-1 rounded-full mt-1.5 overflow-hidden border border-cyan-500/30">
+                        <div
+                          className="bg-gradient-to-r from-cyan-500 to-emerald-400 h-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, Math.max(0, t.progress))}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Task Ausführen Button */}
+                  {!t.completed && (
+                    <button
+                      onClick={() => socketManager.runTask(t.id)}
+                      disabled={t.status === "running"}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
+                        t.status === "running"
+                          ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 opacity-70"
+                          : "bg-cyan-500/15 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-300 hover:text-white"
+                      }`}
+                      title="Aufgabe autonom analysieren, updaten & ausführen"
+                    >
+                      <Sparkles className="w-3 h-3 text-cyan-400" />
+                      <span>{t.status === "running" ? `${t.progress || 0}%` : "Ausführen"}</span>
+                    </button>
+                  )}
                   {t.priority === "high" && (
                     <span className="text-[10px] px-2 py-0.5 rounded bg-red-950/80 border border-red-500/50 text-red-400 font-bold uppercase">
                       High

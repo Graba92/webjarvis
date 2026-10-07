@@ -22,7 +22,7 @@
       "id": "hub-gemini-live",
       "name": "Gemini Live API",
       "category": "Router",
-      "connections": 14,
+      "connections": 24,
       "description": "Vollduplex-Multimodal-Streaming-Core (gemini-3.1-flash-live-preview) mit 16/24-kHz-Audio.",
       "path": "backend/core/gemini_live.py",
       "is_orphan": false
@@ -31,7 +31,7 @@
       "id": "hub-ai-workshop",
       "name": "AI Workshop OS",
       "category": "Concepts",
-      "connections": 7,
+      "connections": 11,
       "description": "Hauptarchitektur des hybriden Betriebssystems für CachyOS / Arch Linux.",
       "path": ".",
       "is_orphan": false
@@ -139,7 +139,7 @@
       "id": "wiki-cachyos",
       "name": "CachyOS Optimization",
       "category": "Wiki",
-      "connections": 1,
+      "connections": 2,
       "description": "Kernel-Optimierungen, BORE-Scheduler und x86-64-v3/v4 Performance-Builds.",
       "path": "https://wiki.cachyos.org",
       "is_orphan": false
@@ -231,7 +231,7 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum kachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/cachyos-rice-architect",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/cachyos-rice-architect",
       "is_orphan": false
     },
     {
@@ -249,7 +249,7 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum cachyos-control-center Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/cachyos-control-center",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/cachyos-control-center",
       "is_orphan": false
     },
     {
@@ -258,7 +258,7 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum textual-tui-creator Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/textual-tui-creator",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/textual-tui-creator",
       "is_orphan": false
     },
     {
@@ -267,52 +267,7 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum upgit Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/upgit",
-      "is_orphan": false
-    },
-    {
-      "id": "files-upgit-b7ce",
-      "name": "upgit",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum upgit Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/upgit",
-      "is_orphan": false
-    },
-    {
-      "id": "files-cachyos-control-center-3b38",
-      "name": "cachyos-control-center",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum cachyos-control-center Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/cachyos-control-center",
-      "is_orphan": false
-    },
-    {
-      "id": "files-cachyos-rice-architect-6ff1",
-      "name": "cachyos-rice-architect",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum cachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/cachyos-rice-architect",
-      "is_orphan": false
-    },
-    {
-      "id": "files-jarvis-spatial-shell-7c49",
-      "name": "jarvis-spatial-shell",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/Jarv-orb/fin/jarvis-spatial-shell",
-      "is_orphan": false
-    },
-    {
-      "id": "files-textual-tui-creator-468f",
-      "name": "textual-tui-creator",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum textual-tui-creator Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/textual-tui-creator",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/upgit",
       "is_orphan": false
     },
     {
@@ -347,7 +302,7 @@
       "id": "wiki-audio-pipeline-architecture",
       "name": "Audio Pipeline Architecture",
       "category": "Wiki",
-      "connections": 2,
+      "connections": 3,
       "description": "title: \"Audio Pipeline Architecture\"",
       "status": "active",
       "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/audio-pipeline-architecture.md",
@@ -357,10 +312,202 @@
       "id": "wiki-live-e2e-test-wiki",
       "name": "Live E2E Test Wiki",
       "category": "Wiki",
-      "connections": 3,
+      "connections": 2,
       "description": "title: \"Live E2E Test Wiki\"",
       "status": "active",
-      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/live-e2e-test-wiki.md"
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/live-e2e-test-wiki.md",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-personen-katalog-master",
+      "name": "Personen-Katalog Master",
+      "category": "Notes",
+      "connections": 9,
+      "description": "Zentraler Master-Index für Antigravity-CLI & LLM-Orchestrierung. Dient als Hauptknoten für alle spezialisierten Unter-Personas.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-dev-lead-planer",
+      "name": "Dev Lead Planer",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Spezialist für MVP-Planung, KAIROS-Prinzip und Scope-Creep-Veto. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-ingenieur-gunar-boegner",
+      "name": "Ingenieur Gunar Boegner",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Experte für MSR-Regelung, EPLAN, DIN VDE und Industriestandards. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-react-3d-master",
+      "name": "React 3D Master",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Persona für Three.js, React Three Fiber, Shader und Canvas. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-matze-sysops-alterego",
+      "name": "Matze SysOps AlterEgo",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Spezialist für CachyOS/Linux, Systemd, Performance-Tuning und SysOps. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-kali-rootbro-security",
+      "name": "Kali RootBro Security",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Persona für Pentesting, Härtung und Schwachstellen-Audits. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-prompt-engineer-experte",
+      "name": "Prompt Engineer Experte",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Spezialist für Zero-Shot, Few-Shot, Guardrails und Evaluierung. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-fullstack-pragmatist",
+      "name": "Fullstack Pragmatist",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Persona für robuste Web-/App-Implementierung. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-migration-navigator",
+      "name": "Migration Navigator",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Spezialist für Windows nach Linux Portierung. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "files-webjarvis",
+      "name": "webjarvis",
+      "category": "Files",
+      "connections": 1,
+      "description": "Next.js 15 & Three.js 3D Force-Directed Knowledge Graph + Python Gemini Live Backend. Mein Kernprojekt.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis",
+      "is_orphan": false
+    },
+    {
+      "id": "files-github-desktop-companion",
+      "name": "github-desktop-companion",
+      "category": "Files",
+      "connections": 1,
+      "description": "Begleit-App für den GitHub Desktop-Client.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/github-desktop-companion",
+      "is_orphan": false
+    },
+    {
+      "id": "files-antigravity-quota-monitor",
+      "name": "antigravity-quota-monitor",
+      "category": "Files",
+      "connections": 1,
+      "description": "Monitor für Antigravity Speicher-Quotas.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/antigravity-quota-monitor",
+      "is_orphan": false
+    },
+    {
+      "id": "files-cachy-winbridge",
+      "name": "cachy-winbridge",
+      "category": "Files",
+      "connections": 1,
+      "description": "Bridge-Lösung für CachyOS und Windows Integration.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/cachy-winbridge",
+      "is_orphan": false
+    },
+    {
+      "id": "files-cachy-sched-pilot",
+      "name": "cachy-sched-pilot",
+      "category": "Files",
+      "connections": 1,
+      "description": "Pilot-Projekt für den CachyOS Scheduler (sched-ext).",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/cachy-sched-pilot",
+      "is_orphan": false
+    },
+    {
+      "id": "files-jarv-orb",
+      "name": "Jarv-orb",
+      "category": "Files",
+      "connections": 1,
+      "description": "Ein weiteres Projekt im Graba92 GitHub Workspace.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/Jarv-orb",
+      "is_orphan": false
+    },
+    {
+      "id": "concepts-webjarvis-realtime-collab",
+      "name": "webjarvis: Realtime Collab",
+      "category": "Concepts",
+      "connections": 1,
+      "description": "Vorschlag zur Erweiterung von webjarvis: Integration von Echtzeit-Kollaborations-Features (z.B. via WebSockets/yjs), damit mehrere Nutzer oder Agenten gleichzeitig am 3D-Graphen arbeiten können.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "concepts-webjarvis-plugin-system",
+      "name": "webjarvis: Plugin System",
+      "category": "Concepts",
+      "connections": 1,
+      "description": "Vorschlag zur Erweiterung von webjarvis: Entwicklung eines Plugin-Systems, um neue MCP-Tools oder Analyse-Module dynamisch als Frontend-Widgets zu laden, ohne den Core neu zu bauen.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "concepts-webjarvis-graph-performance",
+      "name": "webjarvis: Graph Performance",
+      "category": "Concepts",
+      "connections": 1,
+      "description": "Vorschlag zur Erweiterung von webjarvis: Optimierung der Three.js Performance für sehr große Graphen durch Techniken wie Instancing, LOD (Level of Detail) oder OffscreenCanvas.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-operatorprofil",
+      "name": "OperatorProfil",
+      "category": "Wiki",
+      "connections": 1,
+      "description": "title: \"OperatorProfil\"",
+      "status": "active",
+      "path": "/home/graba/.local/share/webjarvis/backend/knowledge_base/wiki/operatorprofil.md",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-systemarchitektur",
+      "name": "SystemArchitektur",
+      "category": "Wiki",
+      "connections": 1,
+      "description": "title: \"SystemArchitektur\"",
+      "status": "active",
+      "path": "/home/graba/.local/share/webjarvis/backend/knowledge_base/wiki/systemarchitektur.md",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-projekt-webjarvis",
+      "name": "Projekt Webjarvis",
+      "category": "Wiki",
+      "connections": 2,
+      "description": "title: \"Projekt Webjarvis\"",
+      "status": "active",
+      "path": "/home/graba/.local/share/webjarvis/backend/knowledge_base/wiki/projekt-webjarvis.md"
     }
   ],
   "links": [
@@ -489,26 +636,6 @@
       "target": "files-upgit"
     },
     {
-      "source": "hub-gemini-live",
-      "target": "files-upgit-b7ce"
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-cachyos-control-center-3b38"
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-cachyos-rice-architect-6ff1"
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-jarvis-spatial-shell-7c49"
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-textual-tui-creator-468f"
-    },
-    {
       "source": "hub-ai-workshop",
       "target": "notes-jarvis-manager-desktop-entry-draft"
     },
@@ -537,6 +664,96 @@
     {
       "source": "wiki-live-e2e-test-wiki",
       "target": "wiki-cachyos",
+      "value": 2,
+      "type": "wiki"
+    },
+    {
+      "source": "hub-ai-workshop",
+      "target": "notes-personen-katalog-master"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-dev-lead-planer"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-ingenieur-gunar-boegner"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-react-3d-master"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-matze-sysops-alterego"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-kali-rootbro-security"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-prompt-engineer-experte"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-fullstack-pragmatist"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-migration-navigator"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-webjarvis"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-github-desktop-companion"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-antigravity-quota-monitor"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-cachy-winbridge"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-cachy-sched-pilot"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-jarv-orb"
+    },
+    {
+      "source": "hub-ai-workshop",
+      "target": "concepts-webjarvis-realtime-collab"
+    },
+    {
+      "source": "hub-ai-workshop",
+      "target": "concepts-webjarvis-plugin-system"
+    },
+    {
+      "source": "hub-ai-workshop",
+      "target": "concepts-webjarvis-graph-performance"
+    },
+    {
+      "source": "wiki-operatorprofil",
+      "target": "wiki-projekt-webjarvis",
+      "value": 2,
+      "type": "wiki"
+    },
+    {
+      "source": "wiki-systemarchitektur",
+      "target": "wiki-prozess-cachebereinigung",
+      "value": 2,
+      "type": "wiki"
+    },
+    {
+      "source": "wiki-projekt-webjarvis",
+      "target": "wiki-wiki-datenstruktur",
       "value": 2,
       "type": "wiki"
     }

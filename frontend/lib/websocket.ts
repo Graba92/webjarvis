@@ -236,6 +236,24 @@ class JarvisSocketManager {
         }
         break;
 
+      case "task_progress":
+        if (msg.task_id) {
+          this.currentTasks = this.currentTasks.map((t) => {
+            if (t.id === msg.task_id) {
+              return {
+                ...t,
+                progress: msg.progress ?? t.progress,
+                status: msg.status ?? t.status,
+                status_message: msg.message ?? t.status_message,
+                completed: msg.status === "completed" ? true : t.completed
+              };
+            }
+            return t;
+          });
+          this.tasksListeners.forEach((fn) => fn(this.currentTasks));
+        }
+        break;
+
       case "wiki_article_data":
         if (msg.article) {
           this.wikiArticleListeners.forEach((fn) => fn(msg.article));
@@ -1022,6 +1040,12 @@ class JarvisSocketManager {
   public reorderTasks(taskIds: string[]) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "reorder_tasks", task_ids: taskIds }));
+    }
+  }
+
+  public runTask(taskId: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "run_task", task_id: taskId }));
     }
   }
 

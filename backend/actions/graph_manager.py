@@ -214,11 +214,27 @@ def add_node_internal(
     nodes: list[dict] = data.setdefault("nodes", [])
     links: list[dict] = data.setdefault("links", [])
 
-    # Prüfen, ob ID bereits existiert -> eindeutigen Suffix anhängen
-    existing_ids = {n["id"] for n in nodes}
-    if node_id in existing_ids:
-        node_id = f"{node_id}-{uuid.uuid4().hex[:4]}"
+    # Prüfen, ob Knoten bereits existiert (per ID oder Name) -> Aktualisieren statt Duplizieren
+    existing_node = next((n for n in nodes if n["id"] == node_id or n["name"].strip().lower() == title.strip().lower()), None)
+    if existing_node:
+        existing_node["description"] = content.strip() or existing_node.get("description", "")
+        existing_node["category"] = cat_clean
+        if path:
+            existing_node["path"] = path.strip()
+        existing_node["connections"] = max(existing_node.get("connections", 1), int(connections or 1))
+        
+        _save_graph_data(data)
+        if broadcast_fn:
+            broadcast_fn({
+                "type": "graph_update",
+                "data": data,
+                "action": "update_node",
+                "node": existing_node
+            })
+        return existing_node, f"Bestehender Knoten '{title}' [{cat_clean}] (ID: {existing_node['id']}) erfolgreich aktualisiert (keine redundante Neuanlage)."
 
+    # Neuer Knoten
+    existing_ids = {n["id"] for n in nodes}
     new_node = {
         "id": node_id,
         "name": title.strip(),
