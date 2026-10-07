@@ -330,3 +330,108 @@ def manage_wiki(parameters: Dict[str, Any], **kwargs) -> str:
         return f"Keine Wiki-Artikel gefunden für '{query}'."
 
     return f"Unbekannte Aktion '{action}'."
+
+def read_wiki_article(slug_or_title: str, node_path: str = "") -> Dict[str, Any]:
+    """Liest einen Wiki-Artikel oder eine Markdown-Datei für das Frontend."""
+    target_path = None
+    if node_path:
+        p = Path(node_path)
+        if not p.is_absolute():
+            p = BACKEND_DIR / p
+        if p.exists() and p.is_file():
+            target_path = p
+
+    if not target_path and slug_or_title:
+        slug = _slugify(slug_or_title)
+        candidate = WIKI_DIR / f"{slug}.md"
+        if candidate.exists():
+            target_path = candidate
+        else:
+            matches = list(WIKI_DIR.glob(f"*{slug}*.md"))
+            if matches:
+                target_path = matches[0]
+
+    if not target_path or not target_path.exists():
+        return {
+            "title": slug_or_title or "Neuer Eintrag",
+            "slug": _slugify(slug_or_title) if slug_or_title else "neuer-eintrag",
+            "content": f"# {slug_or_title}\n\n*Noch kein Artikel angelegt. Klicke auf 'Bearbeiten', um Notizen und [[Wiki-Links]] hinzuzufügen.*",
+            "metadata": {},
+            "links": [],
+            "exists": False,
+            "has_conflict": False,
+            "path": str(WIKI_DIR / f"{_slugify(slug_or_title)}.md") if slug_or_title else ""
+        }
+
+    try:
+        text = target_path.read_text(encoding="utf-8")
+        meta, body = _parse_frontmatter(text)
+        links = _extract_wiki_links(text)
+        has_conflict = "> [!WARNING] Widerspruch" in text
+        title = meta.get("title") or target_path.stem.replace("-", " ").title()
+
+        return {
+            "title": title,
+            "slug": target_path.stem,
+            "content": text,
+            "body": body,
+            "metadata": meta,
+            "links": links,
+            "exists": True,
+            "has_conflict": has_conflict,
+            "path": str(target_path)
+        }
+    except Exception as e:
+        return {
+            "title": slug_or_title,
+            "slug": _slugify(slug_or_title),
+            "content": f"Fehler beim Lesen: {e}",
+            "metadata": {},
+            "links": [],
+            "exists": False,
+            "has_conflict": False,
+            "path": str(target_path)
+        }
+
+def write_wiki_article(title: str, content: str, tags: list = None, broadcast_fn = None) -> Dict[str, Any]:
+    """Speichert einen Wiki-Artikel atomar und synchronisiert mit Graph und LanceDB."""
+    tags = tags or []
+    slug = _slugify(title)
+    # Sanitization gegen Path Traversal
+    slug = re.sub(r"[^a-zA-Z0-9_-]", "-", slug).strip("-") or "wiki-page"
+    page_path = WIKI_DIR / f"{slug}.md"
+    now_iso = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    links = _extract_wiki_links(content)
+    tags_str = ", ".join(tags) if isinstance(tags, list) else str(tags)
+
+    if not content.startswith("---"):
+        frontmatter = (
+            f"---\n"
+            f"title: \"{title}\"\n"
+            f"updated: \"{now_iso}\"\n"
+            f"tags: [{tags_str}]\n"
+            f"wiki_links_count: {len(links)}\n"
+            f"---\n\n"
+        )
+        full_markdown = frontmatter + content.strip() + "\n"
+    else:
+        full_markdown = content.strip() + "\n"
+
+    has_conflict = "> [!WARNING] Widerspruch" in full_markdown
+
+    temp_file = page_path.with_suffix(".tmp")
+    temp_file.write_text(full_markdown, encoding="utf-8")
+    os.replace(temp_file, page_path)
+
+    _sync_to_graph_and_lancedb(title, full_markdown, links, has_conflict=has_conflict, broadcast_fn=broadcast_fn)
+
+    return {
+        "success": True,
+        "title": title,
+        "slug": slug,
+        "path": str(page_path),
+        "links": links,
+        "has_conflict": has_conflict
+    }
+

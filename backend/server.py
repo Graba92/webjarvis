@@ -471,6 +471,34 @@ class JarvisServer:
                         await self.task_manager.delete_task(task_id)
                         self.log(f"Aufgabe [{task_id}] gelöscht.", "SYS")
 
+                elif msg_type == "reorder_tasks":
+                    task_ids = data.get("task_ids", [])
+                    if isinstance(task_ids, list) and task_ids:
+                        await self.task_manager.reorder_tasks(task_ids)
+                        self.log(f"Aufgaben neu angeordnet ({len(task_ids)} Einträge).", "SYS")
+
+                elif msg_type == "get_wiki_article":
+                    slug_or_title = str(data.get("slug", "") or data.get("title", "")).strip()
+                    node_path = str(data.get("path", "")).strip()
+                    from actions.wiki_manager import read_wiki_article
+                    article_data = await asyncio.to_thread(read_wiki_article, slug_or_title, node_path)
+                    await websocket.send(json.dumps({
+                        "type": "wiki_article_data",
+                        "article": article_data
+                    }))
+
+                elif msg_type == "save_wiki_article":
+                    title = str(data.get("title", "")).strip()
+                    content = str(data.get("content", ""))
+                    tags = data.get("tags", [])
+                    from actions.wiki_manager import write_wiki_article
+                    res = await asyncio.to_thread(write_wiki_article, title, content, tags, broadcast_fn=broadcast)
+                    broadcast({
+                        "type": "wiki_article_saved",
+                        "result": res
+                    })
+                    self.log(f"Wiki-Artikel '{title}' via Frontend gespeichert.", "SYS")
+
                 elif msg_type == "execute_node_action":
                     node_id = str(data.get("node_id", "")).strip()
                     path_val = str(data.get("path", "")).strip()

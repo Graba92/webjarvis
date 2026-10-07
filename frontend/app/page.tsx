@@ -20,6 +20,7 @@ import { CalendarModal } from "@/components/CalendarModal";
 import { BackupModal } from "@/components/BackupModal";
 import { SandboxModal } from "@/components/SandboxModal";
 import { BacklogDrawer } from "@/components/BacklogDrawer";
+import WikiInspectorModal from "@/components/WikiInspectorModal";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -31,6 +32,7 @@ const ApexWorld = dynamic(
 export default function Home() {
   const [data, setData] = useState<GraphData>(INITIAL_GRAPH_DATA);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [inspectorNode, setInspectorNode] = useState<GraphNode | null>(null);
   const [repelForce, setRepelForce] = useState<number>(140);
   const [linkLength, setLinkLength] = useState<number>(80);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -134,6 +136,7 @@ export default function Home() {
         audioLevel={audioLevel}
         assistantState={assistantState}
         onNodeSelect={setSelectedNode}
+        onNodeInspect={(node) => setInspectorNode(node)}
       />
 
       {/* 2. Linke Telemetrie-Sidebar & Obere Floating Toolbar */}
@@ -151,6 +154,7 @@ export default function Home() {
         onFitView={handleFitView}
         onResetTarget={handleResetTarget}
         onFocusNode={handleFocusNode}
+        onOpenInspector={(node) => setInspectorNode(node)}
       />
 
       {/* 3. Rechte Sidebar: J.A.R.V.I.S. Core, Arc Reactor, Killswitch & Sensor Matrix */}
@@ -226,6 +230,37 @@ export default function Home() {
       {/* 9.5 Task Matrix / Backlog Drawer (Single Source of Truth) */}
       {isBacklogOpen && (
         <BacklogDrawer onClose={() => setIsBacklogOpen(false)} />
+      )}
+
+      {/* 9.6 Wissens- & Node-Inspektor Modal */}
+      {inspectorNode && (
+        <WikiInspectorModal
+          node={inspectorNode}
+          onClose={() => setInspectorNode(null)}
+          onNavigateToNode={(target) => {
+            const found = data.nodes?.find(
+              (n) =>
+                n.name.toLowerCase() === target.toLowerCase() ||
+                n.id.toLowerCase() === target.toLowerCase() ||
+                n.id.toLowerCase() === `wiki-${target.toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`
+            );
+            if (found) {
+              setInspectorNode(found);
+              setSelectedNode(found);
+              if (apexWorldRef.current) {
+                apexWorldRef.current.focusNode(found.id);
+              }
+            } else {
+              setInspectorNode({
+                id: `wiki-${target.toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`,
+                name: target,
+                category: "Wiki",
+                connections: 0,
+                description: `Kuratierter Artikel zu ${target}`
+              });
+            }
+          }}
+        />
       )}
 
       {/* 10. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}

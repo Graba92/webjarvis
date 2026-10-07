@@ -14,7 +14,8 @@ import {
   CalendarEvent,
   SandboxConfig,
   ChatMessage,
-  TaskItem
+  TaskItem,
+  WikiArticle
 } from "./types";
 import { auditor } from "../utils/auditLogger";
 
@@ -54,6 +55,8 @@ class JarvisSocketManager {
   private sandboxListeners: Set<Listener<SandboxConfig>> = new Set();
   private voiceListeners: Set<Listener<string>> = new Set();
   private tasksListeners: Set<Listener<TaskItem[]>> = new Set();
+  private wikiArticleListeners: Set<Listener<WikiArticle>> = new Set();
+  private wikiSavedListeners: Set<Listener<any>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public currentAiName: string = "Cypher";
@@ -227,6 +230,18 @@ class JarvisSocketManager {
         if (msg.tasks && Array.isArray(msg.tasks)) {
           this.currentTasks = msg.tasks;
           this.tasksListeners.forEach((fn) => fn(this.currentTasks));
+        }
+        break;
+
+      case "wiki_article_data":
+        if (msg.article) {
+          this.wikiArticleListeners.forEach((fn) => fn(msg.article));
+        }
+        break;
+
+      case "wiki_article_saved":
+        if (msg.result) {
+          this.wikiSavedListeners.forEach((fn) => fn(msg.result));
         }
         break;
 
@@ -986,6 +1001,34 @@ class JarvisSocketManager {
   public deleteTask(taskId: string) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "delete_task", task_id: taskId }));
+    }
+  }
+
+  public reorderTasks(taskIds: string[]) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "reorder_tasks", task_ids: taskIds }));
+    }
+  }
+
+  public onWikiArticle(listener: Listener<WikiArticle>): () => void {
+    this.wikiArticleListeners.add(listener);
+    return () => this.wikiArticleListeners.delete(listener);
+  }
+
+  public onWikiSaved(listener: Listener<any>): () => void {
+    this.wikiSavedListeners.add(listener);
+    return () => this.wikiSavedListeners.delete(listener);
+  }
+
+  public getWikiArticle(slugOrTitle: string, path?: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "get_wiki_article", slug: slugOrTitle, title: slugOrTitle, path }));
+    }
+  }
+
+  public saveWikiArticle(title: string, content: string, tags?: string[]) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "save_wiki_article", title, content, tags }));
     }
   }
 

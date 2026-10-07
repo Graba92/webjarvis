@@ -337,11 +337,20 @@
       "id": "wiki-kernel-sched-ext-testing",
       "name": "Kernel Sched Ext Testing",
       "category": "Wiki",
-      "connections": 2,
+      "connections": 1,
       "description": "title: \"Kernel Sched Ext Testing\"",
       "status": "conflict",
       "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/kernel-sched-ext-testing.md",
       "is_orphan": false
+    },
+    {
+      "id": "wiki-audio-pipeline-architecture",
+      "name": "Audio Pipeline Architecture",
+      "category": "Wiki",
+      "connections": 2,
+      "description": "title: \"Audio Pipeline Architecture\"",
+      "status": "active",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/audio-pipeline-architecture.md"
     }
   ],
   "links": [
@@ -500,6 +509,12 @@
     {
       "source": "wiki-kernel-sched-ext-testing",
       "target": "wiki-audio-pipeline-architecture",
+      "value": 2,
+      "type": "wiki"
+    },
+    {
+      "source": "wiki-audio-pipeline-architecture",
+      "target": "tool-pipewire",
       "value": 2,
       "type": "wiki"
     }

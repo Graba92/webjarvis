@@ -25,6 +25,7 @@ interface ApexWorldProps {
   audioLevel?: number;
   assistantState?: AssistantState;
   onNodeSelect: (node: GraphNode | null) => void;
+  onNodeInspect?: (node: GraphNode) => void;
   onPathFound?: (path: string[]) => void;
 }
 
@@ -193,6 +194,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
   audioLevel = 0,
   assistantState = "OFFLINE",
   onNodeSelect,
+  onNodeInspect,
   onPathFound
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -462,6 +464,76 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         z: baseZ
       };
     });
+
+    // ── Vorberechnete Settle-on-Equilibrium Physik-Relaxation (Agent 1) ──
+    // 75 Iterationen deterministische Kantenanziehung & Knotenabstoßung
+    const nodeMap = new Map<string, InternalNode>(internalNodes.map((n) => [n.id, n]));
+    const iterations = 75;
+    let temp = 1.0;
+    const cooling = 0.96;
+
+    for (let iter = 0; iter < iterations; iter++) {
+      // 1. Abstoßung aller Knotenpaare (Coulomb-Repulsion)
+      for (let i = 0; i < internalNodes.length; i++) {
+        const n1 = internalNodes[i];
+        for (let j = i + 1; j < internalNodes.length; j++) {
+          const n2 = internalNodes[j];
+          const dx = n1.baseX - n2.baseX;
+          const dy = n1.baseY - n2.baseY;
+          const dz = n1.baseZ - n2.baseZ;
+          const distSq = dx * dx + dy * dy + dz * dz + 0.01;
+          const dist = Math.sqrt(distSq);
+          if (dist < 180) {
+            const force = (Math.max(12, 160 - dist) / dist) * 0.42 * temp;
+            n1.baseX += dx * force;
+            n1.baseY += dy * force;
+            n1.baseZ += dz * force;
+            n2.baseX -= dx * force;
+            n2.baseY -= dy * force;
+            n2.baseZ -= dz * force;
+          }
+        }
+      }
+
+      // 2. Kantenanziehung für verbundene Knoten (Hooke-Spring)
+      curData.links.forEach((l) => {
+        const sId = typeof l.source === "object" ? (l.source as any).id : l.source;
+        const tId = typeof l.target === "object" ? (l.target as any).id : l.target;
+        const sNode = nodeMap.get(sId);
+        const tNode = nodeMap.get(tId);
+        if (sNode && tNode) {
+          const dx = tNode.baseX - sNode.baseX;
+          const dy = tNode.baseY - sNode.baseY;
+          const dz = tNode.baseZ - sNode.baseZ;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.01;
+          const springDist = l.type === "wiki" ? 42 : 58;
+          const springForce = ((dist - springDist) / dist) * 0.08 * temp;
+          sNode.baseX += dx * springForce;
+          sNode.baseY += dy * springForce;
+          sNode.baseZ += dz * springForce;
+          tNode.baseX -= dx * springForce;
+          tNode.baseY -= dy * springForce;
+          tNode.baseZ -= dz * springForce;
+        }
+      });
+
+      // 3. Zentripetalkraft / Cluster-Zentrierung
+      internalNodes.forEach((node) => {
+        const groupKey = getGroupKey(node.category);
+        const center = clusterCenters[groupKey];
+        if (center) {
+          node.baseX += (center.x - node.baseX) * 0.03 * temp;
+          node.baseY += (center.y - node.baseY) * 0.03 * temp;
+          node.baseZ += (center.z - node.baseZ) * 0.03 * temp;
+        }
+        node.x = node.baseX;
+        node.y = node.baseY;
+        node.z = node.baseZ;
+      });
+
+      temp *= cooling;
+    }
+
     internalNodesRef.current = internalNodes;
 
     // Node Meshes & Shader erstellen
@@ -1216,7 +1288,11 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       const id = intersects[0].object.userData.id;
       const clickedNode = internalNodesRef.current.find((n) => n.id === id);
       if (clickedNode) {
-        socketManager.executeNodeAction(clickedNode.id, clickedNode.path, clickedNode.category, "open");
+        if (onNodeInspect) {
+          onNodeInspect(clickedNode);
+        } else {
+          socketManager.executeNodeAction(clickedNode.id, clickedNode.path, clickedNode.category, "open");
+        }
       }
     }
   };

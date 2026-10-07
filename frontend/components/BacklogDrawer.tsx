@@ -5,7 +5,8 @@ import { socketManager } from "@/lib/websocket";
 import { TaskItem } from "@/lib/types";
 import { 
   CheckSquare, Square, Trash2, Plus, X, ListTodo, 
-  AlertCircle, Sparkles, Filter, CheckCircle2 
+  AlertCircle, Sparkles, Filter, CheckCircle2,
+  ChevronUp, ChevronDown
 } from "lucide-react";
 
 interface BacklogDrawerProps {
@@ -17,6 +18,19 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({ onClose }) => {
   const [filter, setFilter] = useState<"all" | "pending" | "done">("all");
   const [newText, setNewText] = useState("");
   const [newPriority, setNewPriority] = useState<"high" | "normal" | "low">("normal");
+
+  const handleMove = (taskId: string, direction: -1 | 1) => {
+    const currentIdx = tasks.findIndex((t) => t.id === taskId);
+    if (currentIdx === -1) return;
+    const targetIdx = currentIdx + direction;
+    if (targetIdx < 0 || targetIdx >= tasks.length) return;
+    const newOrder = [...tasks];
+    const temp = newOrder[currentIdx];
+    newOrder[currentIdx] = newOrder[targetIdx];
+    newOrder[targetIdx] = temp;
+    setTasks(newOrder);
+    socketManager.reorderTasks(newOrder.map((t) => t.id));
+  };
 
   useEffect(() => {
     const unsub = socketManager.onTasks((updated) => {
@@ -173,6 +187,23 @@ export const BacklogDrawer: React.FC<BacklogDrawerProps> = ({ onClose }) => {
                       Low
                     </span>
                   )}
+
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => handleMove(t.id, -1)}
+                      className="p-1 text-gray-500 hover:text-cyan-400 rounded hover:bg-gray-800 transition-colors"
+                      title="Nach oben verschieben"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleMove(t.id, 1)}
+                      className="p-1 text-gray-500 hover:text-cyan-400 rounded hover:bg-gray-800 transition-colors"
+                      title="Nach unten verschieben"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
                   <button
                     onClick={() => handleDelete(t.id)}

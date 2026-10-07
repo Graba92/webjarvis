@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { GraphData, GraphNode, NodeCategory } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/graphData";
-import { Search, Maximize2, Crosshair, Layers, Sliders, Info } from "lucide-react";
+import { Search, Maximize2, Crosshair, Layers, Sliders, Info, BookOpen } from "lucide-react";
 
 interface ApexOverviewPanelProps {
   data: GraphData;
@@ -19,6 +19,7 @@ interface ApexOverviewPanelProps {
   onFitView: () => void;
   onResetTarget: () => void;
   onFocusNode: (nodeId: string) => void;
+  onOpenInspector?: (node: GraphNode) => void;
 }
 
 export const ApexOverviewPanel: React.FC<ApexOverviewPanelProps> = ({
@@ -35,6 +36,7 @@ export const ApexOverviewPanel: React.FC<ApexOverviewPanelProps> = ({
   onFitView,
   onResetTarget,
   onFocusNode,
+  onOpenInspector,
 }) => {
   const [showPhysics, setShowPhysics] = useState(true);
 
@@ -126,6 +128,13 @@ export const ApexOverviewPanel: React.FC<ApexOverviewPanelProps> = ({
               <p className="text-[11px] text-gray-400 leading-normal">
                 {selectedNode.description}
               </p>
+              <button
+                onClick={() => onOpenInspector?.(selectedNode)}
+                className="mt-2.5 w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#00d4ff]/15 hover:bg-[#00d4ff]/25 border border-[#00d4ff]/40 text-[#00d4ff] text-[11px] font-mono font-medium transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Wissens-Inspektor öffnen</span>
+              </button>
             </div>
           ) : (
             <div className="flex items-start gap-2 text-gray-400 text-[11px] leading-relaxed">

@@ -233,6 +233,29 @@ class TaskManager:
     async def delete_task(self, task_id: str) -> bool:
         return self.delete_task_sync(task_id)
 
+    def reorder_tasks_sync(self, task_ids: List[str]) -> bool:
+        """Ordnet die Aufgaben anhand einer geordneten ID-Liste neu an."""
+        with self._lock:
+            id_map = {t.id: t for t in self._tasks}
+            ordered = [id_map[tid] for tid in task_ids if tid in id_map]
+            # Tasks anfügen, die nicht in task_ids genannt wurden
+            for t in self._tasks:
+                if t not in ordered:
+                    ordered.append(t)
+            
+            # Zeilen im raw_lines Block anpassen
+            line_indices = sorted([t.line_index for t in ordered])
+            for new_idx, task_item in enumerate(ordered):
+                task_item.line_index = line_indices[new_idx]
+            
+            self._tasks = ordered
+            self._atomic_save()
+            self._broadcast_change()
+            return True
+
+    async def reorder_tasks(self, task_ids: List[str]) -> bool:
+        return self.reorder_tasks_sync(task_ids)
+
     def check_external_changes_sync(self) -> bool:
         """Prüft synchron, ob die Datei extern (z.B. in Kate/Neovim) geändert wurde."""
         if not self.backlog_path.exists():

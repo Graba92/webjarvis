@@ -176,3 +176,16 @@ export interface TaskItem {
   line_index: number;
   priority?: "high" | "normal" | "low";
 }
+
+export interface WikiArticle {
+  title: string;
+  slug: string;
+  content: string;
+  body?: string;
+  metadata?: Record<string, any>;
+  links?: string[];
+  exists?: boolean;
+  has_conflict?: boolean;
+  path?: string;
+}
+
