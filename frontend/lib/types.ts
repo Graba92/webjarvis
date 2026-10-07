@@ -189,3 +189,18 @@ export interface WikiArticle {
   path?: string;
 }
 
+export interface GuideStep {
+  step_number: number;
+  title: string;
+  description: string;
+  image_base64?: string;
+  highlight_action?: string;
+}
+
+export interface GuideOverlayData {
+  id: string;
+  title: string;
+  total_steps: number;
+  steps: GuideStep[];
+}
+

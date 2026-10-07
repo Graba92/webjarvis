@@ -110,6 +110,10 @@ class GeminiLiveController:
         except Exception:
             tasks_str = ""
 
+        soul_str = load_soul_instructions()
+        mem_md = load_memory_md_content()
+        heartbeat_checklist = load_heartbeat_checklist()
+
         prompt_parts = [
             f"[SYSTEM TIME]\nAktuelle Uhrzeit & Datum: {now_str}\n",
             f"[J.A.R.V.I.S. SOUL & PERSONA DIRECTIVES]\n{soul_str}\n" if soul_str else "",

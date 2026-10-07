@@ -309,14 +309,31 @@ Menü-Auswahl:
 * `6)` **Gemini API Key konfigurieren**: Interaktive, persistente Eingabe- und Speicherhilfe.
 * `7)` **Beenden**: Beendet alle Subsysteme geordnet.
 
-#### Option C: Direkte Befehlszeilen-Steuerung (Headless & Automatisierung)
-```bash
-./start.sh --all        # Startet Gesamtsystem direkt
-./start.sh --backend    # Startet nur das WebSocket Backend
-./start.sh --frontend   # Startet nur das Next.js Frontend
-./start.sh --check      # Führt alle Validierungs-Gates aus
-./stop.sh               # Stoppt alle Hintergrundprozesse sauber und gibt die Ports 8765 / 3000 frei
+#### Option D: Windows 1-Klick WSL2 Starter (Cross-Platform)
+```cmd
+:: In der Windows Eingabeaufforderung (CMD) oder PowerShell:
+run_windows.bat
+:: oder: python run_windows.py
 ```
+* **WSL2 Auto-Orchestrierung**: Erkennt und validiert WSL2 automatisch, führt bei Bedarf die Einrichtung mit interaktiver TUI-Zustimmung durch.
+* **Dynamische Pfad-Konvertierung**: Wandelt Windows-Dateipfade (`C:\...`) nahtlos in Linux-Pfade (`/mnt/c/...`) um.
+* **CRLF-to-LF Sanitizer**: Bereinigt Windows-Zeilenumbrüche on-the-fly, um Bash-Syntaxfehler zuverlässig zu verhindern.
+* **Dependency-Prüfung**: Installiert fehlende Abhängigkeiten (Python, Node.js, npm) transparent in der WSL-Distribution.
+
+---
+
+## 🗺️ Interaktive Bild-Anleitung & Visuelle Callout-Engine (`show_guide`)
+
+- **Schritt-für-Schritt HUD Slideshow (`GuideOverlayModal.tsx`):**
+  Ein visuelles Hilfesystem mit nummerierten Schritten, Fortschritts-Indikatoren und intuitiver Tastatursteuerung (`◀` / `▶` / `Esc`).
+- **Sci-Fi Callout-Annotationen:**
+  Zeichnet leuchtende Fokus-Rahmen und Neon-Pfeile direkt auf das aktuelle Interface (Task Backlog, Wissensgraph, Arc Reactor, Bottom Dock).
+- **Zero-Flicker Screen-Integration:**
+  Kann den aktuellen Desktop-Zustand via `mss` erfassen und mit dynamischen Hinweispfeilen überlagern, ohne die WebGL-FPS zu beeinträchtigen.
+- **1-Klick Bild-Export:**
+  Benutzer können die bebilderten Anleitungs-Schritte per Klick auf "Bild speichern" direkt als JPEG herunterladen (`webjarvis_anleitung_schritt_X.jpg`).
+- **Autonome KI-Aktivierung:**
+  Gemini Live kann Hilfeseiten bei Fragen vollautomatisch über das Tool `show_guide` einblenden oder der Nutzer öffnet sie direkt über den `Guide`-Button im Dock bzw. `Alt+G` / `Alt+H`.
 
 ---
 

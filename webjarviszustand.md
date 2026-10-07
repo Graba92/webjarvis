@@ -338,13 +338,26 @@ Gemini Live stehen über die Action-Registry folgende autonome Werkzeuge zur Ver
 6. **`calendar_manager`:**
    - Parameter: `action` (`list`, `add`, `delete`), `title`, `start_time`, `category`.
    - Terminverwaltung und Abgleich für das morgendliche Briefing.
-7. **`undo_manager`:**
-   - Parameter: `action` (`undo`, `peek`).
-   - Rückgängigmachen der letzten destruktiven Operation.
+8. **`show_guide`:**
+   - Parameter: `action` (`show`, `close`), `title`, `steps`, `capture_screen`.
+   - Blendet eine interaktive Bild-Anleitung mit Pfeilen und Erklärungen im HUD ein (`GuideOverlayModal.tsx`), inklusive 1-Klick JPEG-Download.
+9. **`screen_process`:**
+   - Parameter: keine.
+   - Nimmt den aktuellen Bildschirm via `mss` auf für multimodale Seh-Analysen oder Hintergrund-Guides.
 
 ---
 
-## 11. ENTWICKLER-LEITFADEN & TEST-KOMMANDOS
+## 11. CROSS-PLATFORM & WINDOWS WSL2 INTEGRATION (`run_windows.py` / `run_windows.bat`)
+
+* **WSL 2 Goldstandard (2026):** WebJarvis verzichtet unter Windows vollständig auf ineffiziente Ports (MinGW/Cygwin) und nutzt WSL 2 als native Linux-Engine.
+* **TUI-Consent-Architektur (Vektor-7):** Vor tiefgreifenden Host-Eingriffen (`wsl --install`, Paketinstallationen) wird ein klarer Konsens mit Begründung und Systemauswirkung eingeholt.
+* **Dynamische Pfad-Konvertierung:** Argumente und Dateipfade werden on-the-fly durch `wslpath -a -u` geschleift, sodass Windows-Dateipfade (`C:\...`) nahtlos in Linux-Pfade übersetzt werden.
+* **CRLF-to-LF Sanitizer:** Konvertiert Zeilenumbrüche vor der Übergabe automatisch, um Bash-Syntaxabbrüche (`\r: command not found`) auszuschließen.
+* **1-Klick-Starter Batch:** `run_windows.bat` prüft den Python-Hostpfad und leitet direkt an `run_windows.py` weiter.
+
+---
+
+## 12. ENTWICKLER-LEITFADEN & TEST-KOMMANDOS
 
 ### 11.1 Schnelle Validierung (One-Liner für Devs)
 ```bash

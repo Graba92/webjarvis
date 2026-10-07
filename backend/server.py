@@ -139,6 +139,13 @@ class JarvisServer:
         except Exception as e:
             self._log(f"Warnung: Kalender-Sync-Binding fehlgeschlagen: {e}")
 
+        # Guide Overlay Engine anbinden
+        try:
+            from actions.guide_overlay import bind_broadcast as bind_guide_broadcast
+            bind_guide_broadcast(broadcast)
+        except Exception as e:
+            self._log(f"Warnung: Guide-Overlay-Binding fehlgeschlagen: {e}")
+
     def _log(self, msg: str):
         print(f"[JarvisServer] {msg}")
         ts = datetime.now().strftime("%H:%M:%S")
@@ -669,6 +676,46 @@ class JarvisServer:
                             result = res
                             broadcast({"type": "backups_list_data", "backups": list_available_backups()})
 
+                        elif action_name in ("TRIGGER_GUIDE", "SHOW_GUIDE"):
+                            from actions.guide_overlay import show_interactive_guide
+                            g_id = payload.get("guide_id", "interactive_tutorial")
+                            g_title = payload.get("title", "Interaktive WebJarvis HUD-Anleitung")
+                            g_steps = payload.get("steps", [])
+                            g_screen = bool(payload.get("capture_screen", False))
+                            if not g_steps:
+                                g_steps = [
+                                    {
+                                        "title": "3D-Wissensgraph & Karpathy-Vault",
+                                        "description": "Klicke auf beliebige Knoten zur Erkundung. Doppelklick öffnet den Markdown-Inspektor.",
+                                        "focus_box": [25, 20, 50, 55],
+                                        "arrow_from": [10, 45],
+                                        "arrow_to": [25, 45]
+                                    },
+                                    {
+                                        "title": "Task Backlog Drawer (Alt+T)",
+                                        "description": "Verwalte deine Aufgaben interaktiv mit Checkboxen, Prioritäts-Tags und Pfeil-Sortierung.",
+                                        "focus_box": [78, 12, 20, 78],
+                                        "arrow_from": [62, 35],
+                                        "arrow_to": [78, 35]
+                                    },
+                                    {
+                                        "title": "Arc-Reactor & Audio-Status",
+                                        "description": "Pulsierender Sprach- und Hörindikator. Schaltet bei Sprachausgabe auf SPEAKING um.",
+                                        "focus_box": [2, 2, 22, 22],
+                                        "arrow_from": [25, 12],
+                                        "arrow_to": [12, 12]
+                                    },
+                                    {
+                                        "title": "Bottom-Dock & Paranoia-Mute",
+                                        "description": "Schnellzugriff auf Dev-Konsole, Backups, Kalender und den roten Hardware-Mute-Killswitch.",
+                                        "focus_box": [20, 88, 60, 10],
+                                        "arrow_from": [50, 72],
+                                        "arrow_to": [50, 88]
+                                    }
+                                ]
+                            result = await asyncio.to_thread(show_interactive_guide, g_id, g_title, g_steps, g_screen)
+                            self.log(result.get("message", "Guide gestartet"), "SYS")
+
                         else:
                             self.log(f"Unbekannte ActionDispatch-Aktion: {action_name}", "WARN")
                             status = "PROCESSED"
@@ -934,6 +981,48 @@ class JarvisServer:
                         self.log(msg, "SYS" if ok else "ERR")
                         if ok:
                             self.gemini.reload_personality()
+
+                elif msg_type == "show_guide":
+                    from actions.guide_overlay import show_interactive_guide
+                    g_id = data.get("guide_id", "interactive_tutorial")
+                    g_title = data.get("title", "Interaktive WebJarvis HUD-Anleitung")
+                    g_steps = data.get("steps", [])
+                    g_screen = bool(data.get("capture_screen", False))
+                    if not g_steps:
+                        g_steps = [
+                            {
+                                "title": "3D-Wissensgraph & Karpathy-Vault",
+                                "description": "Klicke auf beliebige Knoten zur Erkundung. Doppelklick öffnet den Markdown-Inspektor.",
+                                "focus_box": [25, 20, 50, 55],
+                                "arrow_from": [10, 45],
+                                "arrow_to": [25, 45]
+                            },
+                            {
+                                "title": "Task Backlog Drawer (Alt+T)",
+                                "description": "Verwalte deine Aufgaben interaktiv mit Checkboxen, Prioritäts-Tags und Pfeil-Sortierung.",
+                                "focus_box": [78, 12, 20, 78],
+                                "arrow_from": [62, 35],
+                                "arrow_to": [78, 35]
+                            },
+                            {
+                                "title": "Arc-Reactor & Audio-Status",
+                                "description": "Pulsierender Sprach- und Hörindikator. Schaltet bei Sprachausgabe auf SPEAKING um.",
+                                "focus_box": [2, 2, 22, 22],
+                                "arrow_from": [25, 12],
+                                "arrow_to": [12, 12]
+                            },
+                            {
+                                "title": "Bottom-Dock & Paranoia-Mute",
+                                "description": "Schnellzugriff auf Dev-Konsole, Backups, Kalender und den roten Hardware-Mute-Killswitch.",
+                                "focus_box": [20, 88, 60, 10],
+                                "arrow_from": [50, 72],
+                                "arrow_to": [50, 88]
+                            }
+                        ]
+                    await asyncio.to_thread(show_interactive_guide, g_id, g_title, g_steps, g_screen)
+
+                elif msg_type == "close_guide":
+                    broadcast({"type": "guide_overlay_close"})
 
         except websockets.exceptions.ConnectionClosed:
             pass

@@ -21,6 +21,8 @@ import { BackupModal } from "@/components/BackupModal";
 import { SandboxModal } from "@/components/SandboxModal";
 import { BacklogDrawer } from "@/components/BacklogDrawer";
 import WikiInspectorModal from "@/components/WikiInspectorModal";
+import { GuideOverlayModal } from "@/components/GuideOverlayModal";
+import { GuideOverlayData } from "@/lib/types";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -56,6 +58,7 @@ export default function Home() {
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
   const [isSandboxModalOpen, setIsSandboxModalOpen] = useState<boolean>(false);
   const [isBacklogOpen, setIsBacklogOpen] = useState<boolean>(false);
+  const [activeGuide, setActiveGuide] = useState<GuideOverlayData | null>(null);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
 
@@ -66,6 +69,7 @@ export default function Home() {
     const unsubState = socketManager.onState(setAssistantState);
     const unsubAudio = socketManager.onAudioLevel(setAudioLevel);
     const unsubGraph = socketManager.onGraphUpdate(setData);
+    const unsubGuide = socketManager.onGuide(setActiveGuide);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && (e.key === "c" || e.key === "C")) {
@@ -76,6 +80,10 @@ export default function Home() {
         e.preventDefault();
         setIsBacklogOpen((prev) => !prev);
       }
+      if (e.altKey && (e.key === "g" || e.key === "G" || e.key === "h" || e.key === "H")) {
+        e.preventDefault();
+        socketManager.triggerGuide("interactive_tutorial");
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
 
@@ -83,6 +91,7 @@ export default function Home() {
       unsubState();
       unsubAudio();
       unsubGraph();
+      unsubGuide();
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
@@ -181,6 +190,7 @@ export default function Home() {
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenSandboxModal={() => setIsSandboxModalOpen(true)}
         onOpenBacklog={() => setIsBacklogOpen(true)}
+        onOpenGuide={() => socketManager.triggerGuide("interactive_tutorial")}
         orphanCount={data.nodes ? data.nodes.filter((n) => n.connections === 0 || n.is_orphan || n.status === "orphan").length : 0}
         onFocusOrphan={() => {
           const firstOrphan = data.nodes?.find((n) => n.connections === 0 || n.is_orphan || n.status === "orphan");
@@ -260,6 +270,14 @@ export default function Home() {
               });
             }
           }}
+        />
+      )}
+
+      {/* 9.7 Interaktive Schritt-für-Schritt Bild-Anleitung mit Pfeilen & Slideshow */}
+      {activeGuide && (
+        <GuideOverlayModal
+          guide={activeGuide}
+          onClose={() => socketManager.closeGuide()}
         />
       )}
 

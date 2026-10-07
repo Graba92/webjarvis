@@ -6,7 +6,7 @@ import { socketManager } from "@/lib/websocket";
 import { 
   Send, Ear, Feather, Folder, Bell, Lightbulb, RefreshCw, 
   ChevronUp, ChevronDown, Terminal, Sparkles, Puzzle, Archive, UserCheck, ShieldCheck, ShieldAlert,
-  Calendar, MessageSquare, ListTodo, AlertTriangle
+  Calendar, MessageSquare, ListTodo, AlertTriangle, HelpCircle
 } from "lucide-react";
 
 interface BottomDockProps {
@@ -20,6 +20,7 @@ interface BottomDockProps {
   onOpenBackupModal?: () => void;
   onOpenSandboxModal?: () => void;
   onOpenBacklog?: () => void;
+  onOpenGuide?: () => void;
   orphanCount?: number;
   onFocusOrphan?: () => void;
 }
@@ -35,6 +36,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   onOpenBackupModal,
   onOpenSandboxModal,
   onOpenBacklog,
+  onOpenGuide,
   orphanCount,
   onFocusOrphan,
 }) => {
@@ -315,6 +317,19 @@ export const BottomDock: React.FC<BottomDockProps> = ({
             >
               <ListTodo className="w-3.5 h-3.5 text-cyan-400" />
               <span className="text-cyan-300 font-bold hidden sm:inline">Tasks</span>
+            </button>
+          )}
+
+          {/* Interaktive Bild-Anleitung / Tutorial Guide */}
+          {onOpenGuide && (
+            <button
+              type="button"
+              onClick={onOpenGuide}
+              className="px-2.5 h-8 rounded-full shrink-0 flex items-center gap-1.5 text-gray-400 hover:text-cyan-400 hover:bg-white/5 transition-colors cursor-pointer text-[11px] font-mono border border-cyan-500/20"
+              title="Interaktive Bild-Anleitung mit Pfeilen und Erklärungen öffnen"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-cyan-300 font-bold hidden sm:inline">Guide</span>
             </button>
           )}
 

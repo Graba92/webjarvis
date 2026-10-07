@@ -272,13 +272,31 @@ cp backend/.env.example backend/.env
 ```
 Interactive terminal menu for starting backend, frontend, running verification gates, or configuring sandbox paths.
 
-#### Option C: Direct CLI Execution (Headless & Automation)
-```bash
-./start.sh --all        # Starts backend + frontend directly
-./start.sh --backend    # Starts backend only
-./start.sh --frontend   # Starts frontend only
-./stop.sh               # Cleanly stops all background services and frees ports 8765 & 3000
+#### Option D: Windows 1-Click WSL2 Launcher (Cross-Platform)
+```cmd
+:: In Windows Command Prompt or PowerShell:
+run_windows.bat
+:: or: python run_windows.py
 ```
+* **WSL2 Auto-Orchestration**: Automatically detects, validates, and sets up WSL2 environments with interactive TUI consent prompts.
+* **Dynamic Path Translation**: Seamless translation between Windows paths (`C:\...`) and native Linux mounts (`/mnt/c/...`).
+* **CRLF-to-LF Sanitizer**: On-the-fly conversion of Windows CRLF line endings to prevent Bash syntax breakages.
+* **Dependency Auditor**: Verifies and installs Python, Node.js, and npm inside WSL automatically.
+
+---
+
+## 🗺️ Interactive Guide & Visual Callout Engine (`show_guide`)
+
+- **Step-by-Step HUD Slideshow (`GuideOverlayModal.tsx`):**
+  A visual interactive tutorial system featuring numbered slides, progress dots, and keyboard navigation (`◀` / `▶` / `Esc`).
+- **Dynamic Callout Annotations:**
+  Renders sci-fi bounding boxes and neon arrows directly pointing to HUD elements (Task Backlog, Knowledge Graph, Voice Cockpit, System Dock).
+- **Zero-Flicker Screen Integration:**
+  Can capture the active screen via `mss` and overlay directional guides on-the-fly without slowing down WebGL rendering.
+- **One-Click Image Export:**
+  Users can save annotated step images directly to their local drive (`webjarvis_anleitung_schritt_X.jpg`).
+- **Autonomous AI Activation:**
+  Gemini Live can trigger visual guides anytime via the `show_guide` action, or users can trigger it via the `Guide` dock button and `Alt+G` / `Alt+H`.
 
 ---
 

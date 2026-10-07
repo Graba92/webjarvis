@@ -15,7 +15,8 @@ import {
   SandboxConfig,
   ChatMessage,
   TaskItem,
-  WikiArticle
+  WikiArticle,
+  GuideOverlayData
 } from "./types";
 import { auditor } from "../utils/auditLogger";
 
@@ -57,10 +58,12 @@ class JarvisSocketManager {
   private tasksListeners: Set<Listener<TaskItem[]>> = new Set();
   private wikiArticleListeners: Set<Listener<WikiArticle>> = new Set();
   private wikiSavedListeners: Set<Listener<any>> = new Set();
+  private guideListeners: Set<Listener<GuideOverlayData | null>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public currentAiName: string = "Cypher";
   public currentVoice: string = "Puck";
+  public currentGuide: GuideOverlayData | null = null;
   public isMuted: boolean = false;
   public isParanoiaMuted: boolean = false;
   public isFocusMode: boolean = false;
@@ -243,6 +246,18 @@ class JarvisSocketManager {
         if (msg.result) {
           this.wikiSavedListeners.forEach((fn) => fn(msg.result));
         }
+        break;
+
+      case "guide_overlay_show":
+        if (msg.guide) {
+          this.currentGuide = msg.guide;
+          this.guideListeners.forEach((fn) => fn(msg.guide));
+        }
+        break;
+
+      case "guide_overlay_close":
+        this.currentGuide = null;
+        this.guideListeners.forEach((fn) => fn(null));
         break;
 
       case "dev_log":
@@ -1029,6 +1044,30 @@ class JarvisSocketManager {
   public saveWikiArticle(title: string, content: string, tags?: string[]) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "save_wiki_article", title, content, tags }));
+    }
+  }
+
+  public onGuide(listener: Listener<GuideOverlayData | null>): () => void {
+    this.guideListeners.add(listener);
+    if (this.currentGuide) listener(this.currentGuide);
+    return () => this.guideListeners.delete(listener);
+  }
+
+  public triggerGuide(guideId: string = "interactive_tutorial", captureScreen: boolean = false) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ 
+        type: "show_guide", 
+        guide_id: guideId,
+        capture_screen: captureScreen
+      }));
+    }
+  }
+
+  public closeGuide() {
+    this.currentGuide = null;
+    this.guideListeners.forEach((fn) => fn(null));
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "close_guide" }));
     }
   }
 
