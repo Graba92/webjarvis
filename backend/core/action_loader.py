@@ -190,7 +190,10 @@ def _call_handler(fn: Callable, parameters: dict, ctx: dict) -> str:
     kwargs = {}
     for key in _CTX_KEYS:
         if has_var_kw or key in sig.parameters:
-            kwargs[key] = ctx.get(key)
+            if key == "ctx":
+                kwargs["ctx"] = ctx
+            else:
+                kwargs[key] = ctx.get(key)
 
     # 1. Wenn die Funktion explizit einen Parameter namens 'parameters' verlangt:
     if "parameters" in sig.parameters:

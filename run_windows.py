@@ -91,9 +91,10 @@ def convert_win_to_lin_path(win_path: str) -> str:
     if sys.platform != "win32":
         return win_path
     try:
-        res = subprocess.run(["wsl", "wslpath", "-a", "-u", win_path], capture_output=True, text=True, check=True)
-        return res.stdout.strip()
-    except subprocess.CalledProcessError:
+        res = subprocess.run(["wsl", "-e", "wslpath", "-a", "-u", win_path], capture_output=True, text=True, check=True)
+        out = res.stdout.strip()
+        return out if out else win_path
+    except (subprocess.CalledProcessError, FileNotFoundError, Exception):
         return win_path
 
 def sanitize_crlf_in_repo(repo_dir: Path):
@@ -101,7 +102,7 @@ def sanitize_crlf_in_repo(repo_dir: Path):
     Wandelt CRLF (\\r\\n) in Unix-LF (\\n) für alle kritischen Shell- und Config-Dateien um.
     Verhindert mysteriöse Bash-Syntaxfehler ('\\r': command not found).
     """
-    extensions = {".sh", ".py", ".md", ".json", ".env", ".ts", ".tsx"}
+    extensions = {".sh", ".py", ".md", ".json", ".env", ".ts", ".tsx", ".example", ".txt", ".yaml", ".yml", ".conf", ".cfg"}
     converted_count = 0
     
     for root, dirs, files in os.walk(repo_dir):
@@ -110,7 +111,7 @@ def sanitize_crlf_in_repo(repo_dir: Path):
             continue
         for file in files:
             p = Path(root) / file
-            if p.suffix in extensions:
+            if p.suffix in extensions or p.name.startswith(".env"):
                 try:
                     with open(p, "rb") as f:
                         data = f.read()
@@ -125,29 +126,34 @@ def sanitize_crlf_in_repo(repo_dir: Path):
         log_info(f"CRLF -> LF Sanitizer: {converted_count} Dateien bereinigt.")
 
 def check_wsl_dependencies(wsl_repo_path: str):
-    """Prüft im WSL, ob Python3, Pip, Node.js und npm vorhanden sind."""
+    """Prüft im WSL (oder Host), ob Python3, Pip, Node.js und npm vorhanden sind."""
     check_script = "command -v python3 && command -v node && command -v npm"
-    cmd = ["wsl", "-e", "bash", "-c", check_script]
+    cmd = ["wsl", "-e", "bash", "-c", check_script] if sys.platform == "win32" else ["bash", "-c", check_script]
     try:
         subprocess.run(cmd, capture_output=True, text=True, check=True)
-        log_success("WSL-Abhängigkeiten (python3, node, npm) sind vorhanden.")
-    except subprocess.CalledProcessError:
-        log_warn("Einige Basispakete fehlen in deiner WSL-Distribution.")
+        env_label = "WSL" if sys.platform == "win32" else "Linux-Host"
+        log_success(f"{env_label}-Abhängigkeiten (python3, node, npm) sind vorhanden.")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        log_warn("Einige Basispakete fehlen in deiner Umgebung.")
         consent = tui_prompt(
-            action_name="WSL Basispakete installieren",
-            description="Installiert python3, python3-venv, nodejs, npm, curl via apt in deiner WSL-Distro.",
-            impact="Benötigt Internetzugriff und ca. 300 MB temporären Speicher."
+            action_name="Basispakete installieren",
+            description="Installiert python3, python3-venv, nodejs, npm, curl via apt in deiner Distribution.",
+            impact="Benötigt ggf. Administrator-/Sudo-Rechte, Internetzugriff und ca. 300 MB temporären Speicher."
         )
         if consent:
-            install_cmd = ["wsl", "-e", "bash", "-c", "sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip nodejs npm curl bubblewrap"]
+            install_cmd = (
+                ["wsl", "-e", "bash", "-c", "sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip nodejs npm curl bubblewrap"]
+                if sys.platform == "win32"
+                else ["sudo", "apt-get", "update", "&&", "sudo", "apt-get", "install", "-y", "python3", "python3-venv", "python3-pip", "nodejs", "npm", "curl", "bubblewrap"]
+            )
             try:
                 subprocess.run(install_cmd, check=True)
-                log_success("Pakete in WSL installiert.")
-            except subprocess.CalledProcessError as e:
-                log_err(f"Konnte Pakete in WSL nicht automatisch installieren: {e}")
+                log_success("Pakete erfolgreich installiert.")
+            except (subprocess.CalledProcessError, FileNotFoundError) as e:
+                log_err(f"Konnte Pakete nicht automatisch installieren: {e}")
 
 def run_webjarvis_in_wsl(args: list[str]):
-    """Startet WebJarvis im WSL und spiegelt den Output nahtlos."""
+    """Startet WebJarvis im WSL (unter Windows) oder nativ (unter Linux) und spiegelt den Output nahtlos."""
     check_and_install_wsl()
     
     repo_root = Path(__file__).resolve().parent
@@ -156,26 +162,41 @@ def run_webjarvis_in_wsl(args: list[str]):
     wsl_root = convert_win_to_lin_path(str(repo_root))
     check_wsl_dependencies(wsl_root)
     
-    sub_cmd = " ".join(args) if args else "./run.sh"
+    if not args:
+        sub_cmd = "./run.sh"
+    elif args[0].startswith("-"):
+        sub_cmd = f"./run.sh {' '.join(args)}"
+    elif args[0].endswith(".sh") or args[0].endswith(".py") or args[0] in ["bash", "sh", "python", "python3"]:
+        sub_cmd = " ".join(args)
+    else:
+        sub_cmd = f"./run.sh {' '.join(args)}"
     full_bash = f"cd '{wsl_root}' && chmod +x *.sh backend/*.sh 2>/dev/null || true; {sub_cmd}"
     
+    env_name = "Windows WSL2 Bridge Active" if sys.platform == "win32" else "Native Linux Host Active"
+    dir_label = "Arbeitsverzeichnis in WSL" if sys.platform == "win32" else "Arbeitsverzeichnis"
+    
     print("\n" + "="*70)
-    print(f"{CYAN}{BOLD}  J.A.R.V.I.S. AI OS — Windows WSL2 Bridge Active{RESET}")
-    print(f"  Arbeitsverzeichnis in WSL: {BOLD}{wsl_root}{RESET}")
+    print(f"{CYAN}{BOLD}  J.A.R.V.I.S. AI OS — {env_name}{RESET}")
+    print(f"  {dir_label}: {BOLD}{wsl_root}{RESET}")
     print(f"  Web-HUD erreichbar unter:  {GREEN}{BOLD}http://localhost:3000{RESET}")
     print(f"  WebSocket Backend Port:    {GREEN}{BOLD}ws://127.0.0.1:8765{RESET}")
     print("="*70 + "\n")
     
-    wsl_exec = ["wsl", "-e", "bash", "-c", full_bash]
+    wsl_exec = ["wsl", "-e", "bash", "-c", full_bash] if sys.platform == "win32" else ["bash", "-c", full_bash]
     try:
         proc = subprocess.Popen(wsl_exec)
         proc.communicate()
         if proc.returncode != 0:
-            log_warn(f"WebJarvis in WSL beendet mit Code {proc.returncode}.")
+            log_warn(f"WebJarvis beendet mit Code {proc.returncode}.")
     except KeyboardInterrupt:
-        print(f"\n{YELLOW}[!] Abbruch durch User (SIGINT). Stoppe WSL-Prozesse...{RESET}")
+        print(f"\n{YELLOW}[!] Abbruch durch User (SIGINT). Stoppe laufende Prozesse...{RESET}")
+        stop_cmd = (
+            ["wsl", "-e", "bash", "-c", f"cd '{wsl_root}' && ./stop.sh 2>/dev/null || true"]
+            if sys.platform == "win32"
+            else ["bash", "-c", f"cd '{wsl_root}' && ./stop.sh 2>/dev/null || true"]
+        )
         try:
-            subprocess.run(["wsl", "-e", "bash", "-c", f"cd '{wsl_root}' && ./stop.sh 2>/dev/null || true"], timeout=5)
+            subprocess.run(stop_cmd, timeout=5)
         except Exception:
             pass
         log_info("WebJarvis geordnet beendet.")

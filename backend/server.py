@@ -114,6 +114,7 @@ class JarvisServer:
             audio_streamer=self.audio,
             broadcast_cb=broadcast
         )
+        self.gemini = self.controller
 
         # Proaktive Cron-Engine für Heartbeat & autonome Hintergrund-Checks
         from core.cron_engine import CronEngine
@@ -948,7 +949,7 @@ class JarvisServer:
                     broadcast(cfg_payload)
                     status_text = "AKTIVIERT (Unbeschränkter Lese-, Schreib- & Systemzugriff)" if enabled else "DEAKTIVIERT (Sandbox-Schutz aktiv)"
                     self.log(f"OS-Vollzugriff wurde {status_text}.", "WARN" if enabled else "SYS")
-                    self.gemini.reload_personality()
+                    self.controller.reload_personality()
 
                 elif msg_type == "add_sandbox_path":
                     path_val = str(data.get("path", "")).strip()
@@ -964,7 +965,7 @@ class JarvisServer:
                         })
                         self.log(msg, "SYS" if ok else "ERR")
                         if ok:
-                            self.gemini.reload_personality()
+                            self.controller.reload_personality()
 
                 elif msg_type == "remove_sandbox_path":
                     path_val = str(data.get("path", "")).strip()
@@ -980,7 +981,7 @@ class JarvisServer:
                         })
                         self.log(msg, "SYS" if ok else "ERR")
                         if ok:
-                            self.gemini.reload_personality()
+                            self.controller.reload_personality()
 
                 elif msg_type == "show_guide":
                     from actions.guide_overlay import show_interactive_guide

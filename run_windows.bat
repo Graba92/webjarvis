@@ -21,6 +21,6 @@ if %ERRORLEVEL% EQU 0 (
 
 echo [!] Kein Python auf dem Windows-Host gefunden.
 echo [*] Versuche direkten Start über WSL...
-wsl -e bash -c "cd $(wslpath -a -u '%~dp0') && ./run.sh"
+wsl -e bash -c "cd $(wslpath -a -u '%~dp0') && ./run.sh %*"
 
 :end

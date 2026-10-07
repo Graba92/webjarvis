@@ -187,8 +187,8 @@ def manage_wiki(parameters: Dict[str, Any], **kwargs) -> str:
     existing_claim = parameters.get("existing_claim", "")
     query = parameters.get("query", "")
 
-    ctx = kwargs.get("ctx", {})
-    broadcast_fn = ctx.get("ws_broadcast")
+    ctx = kwargs.get("ctx") or {}
+    broadcast_fn = kwargs.get("ws_broadcast") or (ctx.get("ws_broadcast") if isinstance(ctx, dict) else None)
 
     if action == "list":
         pages = list(WIKI_DIR.glob("*.md"))
