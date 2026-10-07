@@ -94,6 +94,60 @@ def _slugify(text: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", s)
     return s.strip("-") or "node"
 
+def _extract_frontmatter_title(file_path: Path) -> tuple[Optional[str], bool]:
+    """Extrahiert title aus YAML Frontmatter und prüft auf Widerspruch."""
+    try:
+        if file_path.exists() and file_path.suffix.lower() == ".md":
+            text = file_path.read_text(encoding="utf-8")
+            has_conflict = "> [!WARNING] Widerspruch" in text
+            fm_match = re.match(r"^---\s*\n(.*?)\n---\s*\n", text, re.DOTALL)
+            if fm_match:
+                for line in fm_match.group(1).splitlines():
+                    if ":" in line:
+                        k, v = line.split(":", 1)
+                        if k.strip().lower() == "title":
+                            return v.strip().strip("'\""), has_conflict
+            # Fallback: Erstes H1
+            for line in text.splitlines():
+                if line.startswith("# "):
+                    return line[2:].strip(), has_conflict
+            return None, has_conflict
+    except Exception:
+        pass
+    return None, False
+
+def _enrich_graph_data(data: dict) -> dict:
+    nodes = data.get("nodes", [])
+    links = data.get("links", [])
+
+    degree_map = {}
+    for l in links:
+        s = l.get("source")
+        t = l.get("target")
+        if s: degree_map[s] = degree_map.get(s, 0) + 1
+        if t: degree_map[t] = degree_map.get(t, 0) + 1
+
+    for n in nodes:
+        nid = n.get("id")
+        deg = degree_map.get(nid, 0)
+        n["connections"] = deg if deg > 0 else n.get("connections", 0)
+        n["is_orphan"] = (deg == 0)
+
+        p_str = n.get("path")
+        if p_str:
+            target_p = Path(p_str)
+            if not target_p.is_absolute():
+                target_p = BACKEND_DIR / target_p
+            fm_title, has_conflict = _extract_frontmatter_title(target_p)
+            if fm_title:
+                n["name"] = fm_title
+            if has_conflict:
+                n["status"] = "conflict"
+            elif deg == 0 and not n.get("status"):
+                n["status"] = "orphan"
+
+    return data
+
 def get_full_graph_data() -> dict:
     """Lädt den vollständigen Graphen thread-sicher aus JSON oder erzeugt die Standarddaten."""
     with _lock:
@@ -103,16 +157,18 @@ def get_full_graph_data() -> dict:
                 json.dumps(DEFAULT_GRAPH_DATA, indent=2, ensure_ascii=False),
                 encoding="utf-8"
             )
-            return json.loads(json.dumps(DEFAULT_GRAPH_DATA))
+            raw = json.loads(json.dumps(DEFAULT_GRAPH_DATA))
+            return _enrich_graph_data(raw)
 
         try:
             data = json.loads(GRAPH_STORAGE_PATH.read_text(encoding="utf-8"))
             if isinstance(data, dict) and "nodes" in data and "links" in data:
-                return data
+                return _enrich_graph_data(data)
         except Exception as e:
             print(f"[GraphManager] Ladefehler: {e}")
 
-        return json.loads(json.dumps(DEFAULT_GRAPH_DATA))
+        raw = json.loads(json.dumps(DEFAULT_GRAPH_DATA))
+        return _enrich_graph_data(raw)
 
 def _save_graph_data(data: dict):
     """Speichert den Graphen thread-sicher in die JSON-Datei."""
@@ -122,6 +178,9 @@ def _save_graph_data(data: dict):
             json.dumps(data, indent=2, ensure_ascii=False),
             encoding="utf-8"
         )
+
+# Public alias for modules like wiki_manager
+save_graph_data = _save_graph_data
 
 def find_node_by_id(node_id: str) -> dict | None:
     data = get_full_graph_data()

@@ -16,6 +16,8 @@ export interface GraphNode {
   connections: number;
   description: string;
   path?: string;
+  is_orphan?: boolean;
+  status?: "active" | "conflict" | "orphan" | string;
   x?: number;
   y?: number;
   z?: number;
@@ -28,6 +30,7 @@ export interface GraphLink {
   source: string;
   target: string;
   value?: number;
+  type?: "wiki" | string;
 }
 
 export interface GraphData {
@@ -164,4 +167,12 @@ export interface SandboxConfig {
   allowed_paths: string[];
   full_os_access: boolean;
   default_dir?: string;
+}
+
+export interface TaskItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  line_index: number;
+  priority?: "high" | "normal" | "low";
 }

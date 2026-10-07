@@ -795,4 +795,34 @@ cd frontend && npm run build
 ```
 
 ---
+
+## 12. ERWEITERUNGEN: TASK ENGINE, KARPATHY-WIKI & 3D GRAPH INTELLIGENCE
+
+### 12.1 SPS Task Backlog Engine (`backlog.md`)
+- **Single Source of Truth:** `backend/backlog.md` als reines Markdown-Format (`- [ ]` und `- [x]`).
+- **Single-Writer & Atomarität:** `TaskManager` (`backend/core/task_manager.py`) nutzt `threading.RLock()` und POSIX-atomaren Datei-Austausch (`.tmp` + `os.replace`), um Lost Updates und Dateikorruption auszuschließen.
+- **Anti-Echo Watcher:** Entprellung externer Dateiedits (Kate/Neovim) über SHA-256 Checksummenvergleich.
+- **Frontend HUD:** `frontend/components/BacklogDrawer.tsx` bietet interaktive Checkboxen, Live-Filter (Alle/Offen/Erledigt), Prioritäts-Badges (`[HIGH]`, `[NORMAL]`, `[LOW]`) und Tastatur-Shortcut `Alt+T`.
+- **KI-Tool:** `manage_tasks` (`backend/actions/task_manager.py`) ermöglicht Gemini das autonome Hinzufügen, Abhaken und Löschen von Aufgaben.
+
+### 12.2 Karpathy-Muster Knowledge Vault & [[Wiki-Links]]
+- **Kuratierte Wissensbasis:** `backend/knowledge_base/wiki/*.md` mit YAML-Frontmatter (`title:`, `updated:`, `tags:`).
+- **Immutability:** Rohe Eingaben und Quelltexte verbleiben unveränderlich in `backend/knowledge_base/raw/`.
+- **[[Wiki-Links]] Extraktion:** Regex-Parser erfasst Verweise wie `[[Thema]]` und transformiert sie in gerichtete Kanten im 3D-Graphen.
+- **Widerspruchs-Erkennung (Zero Data Loss):** Bei widersprüchlichen Fakten überschreibt Jarvis niemals stillschweigend, sondern injiziert einen standardisierten Warnblock:
+  `> [!WARNING] Widerspruch erkannt (Timestamp)`
+  `> **Neuer Input:** ...`
+  `> **Bisheriger Stand:** ...`
+  und markiert den Knoten im Graphen mit dem Status `conflict`.
+- **Vektor- & Graph-Synchronisation:** Jeder Wiki-Artikel wird automatisch in `graph_nodes.json` sowie im LanceDB-Vektorspeicher indexiert.
+
+### 12.3 3D Graph Frontmatter-Titel & Orphan-Erkennung
+- **YAML Frontmatter Title Rendering:** Knoten im 3D-Graph (`ApexWorld.tsx`) heißen nicht mehr generisch nach dem Dateinamen, sondern erhalten ihren echten Titel aus dem Frontmatter.
+- **Orphan-Erkennung:** Knoten mit Grad 0 (ohne Kanten) werden als `is_orphan` markiert.
+- **Shader Strobe-Pulse & HUD-Alerts:**
+  - Knoten mit `is_orphan`: Neon-Amber Fresnel Strobe Pulse im Vertex-/Fragment-Shader und HUD-Badge `⚡ [ORPHAN]`.
+  - Knoten mit `conflict`: Crimson-Warnpulsierung und Billboard-Badge `⚠️ [KONFLIKT]`.
+  - HUD-Pill im Dock (`BottomDock.tsx`) zeigt die Anzahl aktiver Orphans an; ein Klick fokussiert die 3D-Kamera direkt auf den unverbundenen Knoten.
+
+---
 *Ende der Spezifikation — Dokumentiert für das Linux-, SysOps- und Entwickler-Portfolio von @Graba92.*

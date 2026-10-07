@@ -6,7 +6,7 @@ import { socketManager } from "@/lib/websocket";
 import { 
   Send, Ear, Feather, Folder, Bell, Lightbulb, RefreshCw, 
   ChevronUp, ChevronDown, Terminal, Sparkles, Puzzle, Archive, UserCheck, ShieldCheck, ShieldAlert,
-  Calendar, MessageSquare
+  Calendar, MessageSquare, ListTodo, AlertTriangle
 } from "lucide-react";
 
 interface BottomDockProps {
@@ -19,6 +19,9 @@ interface BottomDockProps {
   onOpenCalendarModal?: () => void;
   onOpenBackupModal?: () => void;
   onOpenSandboxModal?: () => void;
+  onOpenBacklog?: () => void;
+  orphanCount?: number;
+  onFocusOrphan?: () => void;
 }
 
 export const BottomDock: React.FC<BottomDockProps> = ({
@@ -31,6 +34,9 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   onOpenCalendarModal,
   onOpenBackupModal,
   onOpenSandboxModal,
+  onOpenBacklog,
+  orphanCount,
+  onFocusOrphan,
 }) => {
   const [mounted, setMounted] = useState(false);
   const [input, setInput] = useState("");
@@ -298,6 +304,32 @@ export const BottomDock: React.FC<BottomDockProps> = ({
               <Calendar className="w-4 h-4" />
             </button>
           )}
+
+          {/* Task Backlog (backlog.md) */}
+          {onOpenBacklog && (
+            <button
+              type="button"
+              onClick={onOpenBacklog}
+              className="px-2.5 h-8 rounded-full shrink-0 flex items-center gap-1.5 text-gray-400 hover:text-cyan-400 hover:bg-white/5 transition-colors cursor-pointer text-[11px] font-mono border border-cyan-500/20"
+              title="Task-Matrix // backlog.md öffnen"
+            >
+              <ListTodo className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-cyan-300 font-bold hidden sm:inline">Tasks</span>
+            </button>
+          )}
+
+          {/* Orphan-Nodes Warn-Pill (nur wenn ungebundene Knoten existieren) */}
+          {orphanCount && orphanCount > 0 ? (
+            <button
+              type="button"
+              onClick={onFocusOrphan}
+              className="px-2 h-8 rounded-full shrink-0 flex items-center gap-1 bg-amber-950/60 border border-amber-500/50 text-amber-400 hover:bg-amber-900/60 transition-colors cursor-pointer text-[10px] font-mono animate-pulse"
+              title={`${orphanCount} ungebundene Orphan-Nodes im 3D-Graph! Klicke zum Fokussieren.`}
+            >
+              <AlertTriangle className="w-3 h-3 text-amber-400" />
+              <span>{orphanCount} Orphan{orphanCount > 1 ? "s" : ""}</span>
+            </button>
+          ) : null}
         </div>
 
         {/* Input Formular */}

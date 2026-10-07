@@ -19,6 +19,7 @@ import { PersonalityWizardModal } from "@/components/PersonalityWizardModal";
 import { CalendarModal } from "@/components/CalendarModal";
 import { BackupModal } from "@/components/BackupModal";
 import { SandboxModal } from "@/components/SandboxModal";
+import { BacklogDrawer } from "@/components/BacklogDrawer";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -52,6 +53,7 @@ export default function Home() {
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState<boolean>(false);
   const [isSandboxModalOpen, setIsSandboxModalOpen] = useState<boolean>(false);
+  const [isBacklogOpen, setIsBacklogOpen] = useState<boolean>(false);
 
   const apexWorldRef = useRef<ApexWorldHandle>(null);
 
@@ -67,6 +69,10 @@ export default function Home() {
       if (e.altKey && (e.key === "c" || e.key === "C")) {
         e.preventDefault();
         setIsCalendarOpen((prev) => !prev);
+      }
+      if (e.altKey && (e.key === "t" || e.key === "T" || e.key === "b" || e.key === "B")) {
+        e.preventDefault();
+        setIsBacklogOpen((prev) => !prev);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -170,6 +176,14 @@ export default function Home() {
         onOpenCalendarModal={() => setIsCalendarOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenSandboxModal={() => setIsSandboxModalOpen(true)}
+        onOpenBacklog={() => setIsBacklogOpen(true)}
+        orphanCount={data.nodes ? data.nodes.filter((n) => n.connections === 0 || n.is_orphan || n.status === "orphan").length : 0}
+        onFocusOrphan={() => {
+          const firstOrphan = data.nodes?.find((n) => n.connections === 0 || n.is_orphan || n.status === "orphan");
+          if (firstOrphan && apexWorldRef.current) {
+            apexWorldRef.current.focusNode(firstOrphan.id);
+          }
+        }}
       />
 
       {/* 5. Jarvis Live Chat Window (verschiebbar & in der Größe anpassbar) */}
@@ -208,6 +222,11 @@ export default function Home() {
         isOpen={isSandboxModalOpen}
         onClose={() => setIsSandboxModalOpen(false)}
       />
+
+      {/* 9.5 Task Matrix / Backlog Drawer (Single Source of Truth) */}
+      {isBacklogOpen && (
+        <BacklogDrawer onClose={() => setIsBacklogOpen(false)} />
+      )}
 
       {/* 10. Hardware Confirmation Gate Banner (Höchste Priorität z-50) */}
       <ConfirmBanner />

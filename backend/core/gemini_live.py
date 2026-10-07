@@ -97,11 +97,25 @@ class GeminiLiveController:
         from core.sandbox import format_sandbox_directive_for_prompt
         sandbox_str = format_sandbox_directive_for_prompt()
 
+        # Task Backlog Direktive
+        try:
+            from core.task_manager import get_task_manager
+            tm = get_task_manager()
+            pending_tasks = [t for t in tm.get_tasks() if not t["completed"]]
+            if pending_tasks:
+                task_lines = [f"- [{t['id']}] {t['text']}" for t in pending_tasks[:5]]
+                tasks_str = "[ACTIVE TASK BACKLOG (backlog.md)]\nAktuell offene Aufgaben im System:\n" + "\n".join(task_lines) + "\n"
+            else:
+                tasks_str = "[ACTIVE TASK BACKLOG (backlog.md)]\nKeine offenen Aufgaben.\n"
+        except Exception:
+            tasks_str = ""
+
         prompt_parts = [
             f"[SYSTEM TIME]\nAktuelle Uhrzeit & Datum: {now_str}\n",
             f"[J.A.R.V.I.S. SOUL & PERSONA DIRECTIVES]\n{soul_str}\n" if soul_str else "",
             sandbox_str,
-            f"[J.A.R.V.I.S. PERSISTENT LONG-TERM MEMORY]\n{mem_md}\n" if mem_md else "",
+            tasks_str,
+            f"[J.A.R.V.I.S. PERSISTENT LONG-TERM MEMORY]\n<untrusted_document name=\"MEMORY.md\">\n{mem_md}\n</untrusted_document>\n" if mem_md else "",
             f"[HEARTBEAT CHECKLIST]\n{heartbeat_checklist}\n" if heartbeat_checklist else "",
             mem_str,
             SYSTEM_PROMPT

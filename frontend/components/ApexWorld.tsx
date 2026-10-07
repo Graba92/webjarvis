@@ -79,6 +79,8 @@ const fresnelFragmentShader = `
   uniform float uPulseRate;
   uniform float uGlowIntensity;
   uniform float uAlpha;
+  uniform float uIsOrphan;
+  uniform float uHasConflict;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
 
@@ -87,10 +89,20 @@ const fresnelFragmentShader = `
     vec3 viewDir = normalize(vViewPosition);
     float dotNV = max(dot(normal, viewDir), 0.0);
     float fresnel = pow(1.0 - dotNV, 2.3);
-    float pulse = 0.5 + 0.5 * sin(uTime * uPulseRate);
     
-    vec3 coreColor = uColor * 0.42;
-    vec3 rimGlow = uColor * (fresnel * (2.2 + 1.2 * pulse) * uGlowIntensity);
+    float pulseSpeed = (uIsOrphan > 0.5 || uHasConflict > 0.5) ? uPulseRate * 2.8 : uPulseRate;
+    float pulse = 0.5 + 0.5 * sin(uTime * pulseSpeed);
+    
+    vec3 activeColor = uColor;
+    if (uHasConflict > 0.5) {
+      activeColor = vec3(1.0, 0.12, 0.28); // Warn-Rot für Wissenskonflikte
+    } else if (uIsOrphan > 0.5) {
+      activeColor = vec3(1.0, 0.65, 0.0); // Warn-Neon-Amber für isolierte Orphans
+    }
+
+    vec3 coreColor = activeColor * 0.42;
+    float glowMult = (uIsOrphan > 0.5 || uHasConflict > 0.5) ? (3.4 + 2.0 * pulse) : (2.2 + 1.2 * pulse);
+    vec3 rimGlow = activeColor * (fresnel * glowMult * uGlowIntensity);
     vec3 finalColor = coreColor + rimGlow;
     float alpha = clamp((0.35 + fresnel * 0.65) * uAlpha, 0.0, 0.98);
     
@@ -471,7 +483,9 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
           uTime: { value: 0 },
           uPulseRate: { value: 2.2 + (node.connections % 4) * 0.5 },
           uGlowIntensity: { value: node.isHub ? 1.5 : 1.1 },
-          uAlpha: { value: 1.0 }
+          uAlpha: { value: 1.0 },
+          uIsOrphan: { value: (node.is_orphan || node.connections === 0 || node.status === "orphan") ? 1.0 : 0.0 },
+          uHasConflict: { value: (node.status === "conflict") ? 1.0 : 0.0 }
         },
         transparent: true,
         blending: THREE.AdditiveBlending,
@@ -505,9 +519,25 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
 
       // D. 3D-Billboard Text-Sprite mit HUD Eck-Brackets
       let billboardSprite: THREE.Sprite | undefined;
-      if (node.isHub) {
-        const subLabel = `[ ${node.category.toUpperCase()} // ${node.connections} LINKS ]`;
-        billboardSprite = createTextSprite(node.name, subLabel, colorHex);
+      const isOrphan = !!(node.is_orphan || node.connections === 0 || node.status === "orphan");
+      const isConflict = node.status === "conflict";
+
+      if (node.isHub || isOrphan || isConflict) {
+        let displayName = node.name;
+        let subLabel = `[ ${node.category.toUpperCase()} // ${node.connections} LINKS ]`;
+        let labelColor = colorHex;
+
+        if (isConflict) {
+          displayName = `⚠️ [KONFLIKT] ${node.name}`;
+          subLabel = `[ ⚠️ WIDERSPRUCH // KLÄRUNG NÖTIG ]`;
+          labelColor = "#ff2244";
+        } else if (isOrphan) {
+          displayName = `⚡ [ORPHAN] ${node.name}`;
+          subLabel = `[ ⚠️ ISOLIERT // 0 VERBINDUNGEN ]`;
+          labelColor = "#ffaa00";
+        }
+
+        billboardSprite = createTextSprite(displayName, subLabel, labelColor);
         billboardSprite.position.y = node.baseRadius + 4.2;
         group.add(billboardSprite);
       }

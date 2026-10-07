@@ -13,7 +13,8 @@ import {
   BackupEntry,
   CalendarEvent,
   SandboxConfig,
-  ChatMessage
+  ChatMessage,
+  TaskItem
 } from "./types";
 import { auditor } from "../utils/auditLogger";
 
@@ -52,6 +53,7 @@ class JarvisSocketManager {
   private aiNameListeners: Set<Listener<string>> = new Set();
   private sandboxListeners: Set<Listener<SandboxConfig>> = new Set();
   private voiceListeners: Set<Listener<string>> = new Set();
+  private tasksListeners: Set<Listener<TaskItem[]>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public currentAiName: string = "Cypher";
@@ -60,6 +62,7 @@ class JarvisSocketManager {
   public isParanoiaMuted: boolean = false;
   public isFocusMode: boolean = false;
   public isAutoBriefing: boolean = true;
+  public currentTasks: TaskItem[] = [];
   public currentCalendarEvents: CalendarEvent[] = [];
   public currentBackups: BackupEntry[] = [];
   public currentChatMessages: ChatMessage[] = [];
@@ -213,7 +216,17 @@ class JarvisSocketManager {
             full_os_access: initialSb.full_os_access !== undefined ? !!initialSb.full_os_access : this.currentSandboxConfig.full_os_access,
             default_dir: initialSb.default_dir || this.currentSandboxConfig.default_dir
           };
-          this.sandboxListeners.forEach((fn) => fn(this.currentSandboxConfig));
+        }
+        if (msg.tasks && Array.isArray(msg.tasks)) {
+          this.currentTasks = msg.tasks;
+          this.tasksListeners.forEach((fn) => fn(this.currentTasks));
+        }
+        break;
+
+      case "tasks_data":
+        if (msg.tasks && Array.isArray(msg.tasks)) {
+          this.currentTasks = msg.tasks;
+          this.tasksListeners.forEach((fn) => fn(this.currentTasks));
         }
         break;
 
@@ -950,6 +963,30 @@ class JarvisSocketManager {
     this.voiceListeners.add(listener);
     listener(this.currentVoice);
     return () => this.voiceListeners.delete(listener);
+  }
+
+  public onTasks(listener: Listener<TaskItem[]>): () => void {
+    this.tasksListeners.add(listener);
+    if (this.currentTasks.length > 0) listener(this.currentTasks);
+    return () => this.tasksListeners.delete(listener);
+  }
+
+  public toggleTask(taskId: string, completed?: boolean) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "toggle_task", task_id: taskId, completed }));
+    }
+  }
+
+  public addTask(text: string, priority: string = "normal") {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "add_task", text, priority }));
+    }
+  }
+
+  public deleteTask(taskId: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "delete_task", task_id: taskId }));
+    }
   }
 
 }

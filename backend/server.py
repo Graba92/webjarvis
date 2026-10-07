@@ -59,6 +59,7 @@ from actions.graph_manager import (
 )
 from actions.open_app import open_app
 from actions.calendar_manager import get_events_list, add_event_entry, delete_event_entry
+from core.task_manager import get_task_manager
 
 CONNECTED_CLIENTS: set[websockets.WebSocketServerProtocol] = set()
 MAIN_LOOP: Optional[asyncio.AbstractEventLoop] = None
@@ -127,6 +128,9 @@ class JarvisServer:
 
         # 60 Hz Telemetrie- & RMS-Throttler
         self.rms_throttler = TelemetryThrottler(target_hz=60)
+
+        # Single-Writer Task-Manager für backlog.md anbinden
+        self.task_manager = get_task_manager(broadcast_cb=broadcast)
 
         # Bidirektionales Event-Driven Live-Sync für Kalender anbinden
         try:
@@ -255,6 +259,7 @@ class JarvisServer:
             "personality": get_personality_dict(),
             "voice_name": get_voice_name(),
             "calendar_events": get_events_list(),
+            "tasks": self.task_manager.get_tasks(),
             "auto_briefing": getattr(self.cron_engine, "auto_briefing", True),
             "sandbox_config": {
                 "allowed_paths": get_allowed_paths(),
@@ -437,6 +442,34 @@ class JarvisServer:
                                 self.log(f"MCP-Skill '{server_id}' gelöscht.", "SYS")
                         except Exception as e:
                             self.log(f"Fehler beim Löschen von MCP-Skill '{server_id}': {e}", "ERR")
+
+                elif msg_type == "get_tasks":
+                    await websocket.send(json.dumps({
+                        "type": "tasks_data",
+                        "tasks": self.task_manager.get_tasks()
+                    }))
+
+                elif msg_type == "toggle_task":
+                    task_id = str(data.get("task_id", "")).strip()
+                    completed = data.get("completed")
+                    if task_id:
+                        res = await self.task_manager.toggle_task(task_id, completed=completed)
+                        if res:
+                            status_txt = "erledigt" if res["completed"] else "reaktiviert"
+                            self.log(f"Aufgabe '{res['text']}' [{res['id']}] {status_txt}.", "SYS")
+
+                elif msg_type == "add_task":
+                    text = str(data.get("text", "")).strip()
+                    priority = str(data.get("priority", "normal")).strip()
+                    if text:
+                        res = await self.task_manager.add_task(text, priority=priority)
+                        self.log(f"Aufgabe '{res['text']}' [{res['id']}] hinzugefügt.", "SYS")
+
+                elif msg_type == "delete_task":
+                    task_id = str(data.get("task_id", "")).strip()
+                    if task_id:
+                        await self.task_manager.delete_task(task_id)
+                        self.log(f"Aufgabe [{task_id}] gelöscht.", "SYS")
 
                 elif msg_type == "execute_node_action":
                     node_id = str(data.get("node_id", "")).strip()
@@ -892,14 +925,16 @@ class JarvisServer:
         self._log(f"Starte WebSocket Server auf ws://{WS_HOST}:{WS_PORT}")
         server = await websockets.serve(self.handle_client, WS_HOST, WS_PORT)
 
-        # Gemini Live & Telemetrie & Cron Engine parallel starten
+        # Gemini Live & Telemetrie & Cron Engine & Task-Watcher parallel starten
         self.cron_engine.start(controller=self.controller)
         t_live = asyncio.create_task(self.controller.run())
         t_telem = asyncio.create_task(self.telemetry_loop())
+        t_tasks = asyncio.create_task(self.task_manager.start_watcher())
 
         try:
-            await asyncio.gather(t_live, t_telem)
+            await asyncio.gather(t_live, t_telem, t_tasks)
         finally:
+            self.task_manager.stop_watcher()
             self.cron_engine.stop()
             server.close()
             await server.wait_closed()

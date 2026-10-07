@@ -4,201 +4,226 @@
       "id": "hub-skill-suites",
       "name": "Skill Suites",
       "category": "Suites",
-      "connections": 236,
+      "connections": 11,
       "description": "Zentraler Routing-Knoten aller autonomen Agenten-Skills, Automatisierungsroutinen und Tool-Pipelines.",
-      "path": "backend/actions"
+      "path": "backend/actions",
+      "is_orphan": false
     },
     {
       "id": "hub-claude-code",
       "name": "Claude Code",
       "category": "Skills",
-      "connections": 48,
+      "connections": 1,
       "description": "Terminal-Agent zur Code-Generierung, Refactoring und statischen AST-Synthese.",
-      "path": "claude"
+      "path": "claude",
+      "is_orphan": false
     },
     {
       "id": "hub-gemini-live",
       "name": "Gemini Live API",
       "category": "Router",
-      "connections": 112,
+      "connections": 14,
       "description": "Vollduplex-Multimodal-Streaming-Core (gemini-3.1-flash-live-preview) mit 16/24-kHz-Audio.",
-      "path": "backend/core/gemini_live.py"
+      "path": "backend/core/gemini_live.py",
+      "is_orphan": false
     },
     {
       "id": "hub-ai-workshop",
       "name": "AI Workshop OS",
       "category": "Concepts",
-      "connections": 184,
+      "connections": 7,
       "description": "Hauptarchitektur des hybriden Betriebssystems für CachyOS / Arch Linux.",
-      "path": "."
+      "path": ".",
+      "is_orphan": false
     },
     {
       "id": "hub-youtube-channel",
       "name": "YouTube Channel",
       "category": "Concepts",
-      "connections": 64,
+      "connections": 4,
       "description": "Content-Pipeline, Videoskripte, Storyboards und Metadaten-Optimierung.",
-      "path": "https://youtube.com"
+      "path": "https://youtube.com",
+      "is_orphan": false
     },
     {
       "id": "suite-finance",
       "name": "Finance Suite",
       "category": "Suites",
-      "connections": 32,
+      "connections": 2,
       "description": "Abrechnungen, Rechnungs-Generierung und Stripe-Schnittstellen.",
-      "path": "backend/actions"
+      "path": "backend/actions",
+      "is_orphan": false
     },
     {
       "id": "suite-seo",
       "name": "SEO Suite",
       "category": "Suites",
-      "connections": 28,
+      "connections": 1,
       "description": "Suchmaschinenoptimierung, Keyword-Cluster und Content-Scoring.",
-      "path": "backend/actions"
+      "path": "backend/actions",
+      "is_orphan": false
     },
     {
       "id": "suite-ads",
       "name": "Ads Suite",
       "category": "Suites",
-      "connections": 19,
+      "connections": 1,
       "description": "Werbekampagnen-Steuerung und Performance-Tracking.",
-      "path": "backend/actions"
+      "path": "backend/actions",
+      "is_orphan": false
     },
     {
       "id": "tool-vidiq",
       "name": "vidIQ",
       "category": "Tools",
-      "connections": 14,
+      "connections": 1,
       "description": "YouTube-Trendanalyse und Keyword-Tracking.",
-      "path": "https://vidiq.com"
+      "path": "https://vidiq.com",
+      "is_orphan": false
     },
     {
       "id": "tool-higgsfield",
       "name": "Higgsfield",
       "category": "Tools",
-      "connections": 22,
+      "connections": 1,
       "description": "KI-Videogenerierung und Prompt-Orchestrierung.",
-      "path": "https://higgsfield.ai"
+      "path": "https://higgsfield.ai",
+      "is_orphan": false
     },
     {
       "id": "tool-zapier",
       "name": "Zapier",
       "category": "Tools",
-      "connections": 38,
+      "connections": 2,
       "description": "Automatisierte Webhook-Verbindungen und Third-Party-Konnektoren.",
-      "path": "https://zapier.com"
+      "path": "https://zapier.com",
+      "is_orphan": false
     },
     {
       "id": "tool-pipewire",
       "name": "PipeWire Audio",
       "category": "Tools",
-      "connections": 54,
+      "connections": 1,
       "description": "CachyOS High-Performance Sound-Server mit 16/24-kHz-Streams.",
-      "path": "pavucontrol"
+      "path": "pavucontrol",
+      "is_orphan": false
     },
     {
       "id": "skill-os-bridge",
       "name": "OS Bridge Engine",
       "category": "Skills",
-      "connections": 76,
+      "connections": 3,
       "description": "Direkte Linux-Systemcalls, Pacman/Yay-Paketmanager und PipeWire-Audio-Routing.",
-      "path": "backend/actions/system_monitor.py"
+      "path": "backend/actions/system_monitor.py",
+      "is_orphan": false
     },
     {
       "id": "skill-undo-stack",
       "name": "Undo Stack",
       "category": "Skills",
-      "connections": 42,
+      "connections": 1,
       "description": "Umkehrung von bis zu 10 destruktiven Aktionen und Systemmutationen.",
-      "path": "backend/core/undo.py"
+      "path": "backend/core/undo.py",
+      "is_orphan": false
     },
     {
       "id": "skill-memory-index",
       "name": "Memory Indexer",
       "category": "Skills",
-      "connections": 88,
+      "connections": 1,
       "description": "Zweistufiges Langzeitgedächtnis mit Recency-Priorisierung und Keyword-Recall.",
-      "path": "backend/memory/memory_manager.py"
+      "path": "backend/memory/memory_manager.py",
+      "is_orphan": false
     },
     {
       "id": "wiki-cachyos",
       "name": "CachyOS Optimization",
       "category": "Wiki",
-      "connections": 29,
+      "connections": 1,
       "description": "Kernel-Optimierungen, BORE-Scheduler und x86-64-v3/v4 Performance-Builds.",
-      "path": "https://wiki.cachyos.org"
+      "path": "https://wiki.cachyos.org",
+      "is_orphan": false
     },
     {
       "id": "wiki-gemini-live-spec",
       "name": "Gemini Live Docs",
       "category": "Wiki",
-      "connections": 34,
+      "connections": 1,
       "description": "Bidirektionale WebSockets, Bidi-Streaming und Tool-Execution-Spezifikationen.",
-      "path": "https://ai.google.dev/api/live"
+      "path": "https://ai.google.dev/api/live",
+      "is_orphan": false
     },
     {
       "id": "world-dev-workspace",
       "name": "Dev Workspace",
       "category": "Worlds",
-      "connections": 62,
+      "connections": 2,
       "description": "Arbeitsverzeichnis für Entwicklung, Tests und Container-Orchestrierung.",
-      "path": "."
+      "path": ".",
+      "is_orphan": false
     },
     {
       "id": "world-sysadmin",
       "name": "Sysadmin Core",
       "category": "Worlds",
-      "connections": 39,
+      "connections": 2,
       "description": "Systemüberwachung, Backups, Netzwerk- und Kernel-Tools.",
-      "path": "backend"
+      "path": "backend",
+      "is_orphan": false
     },
     {
       "id": "note-2026-roadmap",
       "name": "2026-Roadmap",
       "category": "Notes",
-      "connections": 16,
+      "connections": 1,
       "description": "Meilensteine für das autonome KI-Betriebssystem und TUI-Widgets.",
-      "path": "backend/knowledge_base/knowledge_map.json"
+      "path": "backend/knowledge_base/knowledge_map.json",
+      "is_orphan": false
     },
     {
       "id": "note-video-script",
       "name": "VIDEO-SCRIPT-FULL",
       "category": "Notes",
-      "connections": 12,
+      "connections": 1,
       "description": "Skript für Vorstellung des CachyOS AI Betriebssystems.",
-      "path": "backend/knowledge_base/knowledge_map.json"
+      "path": "backend/knowledge_base/knowledge_map.json",
+      "is_orphan": false
     },
     {
       "id": "file-server-py",
       "name": "backend/server.py",
       "category": "Files",
-      "connections": 24,
+      "connections": 2,
       "description": "Zentraler WebSocket & Telemetrie-Bridge Server auf Port 8765.",
-      "path": "backend/server.py"
+      "path": "backend/server.py",
+      "is_orphan": false
     },
     {
       "id": "file-jarvis-core",
       "name": "backend/core/gemini_live.py",
       "category": "Files",
-      "connections": 29,
+      "connections": 1,
       "description": "Vollduplex-Audio & Tool-Routing-Controller.",
-      "path": "backend/core/gemini_live.py"
+      "path": "backend/core/gemini_live.py",
+      "is_orphan": false
     },
     {
       "id": "tools-spotify",
       "name": "Spotify",
       "category": "Tools",
-      "connections": 15,
+      "connections": 1,
       "description": "Musik-Streaming-Dienst und Podcast-Plattform. Integration für Audio-Routing und Playlist-Management im J.A.R.V.I.S. OS.",
-      "path": ""
+      "path": "",
+      "is_orphan": false
     },
     {
       "id": "tools-suno-ai",
       "name": "Suno AI",
       "category": "Tools",
-      "connections": 10,
+      "connections": 1,
       "description": "Generative KI für Musik und Songs. Erstellung von Hardtekk-Tracks und Sound-Experimenten mittels Prompting.",
-      "path": ""
+      "path": "",
+      "is_orphan": false
     },
     {
       "id": "files-cachyos-rice-architect",
@@ -206,7 +231,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum kachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/cachyos-rice-architect"
+      "path": "tools/cachyos-rice-architect",
+      "is_orphan": false
     },
     {
       "id": "files-jarvis-spatial-shell",
@@ -214,7 +240,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/Jarv-orb/fin/jarvis-spatial-shell"
+      "path": "tools/Jarv-orb/fin/jarvis-spatial-shell",
+      "is_orphan": false
     },
     {
       "id": "files-cachyos-control-center",
@@ -222,7 +249,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum cachyos-control-center Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/cachyos-control-center"
+      "path": "tools/cachyos-control-center",
+      "is_orphan": false
     },
     {
       "id": "files-textual-tui-creator",
@@ -230,7 +258,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum textual-tui-creator Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/textual-tui-creator"
+      "path": "tools/textual-tui-creator",
+      "is_orphan": false
     },
     {
       "id": "files-upgit",
@@ -238,7 +267,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum upgit Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/upgit"
+      "path": "tools/upgit",
+      "is_orphan": false
     },
     {
       "id": "files-upgit-b7ce",
@@ -246,7 +276,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum upgit Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/upgit"
+      "path": "tools/upgit",
+      "is_orphan": false
     },
     {
       "id": "files-cachyos-control-center-3b38",
@@ -254,7 +285,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum cachyos-control-center Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/cachyos-control-center"
+      "path": "tools/cachyos-control-center",
+      "is_orphan": false
     },
     {
       "id": "files-cachyos-rice-architect-6ff1",
@@ -262,7 +294,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum cachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/cachyos-rice-architect"
+      "path": "tools/cachyos-rice-architect",
+      "is_orphan": false
     },
     {
       "id": "files-jarvis-spatial-shell-7c49",
@@ -270,7 +303,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/Jarv-orb/fin/jarvis-spatial-shell"
+      "path": "tools/Jarv-orb/fin/jarvis-spatial-shell",
+      "is_orphan": false
     },
     {
       "id": "files-textual-tui-creator-468f",
@@ -278,7 +312,8 @@
       "category": "Files",
       "connections": 1,
       "description": "Lokaler Pfad zum textual-tui-creator Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/textual-tui-creator"
+      "path": "tools/textual-tui-creator",
+      "is_orphan": false
     },
     {
       "id": "notes-jarvis-manager-desktop-entry-draft",
@@ -286,7 +321,8 @@
       "category": "Notes",
       "connections": 1,
       "description": "[Desktop Entry]\nName=Jarvis Manager\nComment=Control Jarvis AI OS (Start, Stop, Status, Autostart)\nExec=bash -c 'echo \"Optionen: Starten, Beenden, Status, Autostart Toggle\" | zenity --list --title=\"Jarvis Manager\" --column=\"Aktion\"'\nIcon=system-run\nTerminal=false\nType=Application\nCategories=System;Utility;\n\n# Anleitung: Diesen Inhalt in eine Datei namens 'jarvis-manager.desktop' kopieren.\n# Danach im Terminal 'sudo mv jarvis-manager.desktop /usr/share/applications/' ausführen.",
-      "path": ""
+      "path": "",
+      "is_orphan": false
     },
     {
       "id": "tools-jarvis-control-center-modern-gui",
@@ -294,7 +330,18 @@
       "category": "Tools",
       "connections": 1,
       "description": "Python-Skript (in Entwicklung) zur Steuerung des J.A.R.V.I.S. Core über ein grafisches Menü im Web-Style. Nutzt start.sh Befehle.",
-      "path": ""
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-kernel-sched-ext-testing",
+      "name": "Kernel Sched Ext Testing",
+      "category": "Wiki",
+      "connections": 2,
+      "description": "title: \"Kernel Sched Ext Testing\"",
+      "status": "conflict",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/kernel-sched-ext-testing.md",
+      "is_orphan": false
     }
   ],
   "links": [
@@ -449,6 +496,12 @@
     {
       "source": "hub-skill-suites",
       "target": "tools-jarvis-control-center-modern-gui"
+    },
+    {
+      "source": "wiki-kernel-sched-ext-testing",
+      "target": "wiki-audio-pipeline-architecture",
+      "value": 2,
+      "type": "wiki"
     }
   ]
 }
