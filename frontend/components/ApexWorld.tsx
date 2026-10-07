@@ -211,17 +211,36 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
   }, [modalNode?.node.id]);
 
   // Three.js State Refs
+  const dataRef = useRef<GraphData>(data);
+  dataRef.current = data;
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const constellationGroupRef = useRef<THREE.Group | null>(null);
   const nodeMeshesRef = useRef<Map<string, THREE.Mesh>>(new Map());
+  const cachedHitMeshesRef = useRef<THREE.Mesh[]>([]);
   const internalNodesRef = useRef<InternalNode[]>([]);
   const curvedLinksRef = useRef<CurvedLink[]>([]);
   const packetsRef = useRef<DataPacket[]>([]);
   const is2DRef = useRef<boolean>(false);
   const selectedNodeRef = useRef<GraphNode | null>(null);
+  const selectedNeighborIdsRef = useRef<Set<string>>(new Set());
   const highlightedPathRef = useRef<Set<string>>(new Set());
+
+  // Shared Geometries & Textures zur Vermeidung von Memory Leaks / Rekreation
+  const sharedSphereGeoRef = useRef<THREE.SphereGeometry | null>(null);
+  const sharedNucleusGeoRef = useRef<THREE.SphereGeometry | null>(null);
+  const sharedNucleusMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const sharedGlowTextureRef = useRef<THREE.CanvasTexture | null>(null);
+  const lineGeoRef = useRef<THREE.BufferGeometry | null>(null);
+  const lineMatRef = useRef<THREE.LineBasicMaterial | null>(null);
+  const packetGeoRef = useRef<THREE.SphereGeometry | null>(null);
+  const packetMaterialsRef = useRef<THREE.MeshBasicMaterial[]>([]);
+  const packetHaloMaterialsRef = useRef<THREE.SpriteMaterial[]>([]);
+
+  // Zero-Allocation Raycasting & Mouse Vectors
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseVecRef = useRef<THREE.Vector2>(new THREE.Vector2());
 
   // Dynamic prop refs to avoid tearing inside the render loop
   const audioLevelRef = useRef<number>(audioLevel);
@@ -246,10 +265,26 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     radius: 450
   });
 
+  // O(1) Nachbarschafts-Cache bei Selektion
+  const updateSelectedNeighbors = (node: GraphNode | null) => {
+    if (!node) {
+      selectedNeighborIdsRef.current.clear();
+      return;
+    }
+    const neighbors = new Set<string>();
+    dataRef.current.links.forEach((l) => {
+      const s = typeof l.source === "object" ? (l.source as any).id : l.source;
+      const t = typeof l.target === "object" ? (l.target as any).id : l.target;
+      if (s === node.id) neighbors.add(t);
+      if (t === node.id) neighbors.add(s);
+    });
+    selectedNeighborIdsRef.current = neighbors;
+  };
+
   // Shortest Path Finder (BFS Dijkstra-äquivalent für ungewichtete Graphen)
   const findShortestPath = (startId: string, endId: string): string[] => {
     const adj = new Map<string, string[]>();
-    data.links.forEach((l) => {
+    dataRef.current.links.forEach((l) => {
       const s = typeof l.source === "object" ? (l.source as any).id : l.source;
       const t = typeof l.target === "object" ? (l.target as any).id : l.target;
       if (!adj.has(s)) adj.set(s, []);
@@ -284,6 +319,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     },
     resetTarget: () => {
       selectedNodeRef.current = null;
+      updateSelectedNeighbors(null);
       highlightedPathRef.current.clear();
       onNodeSelect(null);
       cameraRotationRef.current = { theta: Math.PI / 4.2, phi: Math.PI / 2.8, radius: 450 };
@@ -302,6 +338,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       const target = internalNodesRef.current.find((n) => n.id === nodeId);
       if (target) {
         selectedNodeRef.current = target;
+        updateSelectedNeighbors(target);
         onNodeSelect(target);
       }
     }
@@ -319,6 +356,310 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     cam.lookAt(0, 0, 0);
   };
 
+  // ── Graph Construction & Disposal (Unabhängig vom WebGL Renderer-Lifecycle) ──
+  const buildGraph = () => {
+    const constellationGroup = constellationGroupRef.current;
+    if (!constellationGroup) return;
+
+    // 1. Alte Geometrien & Shader sauber disposen (Speicherleck-Schutz)
+    internalNodesRef.current.forEach((node) => {
+      if (node.shaderMat) node.shaderMat.dispose();
+      if (node.ringMesh) {
+        node.ringMesh.geometry.dispose();
+        (node.ringMesh.material as THREE.Material).dispose();
+      }
+      if (node.billboardSprite) {
+        if (node.billboardSprite.material.map) node.billboardSprite.material.map.dispose();
+        node.billboardSprite.material.dispose();
+      }
+      if (node.hitMesh) {
+        node.hitMesh.geometry.dispose();
+        (node.hitMesh.material as THREE.Material).dispose();
+      }
+    });
+
+    packetMaterialsRef.current.forEach((m) => m.dispose());
+    packetMaterialsRef.current = [];
+    packetHaloMaterialsRef.current.forEach((m) => m.dispose());
+    packetHaloMaterialsRef.current = [];
+    if (packetGeoRef.current) {
+      packetGeoRef.current.dispose();
+      packetGeoRef.current = null;
+    }
+    if (lineGeoRef.current) {
+      lineGeoRef.current.dispose();
+      lineGeoRef.current = null;
+    }
+    if (lineMatRef.current) {
+      lineMatRef.current.dispose();
+      lineMatRef.current = null;
+    }
+
+    constellationGroup.clear();
+
+    const curData = dataRef.current;
+    const sphereGeometry = sharedSphereGeoRef.current;
+    const nucleusGeometry = sharedNucleusGeoRef.current;
+    const nucleusMaterial = sharedNucleusMatRef.current;
+    const glowTexture = sharedGlowTextureRef.current;
+    if (!sphereGeometry || !nucleusGeometry || !nucleusMaterial || !glowTexture) return;
+
+    // Cluster-Zentren für dynamische räumliche Kohärenz
+    const clusterCenters: Record<string, THREE.Vector3> = {
+      Cyan: new THREE.Vector3(120, 30, 40),
+      Blue: new THREE.Vector3(-95, 70, -60),
+      Orange: new THREE.Vector3(-25, -80, 70)
+    };
+
+    const getGroupKey = (cat: NodeCategory): "Cyan" | "Blue" | "Orange" => {
+      if (cat === "Router" || cat === "Skills" || cat === "Tools") return "Cyan";
+      if (cat === "Suites" || cat === "Wiki" || cat === "Files") return "Blue";
+      return "Orange";
+    };
+
+    // Knoten berechnen
+    const internalNodes: InternalNode[] = curData.nodes.map((node, i) => {
+      const groupKey = getGroupKey(node.category);
+      const center = clusterCenters[groupKey] || new THREE.Vector3(0, 0, 0);
+      const isHub = node.id.startsWith("hub-") || node.connections >= 30;
+
+      const angle = (i * 2.399963229728653) % (Math.PI * 2);
+      const elevation = Math.sin(i * 1.7) * 0.75;
+      const radius = isHub ? 36 + (i % 3) * 12 : 68 + (i % 5) * 16;
+
+      const lx = radius * Math.cos(angle) * Math.cos(elevation);
+      const ly = radius * Math.sin(elevation) * 1.2;
+      const lz = radius * Math.sin(angle) * Math.cos(elevation);
+
+      const baseX = isHub ? center.x * 0.55 + lx * 0.6 : center.x + lx;
+      const baseY = isHub ? center.y * 0.55 + ly * 0.6 : center.y + ly;
+      const baseZ = isHub ? center.z * 0.55 + lz * 0.6 : center.z + lz;
+
+      const baseRadius = Math.max(3.8, Math.min(14.5, Math.sqrt(node.connections) * 2.15));
+
+      return {
+        ...node,
+        baseX,
+        baseY,
+        baseZ,
+        baseRadius,
+        isHub,
+        pulsePhase: i * 1.37 + Math.random() * 0.5,
+        x: baseX,
+        y: baseY,
+        z: baseZ
+      };
+    });
+    internalNodesRef.current = internalNodes;
+
+    // Node Meshes & Shader erstellen
+    const meshesMap = new Map<string, THREE.Mesh>();
+
+    internalNodes.forEach((node) => {
+      const group = new THREE.Group();
+      group.position.set(node.baseX, node.baseY, node.baseZ);
+
+      const colorHex = CATEGORY_COLORS[node.category] || "#00f0ff";
+      const colorObj = new THREE.Color(colorHex);
+
+      // A. Volumetrische Fresnel-Shader-Sphäre
+      const shaderMat = new THREE.ShaderMaterial({
+        vertexShader: fresnelVertexShader,
+        fragmentShader: fresnelFragmentShader,
+        uniforms: {
+          uColor: { value: colorObj },
+          uTime: { value: 0 },
+          uPulseRate: { value: 2.2 + (node.connections % 4) * 0.5 },
+          uGlowIntensity: { value: node.isHub ? 1.5 : 1.1 },
+          uAlpha: { value: 1.0 }
+        },
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      const sphereMesh = new THREE.Mesh(sphereGeometry, shaderMat);
+      sphereMesh.scale.setScalar(node.baseRadius);
+      group.add(sphereMesh);
+
+      // B. Innerer leuchtender Energiekern (Nucleus)
+      const nucleusMesh = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
+      nucleusMesh.scale.setScalar(node.baseRadius * 0.38);
+      group.add(nucleusMesh);
+
+      // C. Rotierender Holo-Gyroskop-Ring (für Hubs)
+      let ringMesh: THREE.Mesh | undefined;
+      if (node.isHub) {
+        const ringGeo = new THREE.TorusGeometry(node.baseRadius * 1.38, 0.16, 8, 48);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: colorObj,
+          wireframe: true,
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          opacity: 0.8
+        });
+        ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.rotation.x = Math.PI / 3.2;
+        group.add(ringMesh);
+      }
+
+      // D. 3D-Billboard Text-Sprite mit HUD Eck-Brackets
+      let billboardSprite: THREE.Sprite | undefined;
+      if (node.isHub) {
+        const subLabel = `[ ${node.category.toUpperCase()} // ${node.connections} LINKS ]`;
+        billboardSprite = createTextSprite(node.name, subLabel, colorHex);
+        billboardSprite.position.y = node.baseRadius + 4.2;
+        group.add(billboardSprite);
+      }
+
+      // E. Unsichtbare Hit-Sphere für pixelgenaues Raycasting
+      const hitGeo = new THREE.SphereGeometry(node.baseRadius * 1.4, 16, 16);
+      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+      const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+      hitMesh.userData = { id: node.id };
+      group.add(hitMesh);
+
+      constellationGroup.add(group);
+      meshesMap.set(node.id, hitMesh);
+
+      node.group = group;
+      node.shaderMat = shaderMat;
+      node.nucleusMesh = nucleusMesh;
+      node.ringMesh = ringMesh;
+      node.billboardSprite = billboardSprite;
+      node.hitMesh = hitMesh;
+    });
+    nodeMeshesRef.current = meshesMap;
+    cachedHitMeshesRef.current = Array.from(meshesMap.values());
+
+    // Geschwungene Leuchtlinien (3D Bézier-Kurven)
+    const curvedLinks: CurvedLink[] = [];
+    const segmentsPerCurve = 24;
+    const totalLineVertices = curData.links.length * segmentsPerCurve * 2;
+    const linePos = new Float32Array(totalLineVertices * 3);
+    const lineColors = new Float32Array(totalLineVertices * 3);
+
+    curData.links.forEach((link, lIdx) => {
+      const sId = typeof link.source === "object" ? (link.source as any).id : link.source;
+      const tId = typeof link.target === "object" ? (link.target as any).id : link.target;
+      const n1 = internalNodes.find((n) => n.id === sId);
+      const n2 = internalNodes.find((n) => n.id === tId);
+
+      if (n1 && n2) {
+        const p1 = new THREE.Vector3(n1.baseX, n1.baseY, n1.baseZ);
+        const p2 = new THREE.Vector3(n2.baseX, n2.baseY, n2.baseZ);
+        const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+        const delta = new THREE.Vector3().subVectors(p2, p1);
+        const dist = delta.length();
+
+        let normal = mid.clone().normalize();
+        if (normal.lengthSq() < 0.001) normal = new THREE.Vector3(0, 1, 0);
+
+        const side = new THREE.Vector3().crossVectors(delta, normal).normalize();
+        const elevation = Math.min(dist * 0.18, 16);
+        const ctrl = mid.clone().add(side.multiplyScalar(elevation * 0.45)).add(normal.multiplyScalar(elevation * 0.55));
+
+        const curve = new THREE.QuadraticBezierCurve3(p1, ctrl, p2);
+        curvedLinks.push({ sourceId: sId, targetId: tId, curve });
+
+        const points = curve.getPoints(segmentsPerCurve);
+        let ptr = lIdx * segmentsPerCurve * 2 * 3;
+        for (let s = 0; s < segmentsPerCurve; s++) {
+          const ptA = points[s];
+          const ptB = points[s + 1];
+
+          linePos[ptr++] = ptA.x;
+          linePos[ptr++] = ptA.y;
+          linePos[ptr++] = ptA.z;
+
+          linePos[ptr++] = ptB.x;
+          linePos[ptr++] = ptB.y;
+          linePos[ptr++] = ptB.z;
+        }
+      }
+    });
+    curvedLinksRef.current = curvedLinks;
+
+    // Neon Cyan Farbverlauf für Kanten
+    const baseLineColor = new THREE.Color(0x00f0ff);
+    for (let c = 0; c < lineColors.length; c += 3) {
+      lineColors[c] = baseLineColor.r * 0.85;
+      lineColors[c + 1] = baseLineColor.g * 0.95;
+      lineColors[c + 2] = baseLineColor.b;
+    }
+
+    if (totalLineVertices > 0) {
+      const lineGeo = new THREE.BufferGeometry();
+      lineGeo.setAttribute("position", new THREE.BufferAttribute(linePos, 3));
+      lineGeo.setAttribute("color", new THREE.BufferAttribute(lineColors, 3));
+      lineGeoRef.current = lineGeo;
+
+      const lineMat = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending
+      });
+      lineMatRef.current = lineMat;
+
+      const linkLinesSegments = new THREE.LineSegments(lineGeo, lineMat);
+      constellationGroup.add(linkLinesSegments);
+    }
+
+    // Animierte Datenfluss-Partikel / Flux-Pulse
+    const packetPoolSize = Math.min(72, Math.max(24, curvedLinks.length * 2));
+    const packets: DataPacket[] = [];
+    const packetGeo = new THREE.SphereGeometry(1.35, 12, 12);
+    packetGeoRef.current = packetGeo;
+    const flowColorHexes = [0x00f0ff, 0x00ff88, 0x2979ff, 0x00e5ff, 0x50d7ff];
+    const packetMaterials: THREE.MeshBasicMaterial[] = [];
+    const packetHaloMaterials: THREE.SpriteMaterial[] = [];
+
+    for (let p = 0; p < packetPoolSize; p++) {
+      const pColorHex = flowColorHexes[p % flowColorHexes.length];
+      const pColor = new THREE.Color(pColorHex);
+      const pMeshMat = new THREE.MeshBasicMaterial({
+        color: pColor,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending
+      });
+      packetMaterials.push(pMeshMat);
+      const pMesh = new THREE.Mesh(packetGeo, pMeshMat);
+
+      const pHaloMat = new THREE.SpriteMaterial({
+        map: glowTexture,
+        color: pColor,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      packetHaloMaterials.push(pHaloMat);
+      const pHalo = new THREE.Sprite(pHaloMat);
+      pHalo.scale.set(7.5, 7.5, 1);
+      pMesh.add(pHalo);
+
+      const linkIdx = p % Math.max(1, curvedLinks.length);
+      const packet: DataPacket = {
+        mesh: pMesh,
+        halo: pHalo,
+        linkIndex: linkIdx,
+        progress: Math.random(),
+        speed: 0.28 + Math.random() * 0.35,
+        direction: Math.random() > 0.5 ? 1 : -1
+      };
+      constellationGroup.add(pMesh);
+      packets.push(packet);
+    }
+    packetMaterialsRef.current = packetMaterials;
+    packetHaloMaterialsRef.current = packetHaloMaterials;
+    packetsRef.current = packets;
+
+    updateSelectedNeighbors(selectedNodeRef.current);
+  };
+
+  // ── WebGL Lifecycle (Wird NUR EINMALIG beim Mounten instanziiert) ──
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
@@ -365,7 +706,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     pointEmerald.position.set(0, -240, 180);
     scene.add(pointEmerald);
 
-    // 5. Konzentrische holografische Radar-Ringe & Boden-Gitter (aus preview_graph.py)
+    // 5. Konzentrische holografische Radar-Ringe & Boden-Gitter
     const radarGroup = new THREE.Group();
     radarGroup.position.y = -135;
 
@@ -429,258 +770,20 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     scene.add(constellationGroup);
     constellationGroupRef.current = constellationGroup;
 
-    // 8. Cluster-Zentren für dynamische räumliche Kohärenz
-    const clusterCenters: Record<string, THREE.Vector3> = {
-      Cyan: new THREE.Vector3(120, 30, 40),
-      Blue: new THREE.Vector3(-95, 70, -60),
-      Orange: new THREE.Vector3(-25, -80, 70)
-    };
-
-    const getGroupKey = (cat: NodeCategory): "Cyan" | "Blue" | "Orange" => {
-      if (cat === "Router" || cat === "Skills" || cat === "Tools") return "Cyan";
-      if (cat === "Suites" || cat === "Wiki" || cat === "Files") return "Blue";
-      return "Orange";
-    };
-
-    // NUR ECHTE VORHANDENE KNOTEN (data.nodes) dynamisch abbilden!
-    const internalNodes: InternalNode[] = data.nodes.map((node, i) => {
-      const groupKey = getGroupKey(node.category);
-      const center = clusterCenters[groupKey] || new THREE.Vector3(0, 0, 0);
-      const isHub = node.id.startsWith("hub-") || node.connections >= 30;
-
-      const angle = (i * 2.399963229728653) % (Math.PI * 2);
-      const elevation = Math.sin(i * 1.7) * 0.75;
-      const radius = isHub ? 36 + (i % 3) * 12 : 68 + (i % 5) * 16;
-
-      const lx = radius * Math.cos(angle) * Math.cos(elevation);
-      const ly = radius * Math.sin(elevation) * 1.2;
-      const lz = radius * Math.sin(angle) * Math.cos(elevation);
-
-      const baseX = isHub ? center.x * 0.55 + lx * 0.6 : center.x + lx;
-      const baseY = isHub ? center.y * 0.55 + ly * 0.6 : center.y + ly;
-      const baseZ = isHub ? center.z * 0.55 + lz * 0.6 : center.z + lz;
-
-      const baseRadius = Math.max(3.8, Math.min(14.5, Math.sqrt(node.connections) * 2.15));
-
-      return {
-        ...node,
-        baseX,
-        baseY,
-        baseZ,
-        baseRadius,
-        isHub,
-        pulsePhase: i * 1.37 + Math.random() * 0.5,
-        x: baseX,
-        y: baseY,
-        z: baseZ
-      };
-    });
-    internalNodesRef.current = internalNodes;
-
-    // 9. Glow-Textur für Partikel und Halos
+    // Wiederverwendbare Geometrien & Texturen instanziieren
     const glowTexture = createRadialGlowTexture();
-
-    // 10. Node Builder: Volumetrische Fresnel Shader + Weißer Kern + Holo-Gyroskop-Ring + 3D-Billboard
-    const meshesMap = new Map<string, THREE.Mesh>();
-    const nodeGroups: THREE.Group[] = [];
+    sharedGlowTextureRef.current = glowTexture;
     const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+    sharedSphereGeoRef.current = sphereGeometry;
     const nucleusGeometry = new THREE.SphereGeometry(1, 16, 16);
+    sharedNucleusGeoRef.current = nucleusGeometry;
     const nucleusMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, blending: THREE.AdditiveBlending });
+    sharedNucleusMatRef.current = nucleusMaterial;
 
-    internalNodes.forEach((node) => {
-      const group = new THREE.Group();
-      group.position.set(node.baseX, node.baseY, node.baseZ);
+    // Initialer Graph-Aufbau
+    buildGraph();
 
-      const colorHex = CATEGORY_COLORS[node.category] || "#00f0ff";
-      const colorObj = new THREE.Color(colorHex);
-
-      // A. Volumetrische Fresnel-Shader-Sphäre
-      const shaderMat = new THREE.ShaderMaterial({
-        vertexShader: fresnelVertexShader,
-        fragmentShader: fresnelFragmentShader,
-        uniforms: {
-          uColor: { value: colorObj },
-          uTime: { value: 0 },
-          uPulseRate: { value: 2.2 + (node.connections % 4) * 0.5 },
-          uGlowIntensity: { value: node.isHub ? 1.5 : 1.1 },
-          uAlpha: { value: 1.0 }
-        },
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-
-      const sphereMesh = new THREE.Mesh(sphereGeometry, shaderMat);
-      sphereMesh.scale.setScalar(node.baseRadius);
-      group.add(sphereMesh);
-
-      // B. Innerer leuchtender Energiekern (Nucleus)
-      const nucleusMesh = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
-      nucleusMesh.scale.setScalar(node.baseRadius * 0.38);
-      group.add(nucleusMesh);
-
-      // C. Rotierender Holo-Gyroskop-Ring (für Hubs / hochvernetzte Knoten)
-      let ringMesh: THREE.Mesh | undefined;
-      if (node.isHub) {
-        const ringGeo = new THREE.TorusGeometry(node.baseRadius * 1.38, 0.16, 8, 48);
-        const ringMat = new THREE.MeshBasicMaterial({
-          color: colorObj,
-          wireframe: true,
-          blending: THREE.AdditiveBlending,
-          transparent: true,
-          opacity: 0.8
-        });
-        ringMesh = new THREE.Mesh(ringGeo, ringMat);
-        ringMesh.rotation.x = Math.PI / 3.2;
-        group.add(ringMesh);
-      }
-
-      // D. 3D-Billboard Text-Sprite mit HUD Eck-Brackets für Hubs & Major Nodes
-      let billboardSprite: THREE.Sprite | undefined;
-      if (node.isHub) {
-        const subLabel = `[ ${node.category.toUpperCase()} // ${node.connections} LINKS ]`;
-        billboardSprite = createTextSprite(node.name, subLabel, colorHex);
-        billboardSprite.position.y = node.baseRadius + 4.2;
-        group.add(billboardSprite);
-      }
-
-      // E. Unsichtbare Hit-Sphere für pixelgenaues Raycasting
-      const hitGeo = new THREE.SphereGeometry(node.baseRadius * 1.4, 16, 16);
-      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
-      const hitMesh = new THREE.Mesh(hitGeo, hitMat);
-      hitMesh.userData = { id: node.id };
-      group.add(hitMesh);
-
-      constellationGroup.add(group);
-      nodeGroups.push(group);
-      meshesMap.set(node.id, hitMesh);
-
-      node.group = group;
-      node.shaderMat = shaderMat;
-      node.nucleusMesh = nucleusMesh;
-      node.ringMesh = ringMesh;
-      node.billboardSprite = billboardSprite;
-      node.hitMesh = hitMesh;
-    });
-    nodeMeshesRef.current = meshesMap;
-
-    // 11. Geschwungene Leuchtlinien (3D Bézier-Kurven) für reale Verbindungen (data.links)
-    const curvedLinks: CurvedLink[] = [];
-    const segmentsPerCurve = 24;
-    const totalLineVertices = data.links.length * segmentsPerCurve * 2;
-    const linePos = new Float32Array(totalLineVertices * 3);
-    const lineColors = new Float32Array(totalLineVertices * 3);
-
-    data.links.forEach((link, lIdx) => {
-      const sId = typeof link.source === "object" ? (link.source as any).id : link.source;
-      const tId = typeof link.target === "object" ? (link.target as any).id : link.target;
-      const n1 = internalNodes.find((n) => n.id === sId);
-      const n2 = internalNodes.find((n) => n.id === tId);
-
-      if (n1 && n2) {
-        const p1 = new THREE.Vector3(n1.baseX, n1.baseY, n1.baseZ);
-        const p2 = new THREE.Vector3(n2.baseX, n2.baseY, n2.baseZ);
-        const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-        const delta = new THREE.Vector3().subVectors(p2, p1);
-        const dist = delta.length();
-
-        let normal = mid.clone().normalize();
-        if (normal.lengthSq() < 0.001) normal = new THREE.Vector3(0, 1, 0);
-
-        const side = new THREE.Vector3().crossVectors(delta, normal).normalize();
-        const elevation = Math.min(dist * 0.18, 16);
-        const ctrl = mid.clone().add(side.multiplyScalar(elevation * 0.45)).add(normal.multiplyScalar(elevation * 0.55));
-
-        const curve = new THREE.QuadraticBezierCurve3(p1, ctrl, p2);
-        curvedLinks.push({ sourceId: sId, targetId: tId, curve });
-
-        const points = curve.getPoints(segmentsPerCurve);
-        let ptr = lIdx * segmentsPerCurve * 2 * 3;
-        for (let s = 0; s < segmentsPerCurve; s++) {
-          const ptA = points[s];
-          const ptB = points[s + 1];
-
-          linePos[ptr++] = ptA.x;
-          linePos[ptr++] = ptA.y;
-          linePos[ptr++] = ptA.z;
-
-          linePos[ptr++] = ptB.x;
-          linePos[ptr++] = ptB.y;
-          linePos[ptr++] = ptB.z;
-        }
-      }
-    });
-    curvedLinksRef.current = curvedLinks;
-
-    // Neon-Farbe für Linien: Leuchtendes Cyan / Türkis mit hoher Leuchtkraft
-    const baseLineColor = new THREE.Color(0x00f0ff);
-    for (let c = 0; c < lineColors.length; c += 3) {
-      lineColors[c] = baseLineColor.r * 0.85;
-      lineColors[c + 1] = baseLineColor.g * 0.95;
-      lineColors[c + 2] = baseLineColor.b;
-    }
-
-    const lineGeo = new THREE.BufferGeometry();
-    lineGeo.setAttribute("position", new THREE.BufferAttribute(linePos, 3));
-    lineGeo.setAttribute("color", new THREE.BufferAttribute(lineColors, 3));
-
-    const lineMat = new THREE.LineBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.55,
-      blending: THREE.AdditiveBlending
-    });
-    const linkLinesSegments = new THREE.LineSegments(lineGeo, lineMat);
-    constellationGroup.add(linkLinesSegments);
-
-    // 12. Animierte Datenfluss-Partikel / Flux-Pulse ("wie es arbeitet")
-    const packetPoolSize = Math.min(72, Math.max(24, curvedLinks.length * 2));
-    const packets: DataPacket[] = [];
-    const packetGeo = new THREE.SphereGeometry(1.35, 12, 12);
-    const flowColorHexes = [0x00f0ff, 0x00ff88, 0x2979ff, 0x00e5ff, 0x50d7ff];
-    const packetMaterials: THREE.MeshBasicMaterial[] = [];
-    const packetHaloMaterials: THREE.SpriteMaterial[] = [];
-
-    for (let p = 0; p < packetPoolSize; p++) {
-      const pColorHex = flowColorHexes[p % flowColorHexes.length];
-      const pColor = new THREE.Color(pColorHex);
-      const pMeshMat = new THREE.MeshBasicMaterial({
-        color: pColor,
-        transparent: true,
-        opacity: 0.95,
-        blending: THREE.AdditiveBlending
-      });
-      packetMaterials.push(pMeshMat);
-      const pMesh = new THREE.Mesh(packetGeo, pMeshMat);
-
-      const pHaloMat = new THREE.SpriteMaterial({
-        map: glowTexture,
-        color: pColor,
-        transparent: true,
-        opacity: 0.85,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      packetHaloMaterials.push(pHaloMat);
-      const pHalo = new THREE.Sprite(pHaloMat);
-      pHalo.scale.set(7.5, 7.5, 1);
-      pMesh.add(pHalo);
-
-      const linkIdx = p % Math.max(1, curvedLinks.length);
-      const packet: DataPacket = {
-        mesh: pMesh,
-        halo: pHalo,
-        linkIndex: linkIdx,
-        progress: Math.random(),
-        speed: 0.28 + Math.random() * 0.35,
-        direction: Math.random() > 0.5 ? 1 : -1
-      };
-      constellationGroup.add(pMesh);
-      packets.push(packet);
-    }
-    packetsRef.current = packets;
-
-    // 13. Render- & Animationsloop (60-120 FPS)
+    // 8. Render- & Animationsloop (Stabile 60-120 FPS ohne Garbage-Collection Churn)
     let animationFrameId: number;
     let prevTime = performance.now();
 
@@ -691,7 +794,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       prevTime = now;
       const time = now * 0.001;
 
-      // A. Global Movement: Harmonische 3D-Präzession
+      // A. Global Movement
       const is2D = is2DRef.current;
       if (!is2D) {
         constellationGroup.rotation.y = Math.sin(time * 0.08) * 0.1 + time * 0.02;
@@ -708,17 +811,17 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         constellationGroup.position.set(0, 0, 0);
       }
 
-      // Schwebenden Datenstaub sanft rotieren
       particleSystem.rotation.y = time * 0.015;
 
-      // B. Slider-Skalierung
+      // B. Dynamic Scales & Props
       const scaleFactor = (linkLengthRef.current / 80) * (repelForceRef.current / 140);
       const query = searchQueryRef.current.trim().toLowerCase();
       const filter = activeFilterRef.current;
       const selected = selectedNodeRef.current;
       const pathSet = highlightedPathRef.current;
 
-      // C. Node Shaders, Gyroskop-Ringe & Pulsation updaten
+      // C. Nodes, Gyros & Shader Updates
+      const internalNodes = internalNodesRef.current;
       internalNodes.forEach((node) => {
         if (!node.group || !node.shaderMat) return;
 
@@ -730,13 +833,11 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         node.y = py;
         node.z = pz;
 
-        // Gyroskop-Ring rotieren
         if (node.ringMesh) {
           node.ringMesh.rotation.z += 0.012;
           node.ringMesh.rotation.y += 0.008;
         }
 
-        // Shader-Zeit übergeben
         node.shaderMat.uniforms.uTime.value = time;
 
         const matchesFilter = filter.has(node.category);
@@ -745,13 +846,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
 
         const isSelected = selected?.id === node.id;
         const isOnPath = pathSet.has(node.id);
-        const isNeighbor = selected
-          ? data.links.some((l) => {
-              const s = typeof l.source === "object" ? (l.source as any).id : l.source;
-              const t = typeof l.target === "object" ? (l.target as any).id : l.target;
-              return (s === selected.id && t === node.id) || (t === selected.id && s === node.id);
-            })
-          : true;
+        const isNeighbor = selected ? selectedNeighborIdsRef.current.has(node.id) : true;
 
         if (!isVisible) {
           node.shaderMat.uniforms.uAlpha.value = 0.04;
@@ -782,84 +877,92 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         }
       });
 
-      // D. Aktualisierung der geschwungenen Verbindungslinien
-      const posAttr = lineGeo.attributes.position as THREE.BufferAttribute;
-      const colAttr = lineGeo.attributes.color as THREE.BufferAttribute;
-      const positions = posAttr.array as Float32Array;
-      const colors = colAttr.array as Float32Array;
+      // D. Curved Links Buffer Updates
+      const curvedLinks = curvedLinksRef.current;
+      const lineGeo = lineGeoRef.current;
+      if (lineGeo && curvedLinks.length > 0) {
+        const segmentsPerCurve = 24;
+        const posAttr = lineGeo.attributes.position as THREE.BufferAttribute;
+        const colAttr = lineGeo.attributes.color as THREE.BufferAttribute;
+        if (posAttr && colAttr) {
+          const positions = posAttr.array as Float32Array;
+          const colors = colAttr.array as Float32Array;
 
-      let vIdx = 0;
-      curvedLinks.forEach((cLink) => {
-        const n1 = internalNodes.find((n) => n.id === cLink.sourceId);
-        const n2 = internalNodes.find((n) => n.id === cLink.targetId);
-        if (!n1 || !n2) return;
+          let vIdx = 0;
+          curvedLinks.forEach((cLink) => {
+            const n1 = internalNodes.find((n) => n.id === cLink.sourceId);
+            const n2 = internalNodes.find((n) => n.id === cLink.targetId);
+            if (!n1 || !n2) return;
 
-        const p1 = new THREE.Vector3(n1.x, n1.y, n1.z);
-        const p2 = new THREE.Vector3(n2.x, n2.y, n2.z);
-        const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-        const deltaV = new THREE.Vector3().subVectors(p2, p1);
-        const dist = deltaV.length();
+            const p1 = new THREE.Vector3(n1.x, n1.y, n1.z);
+            const p2 = new THREE.Vector3(n2.x, n2.y, n2.z);
+            const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+            const deltaV = new THREE.Vector3().subVectors(p2, p1);
+            const dist = deltaV.length();
 
-        let normal = mid.clone().normalize();
-        if (normal.lengthSq() < 0.001) normal = new THREE.Vector3(0, 1, 0);
+            let normal = mid.clone().normalize();
+            if (normal.lengthSq() < 0.001) normal = new THREE.Vector3(0, 1, 0);
 
-        const side = new THREE.Vector3().crossVectors(deltaV, normal).normalize();
-        const elevation = Math.min(dist * 0.18, 16);
-        const ctrl = mid.clone().add(side.multiplyScalar(elevation * 0.45)).add(normal.multiplyScalar(elevation * 0.55));
-        if (is2D) ctrl.z = 0;
+            const side = new THREE.Vector3().crossVectors(deltaV, normal).normalize();
+            const elevation = Math.min(dist * 0.18, 16);
+            const ctrl = mid.clone().add(side.multiplyScalar(elevation * 0.45)).add(normal.multiplyScalar(elevation * 0.55));
+            if (is2D) ctrl.z = 0;
 
-        cLink.curve.v0.copy(p1);
-        cLink.curve.v1.copy(ctrl);
-        cLink.curve.v2.copy(p2);
+            cLink.curve.v0.copy(p1);
+            cLink.curve.v1.copy(ctrl);
+            cLink.curve.v2.copy(p2);
 
-        const pts = cLink.curve.getPoints(segmentsPerCurve);
+            const pts = cLink.curve.getPoints(segmentsPerCurve);
 
-        const isPathLink = pathSet.has(n1.id) && pathSet.has(n2.id);
-        const isSelectedLink = selected && (
-          (selected.id === n1.id && filter.has(n2.category)) ||
-          (selected.id === n2.id && filter.has(n1.category))
-        );
+            const isPathLink = pathSet.has(n1.id) && pathSet.has(n2.id);
+            const isSelectedLink = selected && (
+              (selected.id === n1.id && filter.has(n2.category)) ||
+              (selected.id === n2.id && filter.has(n1.category))
+            );
 
-        let r = 0.0, g = 0.94, b = 1.0; // Neon Cyan
-        if (selected) {
-          if (isPathLink || isSelectedLink) {
-            r = 1.0; g = 1.0; b = 1.0; // Weiß glühend
-          } else {
-            r = 0.03; g = 0.1; b = 0.16; // Gedimmt
-          }
+            let r = 0.0, g = 0.94, b = 1.0;
+            if (selected) {
+              if (isPathLink || isSelectedLink) {
+                r = 1.0; g = 1.0; b = 1.0;
+              } else {
+                r = 0.03; g = 0.1; b = 0.16;
+              }
+            }
+
+            for (let s = 0; s < segmentsPerCurve; s++) {
+              const ptA = pts[s];
+              const ptB = pts[s + 1];
+
+              positions[vIdx] = ptA.x;
+              positions[vIdx + 1] = ptA.y;
+              positions[vIdx + 2] = ptA.z;
+              colors[vIdx] = r;
+              colors[vIdx + 1] = g;
+              colors[vIdx + 2] = b;
+              vIdx += 3;
+
+              positions[vIdx] = ptB.x;
+              positions[vIdx + 1] = ptB.y;
+              positions[vIdx + 2] = ptB.z;
+              colors[vIdx] = r;
+              colors[vIdx + 1] = g;
+              colors[vIdx + 2] = b;
+              vIdx += 3;
+            }
+          });
+          posAttr.needsUpdate = true;
+          colAttr.needsUpdate = true;
         }
+      }
 
-        for (let s = 0; s < segmentsPerCurve; s++) {
-          const ptA = pts[s];
-          const ptB = pts[s + 1];
-
-          positions[vIdx] = ptA.x;
-          positions[vIdx + 1] = ptA.y;
-          positions[vIdx + 2] = ptA.z;
-          colors[vIdx] = r;
-          colors[vIdx + 1] = g;
-          colors[vIdx + 2] = b;
-          vIdx += 3;
-
-          positions[vIdx] = ptB.x;
-          positions[vIdx + 1] = ptB.y;
-          positions[vIdx + 2] = ptB.z;
-          colors[vIdx] = r;
-          colors[vIdx + 1] = g;
-          colors[vIdx + 2] = b;
-          vIdx += 3;
-        }
-      });
-      posAttr.needsUpdate = true;
-      colAttr.needsUpdate = true;
-
-      // E. Live-Datenfluss ("wie es arbeitet"): Datenpakete fließen sichtbar über die Nervenbahnen
+      // E. Live-Datenfluss Packets
       const curState = assistantStateRef.current;
       const isWorking = curState === "THINKING" || curState === "SPEAKING" || curState === "LISTENING";
       const audioPulse = Math.min(2.5, (audioLevelRef.current || 0) * 4.0);
       const activityMultiplier = (isWorking ? 2.4 : 1.0) + audioPulse;
 
-      if (curvedLinks.length > 0) {
+      const packets = packetsRef.current;
+      if (curvedLinks.length > 0 && packets.length > 0) {
         packets.forEach((packet) => {
           packet.progress += delta * packet.speed * activityMultiplier;
           if (packet.progress >= 1.0) {
@@ -885,7 +988,6 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
             const currentPos = targetLink.curve.getPoint(t);
             packet.mesh.position.copy(currentPos);
 
-            // Halo pulsiert mit Audio/Status
             const haloScale = 7.5 * (1.0 + (isWorking ? 0.35 : 0.0) + audioPulse * 0.2);
             packet.halo.scale.set(haloScale, haloScale, 1);
           }
@@ -897,18 +999,19 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
 
     animate();
 
-    // 14. Resize Handler
+    // 9. Resize Handler mit Guards gegen NaN
     const handleResize = () => {
       if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
       const w = containerRef.current.clientWidth;
       const h = containerRef.current.clientHeight;
+      if (w <= 0 || h <= 0) return;
       cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
     };
     window.addEventListener("resize", handleResize);
 
-    // 15. Sauberes Cleanup
+    // 10. Sauberes Cleanup beim Unmounten der Komponente
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
@@ -923,12 +1026,12 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       gridMat.dispose();
       particleGeo.dispose();
       particleMat.dispose();
-      lineGeo.dispose();
-      lineMat.dispose();
-      packetGeo.dispose();
-      packetMaterials.forEach((m) => m.dispose());
-      packetHaloMaterials.forEach((m) => m.dispose());
-      internalNodes.forEach((node) => {
+      if (lineGeoRef.current) lineGeoRef.current.dispose();
+      if (lineMatRef.current) lineMatRef.current.dispose();
+      if (packetGeoRef.current) packetGeoRef.current.dispose();
+      packetMaterialsRef.current.forEach((m) => m.dispose());
+      packetHaloMaterialsRef.current.forEach((m) => m.dispose());
+      internalNodesRef.current.forEach((node) => {
         if (node.shaderMat) node.shaderMat.dispose();
         if (node.ringMesh) {
           node.ringMesh.geometry.dispose();
@@ -943,10 +1046,18 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
           (node.hitMesh.material as THREE.Material).dispose();
         }
       });
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
+  }, []);
+
+  // ── Dynamische Graph-Synchronisation bei Datenänderung ──
+  useEffect(() => {
+    buildGraph();
   }, [data]);
 
-  // Interaktionen: Drag-Orbit, Zoom & Raycasting
+  // ── Interaktionen: Zero-Allocation Drag-Orbit, Zoom & Raycasting ──
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 0) {
       isDraggingRef.current = true;
@@ -966,18 +1077,16 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       updateCameraPosition();
       previousMousePositionRef.current = { x: e.clientX, y: e.clientY };
     } else {
-      // Hover Raycasting
-      if (!cameraRef.current || !containerRef.current || !constellationGroupRef.current) return;
+      // Hover Raycasting: Wiederverwendung von Raycaster, Vector2 & Mesh-Cache
+      if (!cameraRef.current || !containerRef.current || cachedHitMeshesRef.current.length === 0) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const mouse = new THREE.Vector2(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1
-      );
+      const mouse = mouseVecRef.current;
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-      const raycaster = new THREE.Raycaster();
+      const raycaster = raycasterRef.current;
       raycaster.setFromCamera(mouse, cameraRef.current);
-      const meshes = Array.from(nodeMeshesRef.current.values());
-      const intersects = raycaster.intersectObjects(meshes);
+      const intersects = raycaster.intersectObjects(cachedHitMeshesRef.current);
 
       if (intersects.length > 0) {
         const id = intersects[0].object.userData.id;
@@ -1001,17 +1110,15 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!cameraRef.current || !containerRef.current) return;
+    if (!cameraRef.current || !containerRef.current || cachedHitMeshesRef.current.length === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const mouse = new THREE.Vector2(
-      ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      -((e.clientY - rect.top) / rect.height) * 2 + 1
-    );
+    const mouse = mouseVecRef.current;
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-    const raycaster = new THREE.Raycaster();
+    const raycaster = raycasterRef.current;
     raycaster.setFromCamera(mouse, cameraRef.current);
-    const meshes = Array.from(nodeMeshesRef.current.values());
-    const intersects = raycaster.intersectObjects(meshes);
+    const intersects = raycaster.intersectObjects(cachedHitMeshesRef.current);
 
     if (intersects.length > 0) {
       const id = intersects[0].object.userData.id;
@@ -1026,6 +1133,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       } else {
         // Normaler Klick: Fokussieren, Isolieren & Modal öffnen
         selectedNodeRef.current = clickedNode;
+        updateSelectedNeighbors(clickedNode);
         highlightedPathRef.current.clear();
         onNodeSelect(clickedNode);
         setModalNode({ node: clickedNode, x: e.clientX, y: e.clientY });
@@ -1033,6 +1141,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     } else {
       // Klick in den leeren Raum -> Deselektieren
       selectedNodeRef.current = null;
+      updateSelectedNeighbors(null);
       highlightedPathRef.current.clear();
       onNodeSelect(null);
       setModalNode(null);
@@ -1041,17 +1150,15 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!cameraRef.current || !containerRef.current) return;
+    if (!cameraRef.current || !containerRef.current || cachedHitMeshesRef.current.length === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const mouse = new THREE.Vector2(
-      ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      -((e.clientY - rect.top) / rect.height) * 2 + 1
-    );
+    const mouse = mouseVecRef.current;
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-    const raycaster = new THREE.Raycaster();
+    const raycaster = raycasterRef.current;
     raycaster.setFromCamera(mouse, cameraRef.current);
-    const meshes = Array.from(nodeMeshesRef.current.values());
-    const intersects = raycaster.intersectObjects(meshes);
+    const intersects = raycaster.intersectObjects(cachedHitMeshesRef.current);
 
     if (intersects.length > 0) {
       const id = intersects[0].object.userData.id;
@@ -1065,17 +1172,15 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    if (!cameraRef.current || !containerRef.current) return;
+    if (!cameraRef.current || !containerRef.current || cachedHitMeshesRef.current.length === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const mouse = new THREE.Vector2(
-      ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      -((e.clientY - rect.top) / rect.height) * 2 + 1
-    );
+    const mouse = mouseVecRef.current;
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-    const raycaster = new THREE.Raycaster();
+    const raycaster = raycasterRef.current;
     raycaster.setFromCamera(mouse, cameraRef.current);
-    const meshes = Array.from(nodeMeshesRef.current.values());
-    const intersects = raycaster.intersectObjects(meshes);
+    const intersects = raycaster.intersectObjects(cachedHitMeshesRef.current);
 
     if (intersects.length > 0) {
       const id = intersects[0].object.userData.id;
@@ -1325,6 +1430,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
                   <button
                     onClick={() => {
                       selectedNodeRef.current = modalNode.node;
+                      updateSelectedNeighbors(modalNode.node);
                       onNodeSelect(modalNode.node);
                       setModalNode(null);
                     }}

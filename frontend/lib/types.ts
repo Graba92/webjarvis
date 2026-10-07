@@ -73,6 +73,8 @@ export type AssistantState =
   | "LISTENING"
   | "THINKING"
   | "SPEAKING"
+  | "CONFIRM"
+  | "IDLE"
   | "ERROR";
 
 export interface ConfirmRequest {
