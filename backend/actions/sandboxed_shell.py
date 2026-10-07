@@ -65,6 +65,10 @@ TOOL = {
                 "type": "STRING",
                 "description": "Der vollständige Shell-Befehl oder das Skript, das isoliert in der Sandbox ausgeführt werden soll."
             },
+            "working_dir": {
+                "type": "STRING",
+                "description": "Optionales Arbeitsverzeichnis innerhalb der freigegebenen Sandbox-Pfade (z.B. ein Unterprojekt). Standard: primärer Sandbox-Workspace."
+            },
             "allow_network": {
                 "type": "BOOLEAN",
                 "description": "Erlaubt Netzwerk- und Internetzugriff innerhalb der Sandbox (Standard: true). Für maximale Isolation auf false setzen."

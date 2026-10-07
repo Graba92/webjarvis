@@ -223,21 +223,28 @@ def remove_allowed_path(path_str: str) -> Tuple[bool, str]:
 
 def is_path_allowed(p: Union[str, Path]) -> bool:
     """
-    Prüft, ob ein Zielpfad für Lese- und Schreiboperationen zugelassen ist.
+    Prüft hermetisch, ob ein Zielpfad für Lese- und Schreiboperationen zugelassen ist.
     Gibt True zurück, wenn OS-Vollzugriff aktiv ist ODER der Pfad innerhalb
     eines der freigegebenen Sandbox-Verzeichnisse liegt.
-    Arbeitet Unicode-NFC-bereinigt und löst Symlinks/Realdateipfade auf.
+    Verhindert Directory-Traversal (..), löst Symlinks auf und prüft echte Pfad-Hierarchien.
     """
     if is_full_os_access():
         return True
+
+    if p is None:
+        return False
 
     try:
         target_str = normalize_path(p)
         if not target_str:
             return False
         target_path = Path(target_str)
-        real_target_str = os.path.realpath(target_str)
-        real_target = Path(real_target_str)
+        # Falls die Zieldatei noch nicht existiert, den nächsten existierenden Vorfahren prüfen
+        check_path = target_path
+        while not check_path.exists() and check_path.parent != check_path:
+            check_path = check_path.parent
+        real_target = target_path.resolve()
+        real_check = check_path.resolve()
     except Exception:
         return False
 
@@ -248,35 +255,18 @@ def is_path_allowed(p: Union[str, Path]) -> bool:
             if not ap_str:
                 continue
             ap_path = Path(ap_str)
-            real_ap_str = os.path.realpath(ap_str)
-            real_ap = Path(real_ap_str)
+            real_ap = ap_path.resolve()
 
             # 1. Direkte Übereinstimmung
-            if target_str == ap_str or real_target_str == real_ap_str or target_path == ap_path:
+            if target_path == ap_path or real_target == real_ap or real_check == real_ap:
                 return True
 
-            # 2. Path.relative_to auf target_path
-            try:
-                target_path.relative_to(ap_path)
+            # 2. Strikte relative Hierarchieprüfung (is_relative_to)
+            if target_path.is_relative_to(ap_path):
                 return True
-            except ValueError:
-                pass
-
-            # 3. Path.relative_to auf real_target
-            try:
-                real_target.relative_to(real_ap)
+            if real_target.is_relative_to(real_ap):
                 return True
-            except ValueError:
-                pass
-
-            # 4. String-Präfix-Prüfung mit Trennzeichen
-            sep = os.sep
-            ap_prefix = ap_str if ap_str.endswith(sep) else ap_str + sep
-            if target_str.startswith(ap_prefix):
-                return True
-
-            real_prefix = real_ap_str if real_ap_str.endswith(sep) else real_ap_str + sep
-            if real_target_str.startswith(real_prefix):
+            if real_check.is_relative_to(real_ap):
                 return True
 
         except Exception:
@@ -301,6 +291,9 @@ def build_bwrap_args(
         "--unshare-pid",
         "--unshare-ipc",
         "--unshare-uts",
+        # Prozess-Sicherheit: Kindprozesse sterben mit Parent, isolierte Session
+        "--die-with-parent",
+        "--new-session",
     ]
 
     if not allow_network:
@@ -330,18 +323,19 @@ def build_bwrap_args(
     if writable_paths:
         for wp in writable_paths:
             n_wp = normalize_path(wp)
-            if n_wp and n_wp not in all_writable:
+            # HÄRTUNG: Nur Pfade einhängen, die durch is_path_allowed bestätigt wurden!
+            if n_wp and is_path_allowed(n_wp) and n_wp not in all_writable:
                 all_writable.append(n_wp)
 
     for wp in all_writable:
         try:
-            p = Path(normalize_path(wp))
+            p = Path(normalize_path(wp)).resolve()
             if p.exists():
                 args.extend(["--bind", str(p), str(p)])
         except Exception:
             pass
 
-    # Arbeitsverzeichnis festlegen
+    # Arbeitsverzeichnis festlegen (MUSS in all_writable sein)
     work_path_str = normalize_path(work_dir)
     args.extend(["--dir", "/workspace"])
     args.extend(["--bind", work_path_str, "/workspace"])
@@ -365,15 +359,19 @@ def execute_sandboxed(
     if not clean_cmd:
         return 1, "", "Fehler: Kein Befehl übergeben.", False
 
-    # Arbeitsverzeichnis ermitteln
+    # 1. Arbeitsverzeichnis ermitteln & strikt validieren
     target_cwd = DEFAULT_SANDBOX_DIR
     if cwd:
         try:
             cand = Path(normalize_path(cwd))
+            if not is_full_os_access() and not is_path_allowed(cand):
+                return 1, "", f"⛔ Sandbox-Schutz verweigert: Arbeitsverzeichnis '{cand}' liegt außerhalb der freigegebenen Sandbox-Pfade.", False
             if cand.exists():
                 target_cwd = cand
-        except Exception:
-            pass
+            else:
+                return 1, "", f"Fehler: Arbeitsverzeichnis '{cand}' existiert nicht.", False
+        except Exception as e:
+            return 1, "", f"Fehler bei Pfadprüfung: {e}", False
     elif get_allowed_paths():
         try:
             first_allowed = Path(normalize_path(get_allowed_paths()[0]))
@@ -384,7 +382,7 @@ def execute_sandboxed(
 
     target_cwd.mkdir(parents=True, exist_ok=True)
 
-    # 1. Fall: Voller OS-Zugriff ist temporär aktiviert -> Direkte Host-Ausführung
+    # 2. Fall: Voller OS-Zugriff ist aktiv -> Direkte Host-Ausführung
     if is_full_os_access():
         try:
             res = subprocess.run(
@@ -401,24 +399,11 @@ def execute_sandboxed(
         except Exception as e:
             return 1, "", f"Ausführungsfehler: {e}", False
 
-    # 2. Fall: bwrap fehlt -> Fallback mit Sicherheitswarnung
+    # 3. Fall: bwrap fehlt und Sandbox ist aktiv -> HARTER SICHERHEITSABBRUCH (Kein ungesandboxter Host-Leak!)
     if not is_bubblewrap_available():
-        try:
-            res = subprocess.run(
-                clean_cmd,
-                shell=True,
-                cwd=str(target_cwd),
-                capture_output=True,
-                text=True,
-                timeout=timeout
-            )
-            return res.returncode, res.stdout, f"[WARNUNG: bwrap fehlt, ungesandboxt ausgeführt] {res.stderr}", False
-        except subprocess.TimeoutExpired:
-            return 124, "", f"Timeout nach {timeout}s.", False
-        except Exception as e:
-            return 1, "", str(e), False
+        return 126, "", "⛔ Sandbox-Sicherheitsabbruch: Bubblewrap ('bwrap') ist nicht installiert. Befehlsausführung verweigert, um das Wirtssystem zu schützen. Installiere bubblewrap oder aktiviere den OS-Vollzugriff im Web-HUD.", False
 
-    # 3. Fall: Härtung via Bubblewrap mit freigegebenen Pfaden
+    # 4. Fall: Härtung via Bubblewrap mit freigegebenen Pfaden
     bwrap_cmd = build_bwrap_args(
         work_dir=target_cwd,
         writable_paths=writable_paths,
@@ -438,3 +423,30 @@ def execute_sandboxed(
         return 124, "", f"Sandbox-Ausführung nach {timeout}s abgebrochen (Timeout).", True
     except Exception as e:
         return 1, "", f"Sandbox-Fehler: {e}", True
+
+def format_sandbox_directive_for_prompt() -> str:
+    """
+    Erzeugt eine verbindliche Systemprompt-Direktive über die aktuellen Sandbox-Grenzen für die KI.
+    """
+    if is_full_os_access():
+        return (
+            "[SECURITY MATRIX: UNRESTRICTED FULL OS ACCESS]\n"
+            "Status: Temporärer OS-Vollzugriff ist VOM BENUTZER AKTIVIERT.\n"
+            "- Du darfst Systembefehle und Dateioperationen auf dem Host ausführen.\n"
+            "- Handle dennoch defensiv und vermeide unbeabsichtigte Modifikationen an Systemdateien.\n"
+        )
+    allowed = get_allowed_paths()
+    paths_list = "\n".join(f"  - {p}" for p in allowed)
+    return (
+        "[SECURITY MATRIX: SANDBOX PROTECTED & ACTIVE RESTRICTIONS]\n"
+        "Status: Der Sandbox-Schutz ist AKTIV. Du bist strikt isoliert.\n"
+        "Verbindliche Regeln:\n"
+        "1. Freigegebene Arbeitsverzeichnisse (Lesen, Schreiben & Ausführen):\n"
+        f"{paths_list}\n"
+        "2. Shell-Befehle ('execute_sandboxed_shell') laufen hermetisch isoliert in einer Bubblewrap (bwrap) Sandbox. "
+        "Das Arbeitsverzeichnis (working_dir) MUSS zwingend innerhalb der freigegebenen Pfade liegen.\n"
+        "3. Datei-Operationen ('file_controller') außerhalb dieser Pfade werden vom System hart blockiert.\n"
+        "4. Wenn der Benutzer eine Aktion anfordert, die einen gesperrten Pfad betrifft, versuche NICHT, "
+        "die Beschränkung zu umgehen oder Ausflüchte zu suchen. Informiere den Benutzer direkt und sachlich:\n"
+        "   'Dieser Pfad liegt außerhalb meiner freigegebenen Sandbox-Verzeichnisse. Bitte gib ihn in der Sandbox-Matrix frei oder aktiviere temporär den OS-Vollzugriff.'\n"
+    )

@@ -9,11 +9,27 @@ import shutil
 from pathlib import Path
 from send2trash import send2trash
 from core.undo import push_undo
-from core.sandbox import is_path_allowed, is_full_os_access, get_allowed_paths, normalize_path
+import unicodedata
+from core.sandbox import (
+    is_path_allowed, is_full_os_access, get_allowed_paths,
+    normalize_path, DEFAULT_SANDBOX_DIR
+)
 
 def _resolve_path(p: str) -> Path:
-    norm = normalize_path(p)
-    return Path(norm)
+    if not p or not str(p).strip():
+        return Path.home() / "Schreibtisch"
+    s = str(p).strip()
+    s_nfc = unicodedata.normalize("NFC", s)
+    expanded = os.path.expanduser(s_nfc)
+    path_obj = Path(expanded)
+    if not path_obj.is_absolute():
+        if DEFAULT_SANDBOX_DIR.exists() or is_path_allowed(DEFAULT_SANDBOX_DIR):
+            base_dir = DEFAULT_SANDBOX_DIR
+        else:
+            allowed = get_allowed_paths()
+            base_dir = Path(allowed[0]) if allowed else DEFAULT_SANDBOX_DIR
+        return (base_dir / path_obj).resolve()
+    return path_obj.resolve()
 
 def file_controller(parameters: dict, **kwargs) -> str:
     action = str(parameters.get("action", "")).lower().strip()

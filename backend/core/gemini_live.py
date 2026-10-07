@@ -94,13 +94,13 @@ class GeminiLiveController:
         mem_str = format_memory_for_prompt(memory)
         now_str = datetime.now().strftime("%A, %d. %B %Y — %H:%M:%S")
 
-        soul_str = load_soul_instructions()
-        mem_md = load_memory_md_content()
-        heartbeat_checklist = load_heartbeat_checklist()
+        from core.sandbox import format_sandbox_directive_for_prompt
+        sandbox_str = format_sandbox_directive_for_prompt()
 
         prompt_parts = [
             f"[SYSTEM TIME]\nAktuelle Uhrzeit & Datum: {now_str}\n",
             f"[J.A.R.V.I.S. SOUL & PERSONA DIRECTIVES]\n{soul_str}\n" if soul_str else "",
+            sandbox_str,
             f"[J.A.R.V.I.S. PERSISTENT LONG-TERM MEMORY]\n{mem_md}\n" if mem_md else "",
             f"[HEARTBEAT CHECKLIST]\n{heartbeat_checklist}\n" if heartbeat_checklist else "",
             mem_str,

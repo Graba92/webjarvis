@@ -840,6 +840,7 @@ class JarvisServer:
                     broadcast(cfg_payload)
                     status_text = "AKTIVIERT (Unbeschränkter Lese-, Schreib- & Systemzugriff)" if enabled else "DEAKTIVIERT (Sandbox-Schutz aktiv)"
                     self.log(f"OS-Vollzugriff wurde {status_text}.", "WARN" if enabled else "SYS")
+                    self.gemini.reload_personality()
 
                 elif msg_type == "add_sandbox_path":
                     path_val = str(data.get("path", "")).strip()
@@ -854,6 +855,8 @@ class JarvisServer:
                             }
                         })
                         self.log(msg, "SYS" if ok else "ERR")
+                        if ok:
+                            self.gemini.reload_personality()
 
                 elif msg_type == "remove_sandbox_path":
                     path_val = str(data.get("path", "")).strip()
@@ -868,6 +871,8 @@ class JarvisServer:
                             }
                         })
                         self.log(msg, "SYS" if ok else "ERR")
+                        if ok:
+                            self.gemini.reload_personality()
 
         except websockets.exceptions.ConnectionClosed:
             pass
