@@ -179,11 +179,15 @@ WebJarvis ist kein einfaches Web-Chatbot-Interface, sondern ein **lokales, auton
 ### 4.1 Holografischer Szenengraph & Settle-on-Equilibrium Physik
 In [`frontend/components/ApexWorld.tsx`](file:///home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/frontend/components/ApexWorld.tsx) wird das dreidimensionale Hologramm berechnet.
 - **Entkoppelter Lifecycle:** Der WebGL-Renderer und die Animationsschleife (`requestAnimationFrame`) laufen isoliert von React-Rerendern in stabilen `useRef`-Strukturen.
-- **Settle-on-Equilibrium Algorithmus:** Anstatt rechenintensive Force-Directed Physik jedes Frame auf der CPU zu berechnen ($O(N^2)$ Flaschenhals), führt WebJarvis beim Laden des Graphen eine **75-Schritt-Relaxation** mit geometrischer Abkühlung (`cooling = 0.96`) durch:
-  1. *Coulomb-Repulsion:* Knoten stoßen sich im Nahbereich ab ($dist < 180$).
-  2. *Hooke-Spring Attraction:* Über `[[Wiki-Links]]` verbundene Knoten ziehen sich auf eine elastische Ruhedistanz von 42 Einheiten an.
-  3. *Cluster-Zentrierung:* Knoten werden sanft in ihre Kategoriensphäre (Cyan = Skills/Tools, Blau = Wiki/Suites, Orange = Concepts/Worlds) gezogen.
+- **Settle-on-Equilibrium Algorithmus:** Anstatt rechenintensive Force-Directed Physik jedes Frame auf der CPU zu berechnen ($O(N^2)$ Flaschenhals), führt WebJarvis beim Laden des Graphen eine **90-Schritt-Relaxation** mit geometrischer Abkühlung (`cooling = 0.965`) und kollisionsgeschütztem Mindestabstand durch:
+  1. *Coulomb-Repulsion mit Kollisionsschutz:* Knoten stoßen sich ab ($dist < 210$), wobei Mindestabstände (75 für Hubs, 52 für Standardknoten) Text- und Label-Überlappungen in dichten Clustern verhindern.
+  2. *Hooke-Spring Attraction:* Über `[[Wiki-Links]]` verbundene Knoten ziehen sich auf eine elastische Ruhedistanz an.
+  3. *Cluster-Zentrierung:* Knoten werden harmonisch in ihre Kategoriensphäre (Cyan = Skills/Tools, Blau = Wiki/Suites, Orange = Concepts/Worlds) gezogen.
   4. Nach Erreichen des Gleichgewichts friert die Topologie ein (`settled = true`). Dies garantiert **konstante 120 FPS** ohne GPU/CPU-Überlastung.
+- **High-Definition Billboard-Typografie (1024×256) & Gestaffeltes Entfernungs-LOD:**
+  - Knotenbeschriftungen werden auf einem hochauflösenden 1024×256 Canvas mit Sci-Fi Eck-Brackets und abgedunkeltem Glassmorphism-Pill-Hintergrund gerendert.
+  - Groß-Hubs, isolierte Orphan-Knoten und Widerspruchs-Knoten sind dauerhaft sichtbar beschriftet.
+  - Standardknoten zeigen ihre Beschriftung adaptiv bei Nah- und Mittel-Zoom (`cameraDist < 650`), um eine aufgeräumte, futuristische Galaxie-Optik zu wahren.
 
 ### 4.2 Volumetrische Fresnel- & Warn-Shader
 Jeder Knoten wird durch einen spezialisierten GLSL-Shader gerendert:

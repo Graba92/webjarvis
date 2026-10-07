@@ -137,51 +137,94 @@ function createRadialGlowTexture(): THREE.CanvasTexture {
 /**
  * 3D-Billboard Text-Sprite Creator mit Sci-Fi Eck-Brackets (aus preview_graph.py)
  */
-function createTextSprite(mainText: string, subText: string, colorHex: string): THREE.Sprite {
+function createTextSprite(
+  mainText: string,
+  subText: string,
+  colorHex: string,
+  isHub: boolean = false
+): THREE.Sprite {
+  // 1024x256 High-Resolution Canvas für messerscharfe Lesbarkeit ohne Unschärfe/Treppeneffekte
   const cvs = document.createElement("canvas");
-  cvs.width = 512;
-  cvs.height = 128;
+  cvs.width = 1024;
+  cvs.height = 256;
   const ctx = cvs.getContext("2d");
 
   if (ctx) {
-    ctx.fillStyle = "rgba(8, 12, 22, 0.82)";
+    ctx.clearRect(0, 0, 1024, 256);
+
+    // Solider Sci-Fi Glassmorphism Pill-Hintergrund für 100% Kontrast gegen Hintergrundsterne
+    const x = 32, y = 24, w = 960, h = 208, r = 28;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+
+    ctx.fillStyle = isHub ? "rgba(7, 12, 24, 0.94)" : "rgba(8, 14, 26, 0.88)";
+    ctx.fill();
+
+    // Akzentuierte Cyberpunk-Rahmenlinie
     ctx.strokeStyle = colorHex;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(10, 10, 492, 108);
-    ctx.fillRect(10, 10, 492, 108);
+    ctx.lineWidth = isHub ? 5 : 3.5;
+    ctx.stroke();
 
     // Eck-Brackets im Cyberpunk-HUD-Stil
+    const bLen = 22;
+    const bThick = 6;
     ctx.fillStyle = colorHex;
-    ctx.fillRect(10, 10, 14, 14);
-    ctx.fillRect(488, 10, 14, 14);
-    ctx.fillRect(10, 104, 14, 14);
-    ctx.fillRect(488, 104, 14, 14);
+    // Oben links
+    ctx.fillRect(x, y, bLen, bThick);
+    ctx.fillRect(x, y, bThick, bLen);
+    // Oben rechts
+    ctx.fillRect(x + w - bLen, y, bLen, bThick);
+    ctx.fillRect(x + w - bThick, y, bThick, bLen);
+    // Unten links
+    ctx.fillRect(x, y + h - bThick, bLen, bThick);
+    ctx.fillRect(x, y + h - bLen, bThick, bLen);
+    // Unten rechts
+    ctx.fillRect(x + w - bLen, y + h - bThick, bLen, bThick);
+    ctx.fillRect(x + w - bThick, y + h - bLen, bThick, bLen);
 
-    // Haupttext (Node-Name)
-    ctx.font = "bold 32px 'Share Tech Mono', monospace";
-    ctx.fillStyle = "#ffffff";
+    // Haupttext: Glasklar, extra-fett, weiß mit dezentem Farbschatten
+    ctx.font = isHub ? "900 54px 'Share Tech Mono', -apple-system, monospace" : "bold 44px 'Share Tech Mono', -apple-system, monospace";
     ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
     ctx.shadowColor = colorHex;
-    ctx.shadowBlur = 12;
-    ctx.fillText(mainText.toUpperCase(), 256, 56);
+    ctx.shadowBlur = 14;
+    ctx.fillText(mainText.toUpperCase(), 512, subText ? 104 : 128);
 
-    // Subtext (Kategorie // Verbindungen)
-    ctx.font = "bold 18px 'Share Tech Mono', monospace";
-    ctx.fillStyle = colorHex;
-    ctx.shadowBlur = 6;
-    ctx.fillText(subText, 256, 96);
+    // Subtext (Kategorie // Verbindungen): Farbkodiert & klar lesbar
+    if (subText) {
+      ctx.font = "bold 28px 'Share Tech Mono', monospace";
+      ctx.fillStyle = colorHex;
+      ctx.shadowBlur = 6;
+      ctx.fillText(subText, 512, 172);
+    }
   }
 
   const texture = new THREE.CanvasTexture(cvs);
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
+
   const spriteMat = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthTest: false
+    depthTest: false,
+    depthWrite: false
   });
   const sprite = new THREE.Sprite(spriteMat);
-  sprite.scale.set(15, 3.75, 1);
+  const baseW = isHub ? 22 : 16;
+  const baseH = isHub ? 5.5 : 4.0;
+  sprite.scale.set(baseW, baseH, 1);
   return sprite;
 }
 
@@ -465,15 +508,15 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       };
     });
 
-    // ── Vorberechnete Settle-on-Equilibrium Physik-Relaxation (Agent 1) ──
-    // 75 Iterationen deterministische Kantenanziehung & Knotenabstoßung
+    // ── Vorberechnete Settle-on-Equilibrium Physik-Relaxation ──
+    // 90 Iterationen deterministische Kantenanziehung & Coulomb-Repulsion mit Kollisionsschutz
     const nodeMap = new Map<string, InternalNode>(internalNodes.map((n) => [n.id, n]));
-    const iterations = 75;
+    const iterations = 90;
     let temp = 1.0;
-    const cooling = 0.96;
+    const cooling = 0.965;
 
     for (let iter = 0; iter < iterations; iter++) {
-      // 1. Abstoßung aller Knotenpaare (Coulomb-Repulsion)
+      // 1. Abstoßung aller Knotenpaare (Coulomb-Repulsion mit Mindestabstand gegen Label-Kollision)
       for (let i = 0; i < internalNodes.length; i++) {
         const n1 = internalNodes[i];
         for (let j = i + 1; j < internalNodes.length; j++) {
@@ -483,8 +526,12 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
           const dz = n1.baseZ - n2.baseZ;
           const distSq = dx * dx + dy * dy + dz * dz + 0.01;
           const dist = Math.sqrt(distSq);
-          if (dist < 180) {
-            const force = (Math.max(12, 160 - dist) / dist) * 0.42 * temp;
+          
+          // Mindestabstand unter Berücksichtigung von Hub- und Label-Größen
+          const minDist = (n1.isHub || n2.isHub) ? 75 : 52;
+          if (dist < 210) {
+            const pushDist = Math.max(minDist, 180 - dist);
+            const force = (pushDist / dist) * 0.46 * temp;
             n1.baseX += dx * force;
             n1.baseY += dy * force;
             n1.baseZ += dz * force;
@@ -506,8 +553,8 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
           const dy = tNode.baseY - sNode.baseY;
           const dz = tNode.baseZ - sNode.baseZ;
           const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.01;
-          const springDist = l.type === "wiki" ? 42 : 58;
-          const springForce = ((dist - springDist) / dist) * 0.08 * temp;
+          const springDist = l.type === "wiki" ? 48 : 64;
+          const springForce = ((dist - springDist) / dist) * 0.075 * temp;
           sNode.baseX += dx * springForce;
           sNode.baseY += dy * springForce;
           sNode.baseZ += dz * springForce;
@@ -522,9 +569,9 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         const groupKey = getGroupKey(node.category);
         const center = clusterCenters[groupKey];
         if (center) {
-          node.baseX += (center.x - node.baseX) * 0.03 * temp;
-          node.baseY += (center.y - node.baseY) * 0.03 * temp;
-          node.baseZ += (center.z - node.baseZ) * 0.03 * temp;
+          node.baseX += (center.x - node.baseX) * 0.025 * temp;
+          node.baseY += (center.y - node.baseY) * 0.025 * temp;
+          node.baseZ += (center.z - node.baseZ) * 0.025 * temp;
         }
         node.x = node.baseX;
         node.y = node.baseY;
@@ -589,30 +636,33 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         group.add(ringMesh);
       }
 
-      // D. 3D-Billboard Text-Sprite mit HUD Eck-Brackets
+      // D. 3D-Billboard Text-Sprite mit gestaffelter LOD-Darstellung
       let billboardSprite: THREE.Sprite | undefined;
       const isOrphan = !!(node.is_orphan || node.connections === 0 || node.status === "orphan");
       const isConflict = node.status === "conflict";
 
-      if (node.isHub || isOrphan || isConflict) {
-        let displayName = node.name;
-        let subLabel = `[ ${node.category.toUpperCase()} // ${node.connections} LINKS ]`;
-        let labelColor = colorHex;
+      let displayName = node.name;
+      let subLabel = "";
+      let labelColor = colorHex;
 
-        if (isConflict) {
-          displayName = `⚠️ [KONFLIKT] ${node.name}`;
-          subLabel = `[ ⚠️ WIDERSPRUCH // KLÄRUNG NÖTIG ]`;
-          labelColor = "#ff2244";
-        } else if (isOrphan) {
-          displayName = `⚡ [ORPHAN] ${node.name}`;
-          subLabel = `[ ⚠️ ISOLIERT // 0 VERBINDUNGEN ]`;
-          labelColor = "#ffaa00";
-        }
-
-        billboardSprite = createTextSprite(displayName, subLabel, labelColor);
-        billboardSprite.position.y = node.baseRadius + 4.2;
-        group.add(billboardSprite);
+      if (isConflict) {
+        displayName = `⚠️ [KONFLIKT] ${node.name}`;
+        subLabel = `[ ⚠️ WIDERSPRUCH // KLÄRUNG NÖTIG ]`;
+        labelColor = "#ff2244";
+      } else if (isOrphan) {
+        displayName = `⚡ [ORPHAN] ${node.name}`;
+        subLabel = `[ ⚠️ ISOLIERT // 0 VERBINDUNGEN ]`;
+        labelColor = "#ffaa00";
+      } else if (node.isHub) {
+        subLabel = `[ ${node.category.toUpperCase()} // ${node.connections} LINKS ]`;
+      } else {
+        // Standard-Knoten: Kompakte Anzeige der Verbindungsanzahl
+        subLabel = `${node.connections > 0 ? `${node.connections} Links` : ""}`;
       }
+
+      billboardSprite = createTextSprite(displayName, subLabel, labelColor, node.isHub || isConflict || isOrphan);
+      billboardSprite.position.y = node.baseRadius + (node.isHub ? 5.2 : 3.6);
+      group.add(billboardSprite);
 
       // E. Unsichtbare Hit-Sphere für pixelgenaues Raycasting
       const hitGeo = new THREE.SphereGeometry(node.baseRadius * 1.4, 16, 16);
@@ -917,6 +967,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
 
       // B. Dynamic Scales & Props
       const scaleFactor = (linkLengthRef.current / 80) * (repelForceRef.current / 140);
+      const cameraDist = cameraRotationRef.current.radius;
       const query = searchQueryRef.current.trim().toLowerCase();
       const filter = activeFilterRef.current;
       const selected = selectedNodeRef.current;
@@ -975,7 +1026,13 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
           node.shaderMat.uniforms.uGlowIntensity.value = node.isHub ? 1.5 : 1.1;
           if (node.nucleusMesh) node.nucleusMesh.visible = true;
           if (node.ringMesh) node.ringMesh.visible = true;
-          if (node.billboardSprite) node.billboardSprite.visible = true;
+          if (node.billboardSprite) {
+            // Intelligentes Entfernungs-LOD (Level of Detail):
+            // Hubs, Konflikte & Orphans sind permanent sichtbar.
+            // Normale Knoten werden bei Nah- bis Mittel-Zoom eingeblendet (Radius < 650).
+            const isCritical = node.isHub || node.is_orphan || node.connections === 0 || node.status === "orphan" || node.status === "conflict";
+            node.billboardSprite.visible = isCritical || cameraDist < 650;
+          }
         }
       });
 

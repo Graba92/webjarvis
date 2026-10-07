@@ -126,10 +126,12 @@ Angelehnt an Andrej Karpathys persönliches Knowledge-Base-Muster pflegt J.A.R.V
   High-End Cyberpunk 3D-WebGL-Visualisierung mit volumetrischen Fresnel-Glow-Shadern (`pow(1.0 - dotNV, 2.3)`), strahlendem Kern, rotierenden Gyroskop-Ringen (Torus-Wireframe) für Hubs und 3D-Billboard-Text-Sprites mit HUD-Eck-Brackets.
 - **Settle-on-Equilibrium Force-Physik:**
   Statt teure $O(N^2)$ Physikberechnungen in jedem Render-Frame auf der CPU auszuführen, nutzt WebJarvis eine **75-Iterationen Relaxations-Phase** bei der Initialisierung:
-  - *Coulomb-Abstoßung:* Knoten stoßen sich im Umkreis von 180 Einheiten ab.
-  - *Hooke-Feder-Anziehung:* Durch `[[Wiki-Links]]` verbundene Knoten ziehen sich auf eine Ruhe-Distanz von 42 Einheiten an.
-  - *Cluster-Gravitation:* Knoten streben zu ihren Kategoriesphären (Cyan = Skills/Tools, Blau = Wiki/Suites, Orange = Konzepte).
+  - *Hooke-Feder-Anziehung:* Durch `[[Wiki-Links]]` verbundene Knoten ziehen sich elastisch an.
+  - *Cluster-Gravitation & Kollisionsschutz:* Knoten streben zu ihren Kategoriesphären mit striktem Mindestabstand (75 Einheiten für Hubs, 52 für Standardknoten), um Textüberlappungen zuverlässig auszuschließen.
   - *Einfrieren bei Gleichgewicht:* Das Layout friert ein (`settled = true`), was **garantierte 60–120 FPS** ohne Mikroruckler gewährleistet.
+- **Glasklare 3D-Billboard-Typografie & Entfernungs-LOD:**
+  - *High-Definition Canvas (1024×256):* Knackig scharfe Schrift mit Sci-Fi Eck-Brackets und solidem Glassmorphism-Pill-Hintergrund für maximalen Kontrast.
+  - *Gestaffeltes Entfernungs-LOD:* Zentrale Hubs, isolierte Orphans und Widerspruchs-Knoten sind immer lesbar beschriftet; Standardknoten blenden ihre Beschriftung automatisch bei Nah- bis Mittel-Zoom ein.
 - **Visueller Orphan-Stroboskop-Alarm:**
   Knoten mit Grad 0 (keine Verlinkungen) pulsieren im Shader in **Neon-Bernstein (`#ffaa00`)**. Eine Alarmanzeige im HUD-Dock meldet aktive Orphans; ein Klick zentriert die 3D-Kamera sofort auf den isolierten Knoten.
 

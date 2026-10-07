@@ -127,9 +127,12 @@ Inspired by Andrej Karpathy's personal knowledge base patterns, J.A.R.V.I.S. mai
 - **Settle-on-Equilibrium Force Physics:**
   Rather than computing expensive $O(N^2)$ force physics every frame on the CPU, WebJarvis runs a **75-iteration deterministic relaxation** during scene initialization:
   - *Coulomb Repulsion:* Nodes repel each other within a 180-unit radius.
-  - *Hooke Spring Attraction:* Nodes connected via `[[Wiki-Links]]` gently pull together onto a 42-unit resting distance.
-  - *Cluster Gravity:* Nodes gravitate toward their respective category hemispheres (Cyan = Skills/Tools, Blue = Wiki/Suites, Orange = Concepts/Worlds).
+  - *Hooke Spring Attraction:* Nodes connected via `[[Wiki-Links]]` gently pull together onto a resting spring distance.
+  - *Cluster Gravity & Collision Guard:* Nodes gravitate toward their respective category hemispheres (Cyan = Skills/Tools, Blue = Wiki/Suites, Orange = Concepts/Worlds) with a strict minimum radial distance guard (75 units for hubs, 52 for standard nodes) to prevent label crowding.
   - *Freeze on Equilibrium:* The layout freezes (`settled = true`), guaranteeing **stable 60–120 FPS** with zero frame drops.
+- **Crystal-Clear Billboard Typography & Dynamic LOD:**
+  - *High-Definition Canvas (1024×256):* Crisp font rendering with cyber-bracket pill styling and high contrast against dark space backgrounds.
+  - *Tiered Level-of-Detail (LOD):* Major Hubs, isolated orphans, and conflict nodes remain permanently labeled; standard connected nodes scale dynamically based on camera zoom distance.
 - **Visual Orphan Strobe Warning:**
   Nodes with degree 0 (no links) pulse in **neon-amber (`#ffaa00`)** in the Fresnel shader. An alert pill in the bottom dock indicates active orphan counts; clicking immediately centers the 3D camera onto the orphan node.
 

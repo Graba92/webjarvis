@@ -5,7 +5,7 @@ Das **J.A.R.V.I.S. AI OS** bringt das ultimative Sci-Fi-Feeling auf deinen Deskt
 ### 🎮 Features auf einen Blick
 - **⚡ Voice-First mit Gemini Live:** Schnelle Sprachein- und -ausgabe ohne spürbare Verzögerung mit Duplex-Audio.
 - **🎙️ Dedizierte Voice Commands:** 'jarvis neustart' (sicherer Tool-Neustart ohne OS-Reboot), 'jarvis stop', 'jarvis mute' (Paranoia-Killswitch) und 'jarvis update' (GitHub Self-Update).
-- **🪐 3D WebGL Hologramm-HUD:** Three.js Force-Graph mit volumetrischen Fresnel-Shadern, 75-Iterationen Settle-on-Equilibrium Physik für stabile 60–120 FPS und Neon-Amber Orphan-Warnung.
+- **🪐 3D WebGL Hologramm-HUD:** Three.js Force-Graph mit volumetrischen Fresnel-Shadern, gestochen scharfer 1024px Billboard-Typografie mit adaptivem Entfernungs-LOD & Kollisionsschutz, 90-Iterationen Settle-on-Equilibrium Physik für stabile 60–120 FPS und Neon-Amber Orphan-Warnung.
 - **🗺️ Interaktive Bild-Anleitung mit Pfeilen:** Neu! Visuelle Schritt-für-Schritt-Slideshow (`GuideOverlayModal.tsx` & Tool `show_guide`), die Hilfspfeile und Erklärungen direkt über das Interface legt – mit Ein-Klick-Download für jedes Bild!
 - **🪟 Windows 1-Klick Starter (`run_windows.bat` / `run_windows.py`):** WSL2-Orchestrierung nach Bastler-Standard: Automatische Erkennung, interaktive TUI-Zustimmung, on-the-fly Pfadübersetzung (`wslpath`) und CRLF-Sanitizer gegen Bash-Crashes.
 - **📋 Single-Writer Task Backlog:** Reines Markdown (`backlog.md`) mit Checkboxen, atomarem `os.replace`-Schutz und HUD-Drawer (`Alt+T`) mit Prioritäts-Tags und Pfeil-Sortierung.
