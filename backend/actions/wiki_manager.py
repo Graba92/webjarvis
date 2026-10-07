@@ -331,6 +331,8 @@ def manage_wiki(parameters: Dict[str, Any], **kwargs) -> str:
 
     return f"Unbekannte Aktion '{action}'."
 
+TOOL["handler"] = manage_wiki
+
 def read_wiki_article(slug_or_title: str, node_path: str = "") -> Dict[str, Any]:
     """Liest einen Wiki-Artikel oder eine Markdown-Datei für das Frontend."""
     target_path = None

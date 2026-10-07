@@ -114,3 +114,5 @@ def manage_tasks(parameters: Dict[str, Any], **kwargs) -> str:
         return f"Fehler beim Löschen der Aufgabe '{task_id}'."
 
     return f"Unbekannte Aktion '{action}'. Unterstützt: list, complete, add, delete, toggle."
+
+TOOL["handler"] = manage_tasks

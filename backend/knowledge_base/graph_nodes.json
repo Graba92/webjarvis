@@ -103,7 +103,7 @@
       "id": "tool-pipewire",
       "name": "PipeWire Audio",
       "category": "Tools",
-      "connections": 1,
+      "connections": 2,
       "description": "CachyOS High-Performance Sound-Server mit 16/24-kHz-Streams.",
       "path": "pavucontrol",
       "is_orphan": false
@@ -350,7 +350,17 @@
       "connections": 2,
       "description": "title: \"Audio Pipeline Architecture\"",
       "status": "active",
-      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/audio-pipeline-architecture.md"
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/audio-pipeline-architecture.md",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-live-e2e-test-wiki",
+      "name": "Live E2E Test Wiki",
+      "category": "Wiki",
+      "connections": 3,
+      "description": "title: \"Live E2E Test Wiki\"",
+      "status": "active",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/live-e2e-test-wiki.md"
     }
   ],
   "links": [
@@ -515,6 +525,18 @@
     {
       "source": "wiki-audio-pipeline-architecture",
       "target": "tool-pipewire",
+      "value": 2,
+      "type": "wiki"
+    },
+    {
+      "source": "wiki-live-e2e-test-wiki",
+      "target": "wiki-audio-pipeline-architecture",
+      "value": 2,
+      "type": "wiki"
+    },
+    {
+      "source": "wiki-live-e2e-test-wiki",
+      "target": "wiki-cachyos",
       "value": 2,
       "type": "wiki"
     }
