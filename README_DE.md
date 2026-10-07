@@ -5,6 +5,8 @@
 <p align="center">
   <img src="preview_hud.png" alt="J.A.R.V.I.S. WebGL HUD Vorschau" width="900">
   <br><br>
+  <img src="preview_wiki_inspector.png" alt="J.A.R.V.I.S. Task Backlog & Karpathy Wiki Vault Inspector" width="900">
+  <br><br>
   <img src="preview_devconsole.png" alt="J.A.R.V.I.S. Live Dev-Konsole & Stream Engine Vorschau" width="900">
 </p>
 
@@ -24,18 +26,20 @@
 
 ## 📑 Inhaltsverzeichnis
 1. [Systemarchitektur & Datenfluss](#-systemarchitektur--datenfluss)
-2. [Identitäts- & Konfigurations-Dreiklang (`SOUL.md`, `MEMORY.md`, `HEARTBEAT.md`)](#-identitäts--konfigurations-dreiklang)
-3. [Dynamische KI-Identität & Live-HUD-Parität](#-dynamische-ki-identität--live-hud-parität)
-4. [Bidirektionale Kalender-Engine & Dialog-Slot-Filling](#-bidirektionale-kalender-engine--dialog-slot-filling)
-5. [Action-Auditing, Backend Receipts & Telemetrie-Drosselung](#-action-auditing-backend-receipts--telemetrie-drosselung)
-6. [Native CachyOS Skills & Tool-Matrix](#-native-cachyos-skills--tool-matrix)
-7. [Performance, Audio-Routing & Privatsphäre](#-performance-audio-routing--privatsphäre)
-8. [Datenintegrität, atomare Schreibvorgänge & VACUUM INTO Backups](#-datenintegrität-atomare-schreibvorgänge--vacuum-into-backups)
-9. [Entwickler-Tools, Live Dev-Konsole & Personality Wizard](#-entwickler-tools-live-dev-konsole--personality-wizard)
-10. [3D-WebGL-HUD & Theme-Engine](#-3d-webgl-hud--theme-engine)
-11. [MCP-Ökosystem (Model Context Protocol)](#-mcp-ökosystem-model-context-protocol)
-12. [Schnellstart & Master Orchestrator (`start.sh`)](#-schnellstart--master-orchestrator-startsh)
-13. [Lizenz & Autor](#-lizenz--autor)
+2. [Task-Backlog-Engine (`backlog.md` Single-Writer)](#-task-backlog-engine-backlogmd-single-writer)
+3. [Karpathy-Pattern Knowledge Vault & [[Wiki-Links]]](#-karpathy-pattern-knowledge-vault--wiki-links)
+4. [3D-WebGL-Hologramm-HUD & Settle-on-Equilibrium Physik](#-3d-webgl-hologramm-hud--settle-on-equilibrium-physik)
+5. [Interaktiver Wiki- & Knoten-Inspektor (`WikiInspectorModal.tsx`)](#-interaktiver-wiki--knoten-inspektor-wikiinspectormodaltsx)
+6. [Identitäts- & Konfigurations-Dreiklang (`SOUL.md`, `MEMORY.md`, `HEARTBEAT.md`)](#-identitäts--konfigurations-dreiklang)
+7. [Dynamische KI-Identität & Live-HUD-Parität](#-dynamische-ki-identität--live-hud-parität)
+8. [Bidirektionale Kalender-Engine & Dialog-Slot-Filling](#-bidirektionale-kalender-engine--dialog-slot-filling)
+9. [Action-Auditing, Backend Receipts & Telemetrie-Drosselung](#-action-auditing-backend-receipts--telemetrie-drosselung)
+10. [Native CachyOS Skills & Tool-Matrix](#-native-cachyos-skills--tool-matrix)
+11. [Performance, Audio-Routing & Privatsphäre](#-performance-audio-routing--privatsphäre)
+12. [Hermetische Bubblewrap Sandbox & Sicherheitsarchitektur](#-hermetische-bubblewrap-sandbox--sicherheitsarchitektur)
+13. [MCP-Ökosystem (Model Context Protocol)](#-mcp-ökosystem-model-context-protocol)
+14. [Schnellstart & Master Orchestrator (`start.sh`)](#-schnellstart--master-orchestrator-startsh)
+15. [Lizenz & Autor](#-lizenz--autor)
 
 ---
 
@@ -46,7 +50,7 @@
                                   │   Google Gemini Live   │
                                   │  Bidirektionaler Stream│
                                   └───────────▲────────────┘
-                                              │ (Audio in/out & Tool Calls)
+                                              │ (Duplex 16/24kHz Audio & Tool RPC)
                                               ▼
                                   ┌────────────────────────┐
                                   │   Python Core Server   │
@@ -58,11 +62,11 @@
                          │                    │                    │
                          ▼                    ▼                    ▼
                ┌───────────────────┐┌───────────────────┐┌───────────────────┐
-               │ CachyOS Skills    ││  Hybrides Memory  ││  MCP Gateway      │
-               │ - update_agent.py ││ - calendar.db     ││ (Brave Search,    │
-               │ - calendar_mgr.py ││   (WAL + Relational││  Fetch, Custom    │
-               │ - confirm.py Gate ││ - LanceDB Vector  ││  JSON-RPC 2.0)    │
-               │ - ActionDispatch  ││ - long_term.json  ││                   │
+               │ Task & Wiki Vault ││  Hybrides Memory  ││ Bubblewrap Sandbox│
+               │ - task_manager.py ││ - calendar.db     ││ - bwrap Isolation │
+               │   (backlog.md SPS)││   (WAL + Relational││ - Pfad-Traversal- │
+               │ - wiki_manager.py ││ - LanceDB Vector  ││   Block-Guards    │
+               │   (Karpathy RAG)  ││ - long_term.json  ││ - Confirm Gate    │
                └───────────────────┘└───────────────────┘└───────────────────┘
                          │                    │                    │
                          ▼                    ▼                    ▼
@@ -73,16 +77,70 @@
                └───────────────────┘└───────────────────┘└───────────────────┘
                                               │
                                               │ 60Hz Telemetrie-Drosselung, RMS,
-                                              │ CALENDAR_SYNC, ACTION_RECEIPT,
+                                              │ CALENDAR_SYNC, TASK_SYNC, WIKI_SYNC,
                                               │ SYSTEM_INIT & dev_log Events
                                               ▼
                                   ┌────────────────────────┐
                                   │   Next.js 15 App HUD   │
                                   │  Three.js WebGL Engine │
-                                  │  ActionAuditor Tracker │
+                                  │  WikiInspector Modal   │
+                                  │  Backlog Drawer Matrix │
                                   │  Port 3000 (React 19)  │
                                   └────────────────────────┘
 ```
+
+---
+
+## 📋 Task-Backlog-Engine (`backlog.md` Single-Writer)
+
+J.A.R.V.I.S. verwendet eine SPS-konforme, ausfallsichere Single-Writer-Architektur für das Aufgaben-Tracking:
+- **Single Source of Truth im reinen Markdown:** Sämtliche Aufgaben und Meilensteine liegen in klarem Markdown (`backend/backlog.md`) mit Checkboxen (`- [ ]` und `- [x]`).
+- **POSIX-atomare Persistenz:** Datei-Updates werden in eine temporäre Datei (`.tmp`) geschrieben und via `os.replace` atomar ausgetauscht. Thread-Kollisionen werden durch `threading.RLock()` verhindert.
+- **Anti-Echo Datei-Wächter:** Ein Hintergrund-Watcher berechnet SHA-256-Prüfsummen von `backlog.md`. Externe Bearbeitungen (z. B. via Neovim oder Kate) werden in Echtzeit an das HUD gestreamt; interne Speicherungen lösen keine Echo-Schleifen aus.
+- **Interaktives HUD-Drawer (`BacklogDrawer.tsx` / `Alt+T`):** Cyberpunk Glassmorphism-Panel mit Status-Filtern (Alle, Offen, Erledigt), Direkt-Toggle, Löschfunktion, Prioritäts-Tags (`[HIGH]`, `[NORMAL]`, `[LOW]`) und **Auf-/Ab-Verschiebe-Pfeilen zur manuellen Priorisierung**.
+- **KI-Agent-Tool (`manage_tasks`):** Ermöglicht Gemini Live das autonome Abfragen (`list`), Abhaken (`complete`), Hinzufügen (`add`) und Umsortieren von Aufgaben während operativer Arbeitsphasen.
+
+---
+
+## 🧠 Karpathy-Pattern Knowledge Vault & [[Wiki-Links]]
+
+Angelehnt an Andrej Karpathys persönliches Knowledge-Base-Muster pflegt J.A.R.V.I.S. einen kuratierten, strukturierten Markdown-Tresor:
+- **Isoliertes Wiki-Verzeichnis:** Kuratierte Markdown-Seiten unter `backend/knowledge_base/wiki/*.md` mit strukturiertem YAML-Frontmatter (`title:`, `updated:`, `tags:`, `wiki_links_count:`).
+- **Immutabilitäts-Prinzip:** Rohe Quelldokumente des Nutzers unter `backend/knowledge_base/raw/` sind schreibgeschützt und bleiben unberührt.
+- **Semantische [[Wiki-Links]]:** Ein Regex-Parser extrahiert bidirektionale Verknüpfungen im Format `[[Thema]]` und transformiert sie in aktive Kanten im 3D-WebGL-Szenengraphen.
+- **Konflikt-Erkennung ohne Datenverlust:** Stößt Gemini auf widersprüchliche Fakten, werden bisherige Daten niemals überschrieben. Stattdessen wird ein standardisierter Warnblock injiziert:
+  ```markdown
+  > [!WARNING] Widerspruch erkannt (2026-10-07 17:30:00)
+  > **Neuer Input:** Kernel 6.13 benötigt Parameter X
+  > **Bisheriger Stand:** Parameter Y war Standard
+  > **Status:** Klärung durch Operator ausstehend (Originale unberührt)
+  ```
+  und der zugehörige 3D-Graph-Knoten wird mit `status: "conflict"` markiert (pulsierender karminroter Alarm).
+- **Hybrides RAG-Sync:** Jeder gespeicherte Wiki-Artikel wird automatisch in LanceDB für semantische Vektorsuchen indexiert.
+
+---
+
+## 🌐 3D-WebGL-Hologramm-HUD & Settle-on-Equilibrium Physik
+
+- **Three.js Holografische Wissenskonstellation (`ApexWorld.tsx`):**
+  High-End Cyberpunk 3D-WebGL-Visualisierung mit volumetrischen Fresnel-Glow-Shadern (`pow(1.0 - dotNV, 2.3)`), strahlendem Kern, rotierenden Gyroskop-Ringen (Torus-Wireframe) für Hubs und 3D-Billboard-Text-Sprites mit HUD-Eck-Brackets.
+- **Settle-on-Equilibrium Force-Physik:**
+  Statt teure $O(N^2)$ Physikberechnungen in jedem Render-Frame auf der CPU auszuführen, nutzt WebJarvis eine **75-Iterationen Relaxations-Phase** bei der Initialisierung:
+  - *Coulomb-Abstoßung:* Knoten stoßen sich im Umkreis von 180 Einheiten ab.
+  - *Hooke-Feder-Anziehung:* Durch `[[Wiki-Links]]` verbundene Knoten ziehen sich auf eine Ruhe-Distanz von 42 Einheiten an.
+  - *Cluster-Gravitation:* Knoten streben zu ihren Kategoriesphären (Cyan = Skills/Tools, Blau = Wiki/Suites, Orange = Konzepte).
+  - *Einfrieren bei Gleichgewicht:* Das Layout friert ein (`settled = true`), was **garantierte 60–120 FPS** ohne Mikroruckler gewährleistet.
+- **Visueller Orphan-Stroboskop-Alarm:**
+  Knoten mit Grad 0 (keine Verlinkungen) pulsieren im Shader in **Neon-Bernstein (`#ffaa00`)**. Eine Alarmanzeige im HUD-Dock meldet aktive Orphans; ein Klick zentriert die 3D-Kamera sofort auf den isolierten Knoten.
+
+---
+
+## 📖 Interaktiver Wiki- & Knoten-Inspektor (`WikiInspectorModal.tsx`)
+
+- **Split-View Markdown Viewer:** Ein Doppelklick auf einen beliebigen 3D-Knoten oder der Aufruf über die Seitenleiste öffnet den Cyberpunk HUD-Inspektor.
+- **YAML-Frontmatter & Metadaten-Header:** Zeigt Titel, Update-Zeitstempel und Schlagwörter übersichtlich gegliedert an.
+- **Klickbare [[Wiki-Links]]:** Interne Referenzen werden als cyanblaue HUD-Chips dargestellt; ein Klick navigiert sofort zum verlinkten Knoten im 3D-Graph.
+- **Konflikt-Banner:** Erkannte Widersprüche werden prominent in roter Signalfarbe mit Hervorhebung der divergierenden Aussagen dargestellt.
 
 ---
 
@@ -140,6 +198,10 @@ J.A.R.V.I.S. wird transparent über drei zentrale Markdown-Dokumente in `backend
 
 Alle autonomen Werkzeuge liegen unter `backend/actions/` und sind in der Gemini Live Action Registry verankert:
 
+- **Task Manager Tool (`manage_tasks.py`):**
+  Fragt Aufgaben ab, markiert Checkboxen als erledigt, fügt neue Einträge hinzu und ordnet Prioritäten in `backlog.md` an.
+- **Knowledge Wiki Tool (`manage_wiki.py`):**
+  Erstellt und aktualisiert Markdown-Wiki-Seiten, extrahiert `[[Wiki-Links]]`, markiert Widersprüche und synchronisiert LanceDB.
 - **CachyOS Update Agent (`update_agent.py`):**
   Prüft Paketupdates via `checkupdates` und `yay -Qu`. Identifiziert kritische Systemkomponenten (`linux`, `linux-cachyos`, `systemd`, `glibc`, `nvidia`, `mesa`, `openssl`). Führt Systemaktualisierungen niemals unbestätigt aus, sondern leitet sie ausnahmslos über das physische Bestätigungs-Gate (`confirm.py`).
 - **Hardware Confirmation Gate (`computer_settings.py` & `core/confirm.py`):**
@@ -168,14 +230,18 @@ Alle autonomen Werkzeuge liegen unter `backend/actions/` und sind in der Gemini 
 
 ---
 
-## 🛡️ Datenintegrität, atomare Schreibvorgänge & VACUUM INTO Backups
+## 🛡️ Hermetische Bubblewrap Sandbox & Sicherheitsarchitektur
 
+- **Kapselung via Linux Namespaces (`bwrap`):**
+  Alle autonomen Werkzeugaufrufe für Shell- und Scriptausführung laufen in isolierten Bubblewrap-Containern ohne Netzwerkzugriff und mit strikt read-only eingebundenen Host-Verzeichnissen (`/usr`, `/lib`, `/etc`).
+- **Pfad-Traversal-Sperren:**
+  Sämtliche Wiki-, Backlog- und Dateizugriffe unterbinden `../`-Escapes und strikte Whitelist-Prüfungen sichern die Integrität der Arbeitsverzeichnisse.
 - **Konsistente Live-Backups via `VACUUM INTO`:**
   Vor dem Packen von `calendar.db` wird das Write-Ahead-Log geflusht (`PRAGMA wal_checkpoint(TRUNCATE);`) und ein sperrfreier Snapshot via `VACUUM INTO` in ein temporäres Verzeichnis exportiert. Verhindert korrupte Archive durch laufende Transaktionen.
 - **SQLite Concurrency Hardening:**
   Verbindungen nutzen `PRAGMA journal_mode=WAL;`, `PRAGMA synchronous=NORMAL;`, `busy_timeout=10000;` und einen sauberen Kontextmanager (`get_db()`), wodurch parallele Lese- und Schreibzugriffe kollisionsfrei bleiben.
 - **Atomare Gedächtnis-Persistenz:**
-  Änderungen an `long_term.json` werden über temporäre Pufferdateien (`NamedTemporaryFile`), explizites `os.fsync` und `os.replace` atomar geschrieben, um Datenverlust bei abruptem Stromausfall oder SIGKILL abzuwenden.
+  Änderungen an `long_term.json` und `backlog.md` werden über temporäre Pufferdateien, explizites `os.fsync` und `os.replace` atomar geschrieben, um Datenverlust bei abruptem Stromausfall oder SIGKILL abzuwenden.
 
 ---
 
@@ -190,16 +256,7 @@ Alle autonomen Werkzeuge liegen unter `backend/actions/` und sind in der Gemini 
 
 ---
 
-## 🌐 3D-WebGL-HUD & Theme-Engine
-
-- **Holografischer Three.js Wissensgraph (`ApexWorld.tsx`):**
-  Cyberpunk-3D-WebGL-Visualizer mit volumetrischen Fresnel-Glow-Shadern (`pow(1.0 - dotNV, 2.3)`), strahlendem inneren Energiekern (Nucleus), rotierenden holografischen Gyroskop-Ringen (Torus-Wireframe) für Hubs und 3D-Billboard-Text-Sprites mit HUD-Eck-Brackets. Echtzeit-Datenfluss-Partikel (Flux-Pulse) strömen kontinuierlich über kontrastreiche 3D-Bézier-Bögen, um die interne Arbeitsweise ("wie es arbeitet") transparent zu visualisieren – dynamisch moduliert durch KI-Aktivitätsstatus (`THINKING`, `SPEAKING`) und Mikrofon-Pegel. Räumlich verankert durch rotierende konzentrische Radar-Ringe und Boden-Gitter mit vollständigem `.dispose()`-Speicher-Management.
-- **Zentrale Farbpalette (`frontend/theme.json`):**
-  Einheitliche Design-Tokens für Arch- und CachyOS-Ricing.
-
----
-
-## 🔌 MCP-Ökosystem & Robuste Schema-Sanitization
+## 🔌 MCP-Ökosystem (Model Context Protocol)
 
 Unterstützt standardisierte MCP JSON-RPC 2.0 Server (`backend/config/mcp_servers.json`):
 - **`brave_search`:** Datenschutzfreundliche Websuche als Ersatz für Legacy-Scraper.

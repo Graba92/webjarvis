@@ -5,6 +5,8 @@
 <p align="center">
   <img src="preview_hud.png" alt="J.A.R.V.I.S. WebGL HUD Preview" width="900">
   <br><br>
+  <img src="preview_wiki_inspector.png" alt="J.A.R.V.I.S. Task Backlog & Karpathy Wiki Vault Inspector" width="900">
+  <br><br>
   <img src="preview_devconsole.png" alt="J.A.R.V.I.S. Live Dev-Console & Stream Engine Preview" width="900">
 </p>
 
@@ -24,18 +26,20 @@
 
 ## 📑 Table of Contents
 1. [System Architecture & Data Flow](#-system-architecture--data-flow)
-2. [Identity & Configuration Triad (`SOUL.md`, `MEMORY.md`, `HEARTBEAT.md`)](#-identity--configuration-triad)
-3. [Dynamic AI Identity & Live HUD Parity](#-dynamic-ai-identity--live-hud-parity)
-4. [Bidirectional Calendar Engine & Conversational Slot-Filling](#-bidirectional-calendar-engine--conversational-slot-filling)
-5. [Action-Auditing, Backend Receipts & Telemetry Throttling](#-action-auditing-backend-receipts--telemetry-throttling)
-6. [Native CachyOS Skills & Tool Matrix](#-native-cachyos-skills--tool-matrix)
-7. [Performance, Audio Routing & Privacy](#-performance-audio-routing--privacy)
-8. [Data Integrity, Atomic Writes & VACUUM INTO Backups](#-data-integrity-atomic-writes--vacuum-into-backups)
-9. [Developer Tools, Live Dev-Console & Personality Wizard](#-developer-tools-live-dev-console--personality-wizard)
-10. [3D WebGL Holographic HUD & Theme Engine](#-3d-webgl-holographic-hud--theme-engine)
-11. [MCP Ecosystem (Model Context Protocol)](#-mcp-ecosystem-model-context-protocol)
-12. [Quickstart & Master Orchestrator (`start.sh`)](#-quickstart--master-orchestrator-startsh)
-13. [License & Author](#-license--author)
+2. [Task Backlog Engine (`backlog.md` Single-Writer)](#-task-backlog-engine-backlogmd-single-writer)
+3. [Karpathy-Pattern Knowledge Vault & [[Wiki-Links]]](#-karpathy-pattern-knowledge-vault--wiki-links)
+4. [3D WebGL Holographic HUD & Settle-on-Equilibrium Physics](#-3d-webgl-holographic-hud--settle-on-equilibrium-physics)
+5. [Interactive Wiki & Node Inspector (`WikiInspectorModal.tsx`)](#-interactive-wiki--node-inspector-modal)
+6. [Identity & Configuration Triad (`SOUL.md`, `MEMORY.md`, `HEARTBEAT.md`)](#-identity--configuration-triad)
+7. [Dynamic AI Identity & Live HUD Parity](#-dynamic-ai-identity--live-hud-parity)
+8. [Bidirectional Calendar Engine & Conversational Slot-Filling](#-bidirectional-calendar-engine--conversational-slot-filling)
+9. [Action-Auditing, Backend Receipts & Telemetry Throttling](#-action-auditing-backend-receipts--telemetry-throttling)
+10. [Native CachyOS Skills & Tool Matrix](#-native-cachyos-skills--tool-matrix)
+11. [Performance, Audio Routing & Privacy](#-performance-audio-routing--privacy)
+12. [Hermetic Bubblewrap Sandbox & Security Architecture](#-hermetic-bubblewrap-sandbox--security-architecture)
+13. [MCP Ecosystem (Model Context Protocol)](#-mcp-ecosystem-model-context-protocol)
+14. [Quickstart & Master Launcher](#-quickstart--master-launcher)
+15. [License & Author](#-license--author)
 
 ---
 
@@ -46,7 +50,7 @@
                                   │   Google Gemini Live   │
                                   │  Bi-directional Stream │
                                   └───────────▲────────────┘
-                                              │ (Audio in/out & Function Calls)
+                                              │ (Duplex 16/24kHz Audio & Tool RPC)
                                               ▼
                                   ┌────────────────────────┐
                                   │   Python Core Server   │
@@ -58,11 +62,11 @@
                          │                    │                    │
                          ▼                    ▼                    ▼
                ┌───────────────────┐┌───────────────────┐┌───────────────────┐
-               │ CachyOS Skills    ││  Hybrid Memory    ││  MCP Gateway      │
-               │ - update_agent.py ││ - calendar.db     ││ (Brave Search,    │
-               │ - calendar_mgr.py ││   (WAL + Relational││  Fetch, Custom    │
-               │ - confirm.py Gate ││ - LanceDB Vector  ││  JSON-RPC 2.0)    │
-               │ - ActionDispatch  ││ - long_term.json  ││                   │
+               │ Task & Wiki Vault ││  Hybrid Memory    ││ Bubblewrap Sandbox│
+               │ - task_manager.py ││ - calendar.db     ││ - bwrap Isolation │
+               │   (backlog.md SPS)││   (WAL + Relational││ - Path Traversal  │
+               │ - wiki_manager.py ││ - LanceDB Vector  ││   Block Guards    │
+               │   (Karpathy RAG)  ││ - long_term.json  ││ - Confirm Gate    │
                └───────────────────┘└───────────────────┘└───────────────────┘
                          │                    │                    │
                          ▼                    ▼                    ▼
@@ -73,16 +77,69 @@
                └───────────────────┘└───────────────────┘└───────────────────┘
                                               │
                                               │ 60Hz Rate-Limited Telemetry, RMS,
-                                              │ CALENDAR_SYNC, ACTION_RECEIPT,
+                                              │ CALENDAR_SYNC, TASK_SYNC, WIKI_SYNC,
                                               │ SYSTEM_INIT & dev_log Events
                                               ▼
                                   ┌────────────────────────┐
                                   │   Next.js 15 App HUD   │
                                   │  Three.js WebGL Engine │
-                                  │  ActionAuditor Tracker │
+                                  │  WikiInspector Modal   │
+                                  │  Backlog Drawer Matrix │
                                   │  Port 3000 (React 19)  │
                                   └────────────────────────┘
 ```
+
+---
+
+## 📋 Task Backlog Engine (`backlog.md` Single-Writer)
+
+J.A.R.V.I.S. utilizes an SPS-compliant, resilient single-writer architecture for task tracking:
+- **Raw Markdown Single Source of Truth:** All system tasks and milestones live in plain Markdown format (`backend/backlog.md`) with `- [ ]` and `- [x]` checkboxes.
+- **POSIX-Atomic Durability:** File updates are written to a temporary buffer (`.tmp`) and swapped via `os.replace`. Thread concurrency is guarded via `threading.RLock()`.
+- **Anti-Echo File Watcher:** Background watcher computes SHA-256 hashes of `backlog.md`. External edits (e.g. from Neovim or Kate) are broadcast to the HUD in real time; internal saves never trigger redundant echo loops.
+- **Interactive HUD Drawer (`BacklogDrawer.tsx` / `Alt+T`):** Glassmorphism task panel with status filters (All, Pending, Done), instant toggling, deletion, priority tags (`[HIGH]`, `[NORMAL]`, `[LOW]`), and **Up/Down re-ordering arrows**.
+- **AI Agent Tool (`manage_tasks`):** Enables Gemini Live to autonomously query (`list`), complete (`complete`), append (`add`), and re-order tasks during autonomous execution.
+
+---
+
+## 🧠 Karpathy-Pattern Knowledge Vault & [[Wiki-Links]]
+
+Inspired by Andrej Karpathy's personal knowledge base patterns, J.A.R.V.I.S. maintains a curated, structured markdown vault:
+- **Isolated Wiki Directory:** Curated markdown pages stored in `backend/knowledge_base/wiki/*.md` with structured YAML frontmatter (`title:`, `updated:`, `tags:`, `wiki_links_count:`).
+- **Immutability Principle:** User raw source files in `backend/knowledge_base/raw/` are immutable and strictly preserved.
+- **Semantic [[Wiki-Links]]:** Regex parser extracts bidirectional `[[Topic]]` relationships and transforms them into active edges within the 3D WebGL scene graph.
+- **Zero-Data-Loss Conflict Resolution:** When Gemini detects conflicting facts, it never silently overwrites existing records. Instead, it injects a standardized warning block:
+  ```markdown
+  > [!WARNING] Widerspruch erkannt (2026-10-07 17:30:00)
+  > **Neuer Input:** Kernel 6.13 benötigt Parameter X
+  > **Bisheriger Stand:** Parameter Y war Standard
+  > **Status:** Klärung durch Operator ausstehend (Originale unberührt)
+  ```
+  and flags the corresponding 3D graph node with `status: "conflict"` (pulsing crimson alert).
+- **Hybrid RAG Sync:** Every saved wiki article is automatically indexed in LanceDB for semantic vector recall.
+
+---
+
+## 🌐 3D WebGL Holographic HUD & Settle-on-Equilibrium Physics
+
+- **Three.js Holographic Knowledge Constellation (`ApexWorld.tsx`):**
+  High-end cyberpunk 3D WebGL knowledge graph featuring volumetric Fresnel glow shaders (`pow(1.0 - dotNV, 2.3)`), radiant inner energy nuclei, spinning holographic gyroscope rings (Torus wireframe) on hub nodes, and 3D billboard text-sprites with HUD corner brackets.
+- **Settle-on-Equilibrium Force Physics:**
+  Rather than computing expensive $O(N^2)$ force physics every frame on the CPU, WebJarvis runs a **75-iteration deterministic relaxation** during scene initialization:
+  - *Coulomb Repulsion:* Nodes repel each other within a 180-unit radius.
+  - *Hooke Spring Attraction:* Nodes connected via `[[Wiki-Links]]` gently pull together onto a 42-unit resting distance.
+  - *Cluster Gravity:* Nodes gravitate toward their respective category hemispheres (Cyan = Skills/Tools, Blue = Wiki/Suites, Orange = Concepts/Worlds).
+  - *Freeze on Equilibrium:* The layout freezes (`settled = true`), guaranteeing **stable 60–120 FPS** with zero frame drops.
+- **Visual Orphan Strobe Warning:**
+  Nodes with degree 0 (no links) pulse in **neon-amber (`#ffaa00`)** in the Fresnel shader. An alert pill in the bottom dock indicates active orphan counts; clicking immediately centers the 3D camera onto the orphan node.
+
+---
+
+## 📖 Interactive Wiki & Node Inspector (`WikiInspectorModal.tsx`)
+
+- **Split-View Markdown Viewer:** Double-clicking any 3D node or clicking "Wissens-Inspektor öffnen" in the sidebar opens the Cyberpunk HUD Inspector.
+- **Clickable [[Wiki-Links]]:** All inter-document links are rendered as interactive navigation pills. Clicking instantly loads the target article or animates the 3D camera.
+- **Integrated Monospace Editor:** Direct note editing in the HUD with Dirty-State protection (`* Ungespeichert`), `Ctrl+S` quick-save, and POSIX-atomic sync to the backend.
 
 ---
 
@@ -113,26 +170,24 @@ J.A.R.V.I.S. is driven by three transparent Markdown configuration documents loc
 ## 📅 Bidirectional Calendar Engine & Conversational Slot-Filling
 
 - **Relational SQLite Schema (`calendar_events`):**
-  Stores events with unique UUIDs, ISO-8601 timestamps, recurrence rules (`DAILY`, `WEEKLY`, `MONTHLY`), and structured multi-tier reminder strategies in JSON format (`reminder_strategy`).
+  Stores events with unique UUIDs, ISO-8601 timestamps, recurrence rules (`DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`), and structured multi-tier reminder strategies in JSON format (`reminder_strategy`).
 - **Conversational Slot-Filling Directives:**
   When asking Jarvis to schedule appointments, the assistant interactively fills missing slots (date, time, recurrence, notification lead time) and summarizes all details before confirming and invoking the `create_calendar_entry` tool.
 - **Event-Driven Live-Sync (`CALENDAR_SYNC`):**
   Database changes instantly emit `CALENDAR_SYNC` WebSocket broadcasts to all connected frontends, refreshing the calendar UI in real-time.
-- **HUD Calendar Dashboard & Shortcut (`Alt+C`):**
-  A dedicated cyber-glass modal allows full manual inspection, quick filters ("In 1h", "Morgen 09:00"), natural language inputs, and single-click event deletion.
-- **Interactive Calendar Matrix & Horizon Dock:**
-  A prominent toggle button docked to the right edge and in the header switches instantly to the full-featured Calendar Matrix with non-overlapping scalable horizons (1 week, 2 weeks, 1 month, 3 months, 6 months, 9 months, 12-month year overview), automated recurrence projection (including `YEARLY` for birthdays), persistent event color-coding (amber/gold for repeating & birthdays vs. cyan for regular events), and a dedicated Day Inspector drawer.
+- **Interactive Calendar Matrix & Horizon Dock (`Alt+C`):**
+  Scalable non-overlapping horizons (1 week, 2 weeks, 1 month, 3 months, 6 months, 9 months, 12-month year overview) with annual birthday projections.
 
 ---
 
 ## ⚡ Action-Auditing, Backend Receipts & Telemetry Throttling
 
 - **ActionAuditor Engine (`frontend/utils/auditLogger.ts`):**
-  Guarantees that every user interaction dispatched from the HUD (killswitch, manual calendar creation, update checks, backups) receives a verified correlation ID and is acknowledged by an `ACTION_RECEIPT` packet from the Python core. Prevents silent UI stalls or zombie button states.
+  Guarantees that every user interaction dispatched from the HUD receives a verified correlation ID and is acknowledged by an `ACTION_RECEIPT` packet from the Python core.
 - **60 Hz Telemetry & RMS Throttling:**
   Incoming audio RMS levels and hardware sensor data are capped to a strict 60 Hz frame budget (~16.6 ms) on the WebSocket bridge, preventing JavaScript event loop congestion and garbage-collection spikes in Three.js.
 - **Resilient Reconnection with Exponential Backoff & Jitter:**
-  Frontend reconnect logic scales gracefully (`1s * 1.8^n` up to 15s) with random jitter (0–500 ms), completely avoiding thundering-herd reconnect storms upon backend restarts.
+  Frontend reconnect logic scales gracefully (`1s * 1.8^n` up to 15s) with random jitter (0–500 ms).
 
 ---
 
@@ -140,62 +195,38 @@ J.A.R.V.I.S. is driven by three transparent Markdown configuration documents loc
 
 All autonomous skills are located in `backend/actions/` and registered with the Gemini Live Action Registry:
 
-- **CachyOS Update Agent (`update_agent.py`):**
-  Monitors pending package upgrades via `checkupdates` and `yay -Qu`. Specifically isolates critical system components (`linux`, `linux-cachyos`, `systemd`, `glibc`, `nvidia`, `mesa`, `openssl`). Never executes unconfirmed package upgrades: strictly routes through the Hardware Confirmation Gate (`confirm.py`).
-- **Hardware Confirmation Gate (`computer_settings.py` & `core/confirm.py`):**
-  Destructive system commands (shutdown, reboot, sleep) trigger an amber confirmation banner in the HUD with a 90-second countdown, requiring deliberate physical or UI verification before execution.
-- **Hermetic Bubblewrap Sandbox (`sandboxed_shell.py` & `file_controller.py`):**
-  Executes shell operations in a strictly isolated namespace (`bwrap`), mounting system libraries read-only and scoping write access exclusively to `backend/sandbox_workspace/`.
-- **Optimistic Undo-Stack Engine (`undo_action.py` & `core/undo.py`):**
-  A 10-level transaction memory with differential snapshots allowing instant rollback (`undo_last_action`) of accidental file mutations or configuration changes.
-- **Dual-Tier Memory Search (`recall_memory.py` & `memory/memory_manager.py`):**
-  Enables on-demand fuzzy searching across the user's long-term memory archive without inflating the active LLM context window.
-- **Desktop Application Launcher (`open_app.py`):**
-  Spawns Wayland and KDE Plasma native desktop applications (e.g. Konsole, Dolphin, Kate, Brave) with proper session detachment.
-- **Proactive Morning Briefing (`core/cron_engine.py`):**
-  Autonomously triggers at 08:00 or system boot, summarizing appointments, pending package updates, and system metrics via PipeWire voice playback.
+- **Task Manager (`actions/task_manager.py`):** Manage backlog tasks, checkboxes, and priorities (`manage_tasks`).
+- **Wiki Vault Engine (`actions/wiki_manager.py`):** Manage Karpathy knowledge pages, conflict resolution, and wiki links (`manage_wiki`).
+- **Graph Manager (`actions/graph_manager.py`):** Dynamic 3D node manipulation, frontmatter extraction, and orphan analysis.
+- **CachyOS Update Agent (`actions/update_agent.py`):** Monitors pending package upgrades via `checkupdates` and `yay -Qu`.
+- **Hardware Confirmation Gate (`core/confirm.py`):** Destructive system commands trigger an amber confirmation banner in the HUD with a 90-second countdown.
+- **Optimistic Undo-Stack Engine (`actions/undo_action.py`):** 10-level transaction memory with differential snapshots allowing instant rollback.
+- **Desktop Application Launcher (`actions/open_app.py`):** Spawns Wayland and KDE Plasma native desktop applications with session detachment.
+- **Proactive Morning Briefing (`core/cron_engine.py`):** Autonomously triggers at 08:00 or system boot.
 
 ---
 
 ## 🔊 Performance, Audio Routing & Privacy
 
 - **Dedicated PipeWire Virtual Sink (`cypher_ai_sink`):**
-  Jarvis registers as an independent audio node (`Cypher AI Audio`) within PipeWire and PulseAudio emulation. It appears as an individual volume slider in the KDE Plasma System Tray Audio Mixer, allowing independent balance without altering system audio.
+  Jarvis registers as an independent audio node (`Cypher AI Audio`) within PipeWire and PulseAudio emulation. It appears as an individual volume slider in the KDE Plasma System Tray Audio Mixer.
 - **Paranoia Killswitch (Hardware-Level Microphone Cut):**
   A dedicated toggle in the HUD that immediately terminates and closes the ALSA/PipeWire input stream handle. When activated, the HUD displays a bright red `PARANOIA MUTED (HARDWARE-OFF)` alert.
-- **Focus Mode (Zero-Interference Gaming & Compilation):**
+- **Live Voice Switching:**
+  Switch dynamically between `Puck` (male) and `Aoede` (female) without restarting the server.
+- **Focus Mode:**
   Temporarily halts all background cron jobs and heartbeats with a single HUD click, freeing 100% CPU time for gaming, kernel compilation, or benchmark tasks.
 
 ---
 
-## 🛡️ Data Integrity, Atomic Writes & VACUUM INTO Backups
+## 🛡️ Hermetic Bubblewrap Sandbox & Security Architecture
 
-- **Consistent Online SQLite Backups (`VACUUM INTO`):**
-  Before packaging `calendar.db` into a backup archive, the system flushes the Write-Ahead Log (`PRAGMA wal_checkpoint(TRUNCATE);`) and generates an atomic, lock-free snapshot using `VACUUM INTO` in a temporary directory. Eliminates backup corruption caused by active WAL transactions.
-- **SQLite Concurrency Hardening:**
-  All database connections operate with `PRAGMA journal_mode=WAL;`, `PRAGMA synchronous=NORMAL;`, and `busy_timeout=10000;`, coupled with a safe context manager (`get_db()`) to prevent resource exhaustion and connection locks.
-- **Atomic Two-Phase Memory Writes:**
-  Writes to `long_term.json` utilize temporary file buffers (`NamedTemporaryFile`), forced OS synchronization (`os.fsync`), and atomic file replacement (`os.replace`) to guarantee absolute durability against abrupt power cuts or process kills.
-
----
-
-## 🛠️ Developer Tools, Live Dev-Console & Personality Wizard
-
-- **Live Dev-Console (`DevConsole.tsx`):**
-  A collapsible floating terminal streaming unfiltered backend events, exceptions, tool invocations, and tracebacks directly over WebSockets (`dev_log`).
-- **Brain Vault Backup & Restore Modal (`BackupModal.tsx`, `backup_manager.py` & `BottomDock.tsx`):**
-  Full-featured backup vault: creates transactionally consistent backups with custom labels, triggers instant browser `.zip` downloads, captures long-term facts, SQLite calendar, vector DB, and the 3D knowledge graph (`knowledge_base/graph_nodes.json`), allows drag-and-drop restore of older archives, and hot-reloads memory, graph, calendar, and personality live without restarting.
-- **Personality Wizard Modal (`PersonalityWizardModal.tsx`):**
-  Interactive in-HUD wizard for configuring persona tone, humor, expertise domain, and ethical guardrails with 1-click live saving to `SOUL.md`.
-
----
-
-## 🌐 3D WebGL Holographic HUD & Theme Engine
-
-- **Three.js Holographic Knowledge Constellation (`ApexWorld.tsx`):**
-  High-end cyberpunk 3D WebGL knowledge graph featuring volumetric Fresnel glow shaders (`pow(1.0 - dotNV, 2.3)`), radiant inner energy nuclei, spinning holographic gyroscope rings (Torus wireframe) on hub nodes, and 3D billboard text-sprites with HUD corner brackets. Real-time animated data packets (flux pulses) continuously stream across high-visibility 3D Bézier curves to visualize live system activity ("wie es arbeitet"), dynamically accelerating and flaring with AI thought/speech state (`THINKING`, `SPEAKING`) and audio levels. Anchored by concentric holographic radar rings and ground grid with complete `.dispose()` memory management.
-- **Centralized Theme Config (`frontend/theme.json`):**
-  Defines standardized color palettes and glowing borders tailored for Arch Linux and CachyOS desktop ricing.
+- **Bubblewrap (`bwrap`) Process Isolation:**
+  Executes shell operations in a strictly isolated namespace with `--die-with-parent`, `--new-session`, `--unshare-all`, and `--ro-bind /usr /usr`.
+- **Path Traversal & Symlink Defense:**
+  Strict path validation prevents directory traversal (`../`) and verifies real path targets against the configured directory whitelist.
+- **Dynamic AI Prompt Synchronization:**
+  Configured sandbox directories and security policies are injected live into the Gemini system prompt.
 
 ---
 
@@ -204,25 +235,25 @@ All autonomous skills are located in `backend/actions/` and registered with the 
 J.A.R.V.I.S. implements standard Model Context Protocol (MCP) JSON-RPC 2.0 servers configured in `backend/config/mcp_servers.json`:
 - **`brave_search`:** Privacy-focused web search replacing legacy scrapers.
 - **`fetch`:** Efficient web content retrieval and markdown conversion.
-- **Dynamic MCP GUI:** Toggle and configure new MCP servers directly in the HUD via the Skills Matrix.
-- **Zero-Failure Gemini Live Schema Sanitization (`sanitize_schema_for_gemini`):** Fully normalizes and sanitizes OpenAPI schemas from both native actions and dynamic MCP servers. Automatically resolves `anyOf`/`oneOf` constructs, strips incompatible JSON Schema draft fields (`$schema`, `$id`, `additionalProperties`, `$defs`), guarantees uppercase OpenAPI types (`OBJECT`, `STRING`, `INTEGER`, etc.), and guards `LiveConnectConfig` handshake against Pydantic validation crashes.
+- **`filesystem`:** Secure sandbox file system server.
+- **Zero-Failure Schema Sanitization (`sanitize_schema_for_gemini`):** Fully normalizes and sanitizes OpenAPI schemas, eliminating Pydantic handshake errors.
 
 ---
 
-## ⚡ Quickstart & Master Orchestrator (`start.sh`)
+## ⚡ Quickstart & Master Launcher
 
 ### 1. Clone & Setup
 ```bash
 git clone https://github.com/Graba92/webjarvis.git
 cd webjarvis
-chmod +x setup.sh start.sh terminate_jarvis.sh
+chmod +x setup.sh start.sh stop.sh run.sh manager.sh
 ./setup.sh
 ```
 
 ### 2. Configure API Key
 ```bash
 cp backend/.env.example backend/.env
-# Enter your GEMINI_API_KEY into backend/.env (or configure interactively via ./start.sh)
+# Enter your GEMINI_API_KEY into backend/.env
 ```
 
 ### 3. Launch Options
@@ -230,34 +261,22 @@ cp backend/.env.example backend/.env
 #### Option A: PyQt6 Desktop Orchestration Manager (GUI)
 ```bash
 ./manager.sh
-# or python3 manager.py
 ```
 * **Status Cockpit**: Real-time service status (Backend, Frontend, Voice Stream).
 * **1-Click Control**: Start, stop, or restart individual subsystems or the full stack.
 * **Autostart Integration**: Enable/disable desktop autostart via standard XDG entries.
-* **Update Sentinel**: Autonomous checks against GitHub releases (`Graba92/webjarvis`).
-* **Health Check**: Validates Python venv, Node.js, PipeWire audio, and Bubblewrap.
 
-#### Option B: Ergonomic 1-Click Launcher & Master Orchestrator
+#### Option B: Ergonomic Terminal Master Orchestrator
 ```bash
-./run.sh
-# or ./start.sh
+./start.sh
 ```
-Interactive terminal menu options:
-* `1)` **Gesamtsystem starten**: Boots Python Gemini Live WebSocket server & Next.js 15 HUD concurrently.
-* `2)` **Nur Python Backend starten**: Starts WebSocket core on `ws://127.0.0.1:8765`.
-* `3)` **Nur Next.js Frontend starten**: Starts Three.js 3D WebGL HUD on `http://localhost:3000`.
-* `4)` **Sandbox-Arbeitsbereich festlegen / anpassen**: Configure allowed Bubblewrap workspace directories.
-* `5)` **Hardware- & Systemprüfung ausführen**: Verifies PipeWire, ALSA audio sinks, bubblewrap sandbox & dependencies.
-* `6)` **Gemini API Key konfigurieren**: Persistent interactive credential helper.
-* `7)` **Beenden**: Gracefully shuts down subsystems.
+Interactive terminal menu for starting backend, frontend, running verification gates, or configuring sandbox paths.
 
 #### Option C: Direct CLI Execution (Headless & Automation)
 ```bash
 ./start.sh --all        # Starts backend + frontend directly
 ./start.sh --backend    # Starts backend only
 ./start.sh --frontend   # Starts frontend only
-./start.sh --check      # Runs system verification gates
 ./stop.sh               # Cleanly stops all background services and frees ports 8765 & 3000
 ```
 
@@ -267,3 +286,4 @@ Interactive terminal menu options:
 
 - **Author:** Graba92
 - **License:** MIT License (Open Source)
+- **Repository:** [https://github.com/Graba92/webjarvis](https://github.com/Graba92/webjarvis)
