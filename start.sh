@@ -293,12 +293,19 @@ start_backend() {
     exec "$VENV_PYTHON" "$BACKEND_DIR/server.py"
 }
 
+ensure_frontend_bins() {
+    if [ -d "$FRONTEND_DIR/node_modules/.bin" ]; then
+        find "$FRONTEND_DIR/node_modules/.bin" -type l -exec sh -c 'for link; do target=$(readlink -f "$link"); [ -f "$target" ] && [ ! -x "$target" ] && chmod +x "$target"; done' _ {} + 2>/dev/null || true
+    fi
+}
+
 start_frontend() {
     echo -e "\n${BOLD}${CYAN}[*] Starte Next.js 15 WebGL HUD Frontend (http://localhost:3000)...${RESET}"
     cd "$FRONTEND_DIR"
     if [ ! -d "node_modules" ]; then
         npm install --no-fund --no-audit --loglevel=error > /dev/null
     fi
+    ensure_frontend_bins
     exec npm run dev
 }
 
@@ -329,6 +336,7 @@ start_all() {
     if [ ! -d "node_modules" ]; then
         npm install --no-fund --no-audit --loglevel=error > /dev/null
     fi
+    ensure_frontend_bins
     npm run dev
 }
 

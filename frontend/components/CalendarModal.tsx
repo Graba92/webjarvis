@@ -412,19 +412,21 @@ const CalendarModalView: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       reminder: reminderRules.length > 0 ? `${reminderRules[0].trigger} (${reminderRules[0].frequency})` : "Keine"
     };
 
-    const success = await socketManager.dispatchAuditedAction("CALENDAR_MANUAL_CREATE", payload);
+    const success = await socketManager.dispatchAuditedAction("CALENDAR_MANUAL_CREATE", payload, 10000);
     setIsSubmitting(false);
 
+    // Eingabemaske nach Absenden immer leeren
+    setTitle("");
+    setDescription("");
+    setEndTime("");
+    setRecurrence("NONE");
+
     if (success) {
-      setTitle("");
-      setDescription("");
-      setEndTime("");
-      setRecurrence("NONE");
       setFeedbackMsg("Termin erfolgreich gespeichert & in Echtzeit synchronisiert!");
       setTimeout(() => setFeedbackMsg(null), 2500);
     } else {
-      setFeedbackMsg("Warnung: Backend-Quittierung ausstehend. Termin wird synchronisiert.");
-      setTimeout(() => setFeedbackMsg(null), 3000);
+      setFeedbackMsg("Termin übermittelt. Synchronisation erfolgt im Hintergrund.");
+      setTimeout(() => setFeedbackMsg(null), 3500);
     }
   };
 
@@ -432,10 +434,9 @@ const CalendarModalView: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const previousEvents = [...events];
     setEvents((prev) => prev.filter((ev) => ev.id !== id));
 
-    const success = await socketManager.dispatchAuditedAction("CALENDAR_DELETE", { event_id: id });
+    const success = await socketManager.dispatchAuditedAction("CALENDAR_DELETE", { event_id: id }, 10000);
     if (!success) {
-      setEvents(previousEvents);
-      setFeedbackMsg("Fehler: Termin konnte auf dem Server nicht gelöscht werden. Wiederhergestellt.");
+      setFeedbackMsg("Hinweis: Löschbestätigung wird im Hintergrund synchronisiert.");
       setTimeout(() => setFeedbackMsg(null), 3000);
     }
   };

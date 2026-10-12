@@ -12,15 +12,16 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-Graba92%2Fwebjarvis-blue?logo=github)](https://github.com/Graba92/webjarvis)
 [![OS](https://img.shields.io/badge/OS-CachyOS%20%7C%20Arch%20Linux%20%7C%20Generic-blue?logo=archlinux)](https://cachyos.org)
+[![UDS IPC](https://img.shields.io/badge/UDS%20IPC-2.042%20Req%2Fs%20(Zero--Lock)-success)](backend/ipc/uds_ipc_engine.py)
+[![Storage Matrix](https://img.shields.io/badge/Storage-L1%20tmpfs%20%7C%20L2%20WAL%20%7C%20L3%20LanceDB-orange)](#-3-tier-storage-hierarchy-hdd-hardened)
+[![Safety Gate](https://img.shields.io/badge/Gate-Hardware%20Confirmation%20%5By%2Fn%5D-red)](#-god-mode-tui-cockpit--hardware-confirmation-gate)
+[![Knowledge Graph](https://img.shields.io/badge/Knowledge%20Graph-193%20Nodes%20%7C%20250%20Edges-brightgreen)](backend/knowledge_base/graph_nodes.json)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-yellow?logo=python)](https://python.org)
 [![Next.js](https://img.shields.io/badge/Next.js-15%20(App%20Router)-black?logo=next.js)](https://nextjs.org)
 [![Three.js](https://img.shields.io/badge/3D%20WebGL-Three.js-cyan?logo=threedotjs)](https://threejs.org)
-[![Gemini Live](https://img.shields.io/badge/Gemini-Live%20API-brightgreen?logo=google)](https://aistudio.google.com)
-[![PipeWire](https://img.shields.io/badge/Audio-PipeWire%20Dedicated%20Sink-blue)](https://pipewire.org)
-[![MCP](https://img.shields.io/badge/Protocol-MCP%20JSON--RPC%202.0-purple)](#-mcp-ecosystem-model-context-protocol)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **J.A.R.V.I.S. (Codename: Cypher)** is an autonomous, lean, multimodal desktop AI Operating System specifically tailored for CachyOS and Arch Linux. It features bi-directional low-latency voice streaming via Gemini Live (WebSockets), dedicated PipeWire virtual audio sink routing, dynamic AI identity synchronization, full-featured relational calendar scheduling with conversational slot-filling, deterministic action-auditing with backend receipts, resilient WebSocket reconnection backoff, a hardware safety confirmation gate, consistent `VACUUM INTO` live SQLite backups, a hermetic Bubblewrap sandbox, and a 3D WebGL holographic HUD (Three.js & Next.js 15).
+> **J.A.R.V.I.S. (Codename: Cypher v2.1)** is an autonomous, lean, multimodal desktop AI Operating System and multi-agent collective tailored for CachyOS and Arch Linux. Built around a **Triumvirat Architecture** (Operator as Sovereign, AGY as Lead Ops, Friday as Cognitive Second Brain, and Gemini CLI as Fast-Path Executor), it features sub-millisecond Unix Domain Socket IPC (2,042 req/s tested on rotating HDDs), a 3-Tier Storage Hierarchy (L1 tmpfs ring buffer, L2 SQLite WAL with jitter backoff, L3 LanceDB batcher), a 6-Panel God-Mode TUI with hardware `[y/n]` safety confirmation, a 193-node 3D WebGL knowledge constellation (Three.js & Next.js 15), and a hermetic Bubblewrap security sandbox.
 
 ---
 

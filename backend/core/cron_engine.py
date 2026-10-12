@@ -179,11 +179,11 @@ class CronEngine:
         is_critical = False
 
         if job.action == "heartbeat_check":
-            result_text, is_critical = self._run_heartbeat_check()
+            result_text, is_critical = await asyncio.to_thread(self._run_heartbeat_check)
         elif job.action == "system_check":
-            result_text, is_critical = self._run_system_check()
+            result_text, is_critical = await asyncio.to_thread(self._run_system_check)
         elif job.action == "morning_briefing":
-            result_text, is_critical = self._run_morning_briefing()
+            result_text, is_critical = await asyncio.to_thread(self._run_morning_briefing)
         else:
             result_text = f"Benutzerdefinierte Aktion '{job.action}' ausgeführt."
 

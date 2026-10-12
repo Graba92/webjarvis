@@ -1,0 +1,37 @@
+{
+  "active_agents": [
+    "frontend",
+    "backend",
+    "reasoning_core"
+  ],
+  "agents": {
+    "frontend": {
+      "id": "frontend",
+      "name": "WebJarvis Frontend Engineer & UI/UX",
+      "file": "01_AGENT_WEBJARVIS_FRONTEND.md",
+      "description": "Wartung und Optimierung von Next.js, React, Tailwind HUD und WebSocket-Pipelines.",
+      "active": true
+    },
+    "backend": {
+      "id": "backend",
+      "name": "WebJarvis Backend Engineer & SysOps Guardian",
+      "file": "02_AGENT_WEBJARVIS_BACKEND.md",
+      "description": "FastAPI, Asyncio, Prozessüberwachung, Zero-Crash-Stabilität nach SPS-Prinzip.",
+      "active": true
+    },
+    "mcp_api": {
+      "id": "mcp_api",
+      "name": "WebJarvis MCP Architect & API Orchestrator",
+      "file": "03_AGENT_MCP_API_ORCHESTRATOR.md",
+      "description": "Model Context Protocol (MCP Tools/Resources), JSON-RPC 2.0 und API-Integration.",
+      "active": false
+    },
+    "reasoning_core": {
+      "id": "reasoning_core",
+      "name": "Jarvis Cognitive Logic & Reasoning Engine",
+      "file": "04_AGENT_LOGIC_REASONING_CORE.md",
+      "description": "First-Principles-Denken, Tree-of-Thought, Fehlerursachenanalyse und Anti-Halluzination.",
+      "active": true
+    }
+  }
+}

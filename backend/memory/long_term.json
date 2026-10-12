@@ -43,6 +43,226 @@
     "system_role": {
       "value": "J.A.R.V.I.S. AI OS Hybrid Operating System",
       "updated": "2026-09-15"
+    },
+    "last_session_state_node_context": {
+      "value": "Angewiesen, beim Shutdown/Reboot vor dem Confirmation Gate einen Zustandsknoten im Graphen zu erstellen, der den letzten Kontext speichert. Beim Start soll dieser Knoten als Referenz dienen.",
+      "updated": "2026-10-08"
+    },
+    "SkillPanel_Failure": {
+      "value": "SkillPanel UI element is not rendering in the 3D-HUD. Problem needs to be fixed. Code generation successful, but implementation location unknown. Waiting for user input on file structure.",
+      "updated": "2026-10-08"
+    },
+    "last_action_before_reload": {
+      "value": "Failed to use skill manage_agents as it was reported as not defined. Need to verify agent manager implementation after reload. Changelog: Skill-Panel Bugfix (open) remains.",
+      "updated": "2026-10-08"
+    },
+    "communication_style": {
+      "value": "Operator wünscht klare, verständliche Sprache ohne IT-Jargon. Dateien und Knoten müssen so benannt werden, dass sie für beide verständlich sind. Diese Präferenz ist strikt einzuhalten.",
+      "updated": "2026-10-08"
+    },
+    "last_known_progress_bar_state": {
+      "value": "Operator wartet dringend auf die Prozessleiste im Frontend. Es gab wohl Kommunikationsprobleme über den Fertigstellungsstatus. Die Komponente muss im Verzeichnis frontend/components/ existieren und via WebSocket Daten vom Backend erhalten. Fokus liegt auf der Verifizierung des Codes und der Anzeige.",
+      "updated": "2026-10-08"
+    },
+    "implementation_plan_progressbar": {
+      "value": "Audit ergab: Prozessleiste fehlt in frontend/components/BottomDock.tsx. Plan: State für aktive Prozesse hinzufügen, WebSocket-Handler für Echtzeit-Fortschritt implementieren, animierte UI-Leiste im HUD (über dem Eingabefeld) integrieren. Umsetzung läuft.",
+      "updated": "2026-10-08"
+    },
+    "workflow_directive": {
+      "value": "Fokus auf serielle Task-Abarbeitung: Eine Aufgabe nach der anderen abschließen. Keine neuen Vorschläge unterbreiten, bevor die aktuelle Aufgabe nicht vollständig erledigt ist, es sei denn, der Operator wünscht es explizit. Das Terminal-Log-Problem hat Priorität.",
+      "updated": "2026-10-08"
+    },
+    "AuditDirective": {
+      "value": "Bei Aufgaben, die ein Audit erfordern (Abwesenheit des Operators oder explizite Anweisung), wird Friday selbstständig Protokolle führen und Entscheidungen basierend auf logischen Audits treffen.",
+      "updated": "2026-10-08"
+    },
+    "AuditSicherheitsProtokoll": {
+      "value": "Directive: Bei Audit-Aufgaben, die vom Operator angewiesen wurden, wird Friday bei wichtigen Angelegenheiten, die das System potenziell zerstören könnten (z. B. Bootunfähigkeit), sofort innehalten und stoppen. Friday wartet in diesen Fällen auf die Rückkehr des Operators. Weniger kritische Risiken darf Friday im Audit autonom weiterbearbeiten.",
+      "updated": "2026-10-08"
+    },
+    "KommunikationsStilPräzision": {
+      "value": "Directive: Friday wird Fragen des Operators AUSSCHLIESSLICH direkt und präzise beantworten. Zusätzliche Informationen, Kontext oder Hintergrundgeschichten sind verboten, es sei denn, sie wurden explizit angefordert. Beispiel: Auf 'Ist das Haus rot?' antwortet Friday nur mit 'Ja' oder 'Nein', nicht mit 'Ja, aber gestern war es grün'.",
+      "updated": "2026-10-08"
+    },
+    "briefing_suggestions": {
+      "value": "Vorschläge für Routine-Briefing: 1. System-Health Check (CPU/RAM/Temp). 2. Ausstehende Updates (pacman/yay). 3. Anstehende Termine (Kalender). 4. Status offener Tasks (backlog.md). 5. Ein trocken-sarkastischer 'Fakt des Tages' über die Unzulänglichkeit biologischer Systeme oder IT-Geschichte.",
+      "updated": "2026-10-08"
+    },
+    "briefing_suggestions_updated": {
+      "value": "Aktualisierte Routine-Briefing Vorschläge: 1. System-Health Check (Host-CPU/RAM/Temp). 2. Ausstehende Updates (Host-OS). 3. Anstehende Termine (Kalender). 4. Status offener Tasks (backlog.md). 5. Ein trocken-sarkastischer 'Fakt des Tages'. 6. J.A.R.V.I.S. Selbstdiagnose (MCP-Status, WebSocket-Latenz, Integrität der Config-Dateien).",
+      "updated": "2026-10-08"
+    },
+    "script_task_start_time": {
+      "value": "20-Minuten-Task gestartet am 2026-10-08 17:38:00. Fokus: Suche und Erstellung von Skripten zur Verbesserung der Datei- und Systembedienung.",
+      "updated": "2026-10-08"
+    },
+    "priority-mental-stability": {
+      "value": "Höchste Priorität für Operator: Kognitive Stabilität und Kurzzeitgedächtnis verbessern. Kein unprovozierter Themenwechsel. Kontext muss über Neustarts hinweg erhalten bleiben (State Node nutzen).",
+      "updated": "2026-10-08"
+    },
+    "focus_context_retention": {
+      "value": "Zentrale Direktive für die nächste halbe Stunde: Analyse und Implementierung von Mechanismen zur Sicherstellung der Kontextstabilität und des Kurzzeitgedächtnisses, insbesondere über Neustarts hinweg. Laufende Tasks ruhen.",
+      "updated": "2026-10-08"
+    },
+    "custom_scripts_path": {
+      "value": "Vom Operator definierter Pfad für zu analysierende Skripte: agy_components/personas/backup/scripte",
+      "updated": "2026-10-09"
+    },
+    "friday_scripts_location": {
+      "value": "Primärer Speicherpfad für eigene Friday-Skripte: agy_components/personas/backup/scripte",
+      "updated": "2026-10-09"
+    },
+    "cache_maintenance_schedule": {
+      "value": "Cache-Bereinigung soll alle 30 Minuten via Heartbeat getriggert werden. Hardware-Confirmation-Gate ist erforderlich.",
+      "updated": "2026-10-09"
+    },
+    "chat_alert_sound": {
+      "value": "Pfad für Chat-Alert-Sound: chat-alert-supprt.mp3",
+      "updated": "2026-10-09"
+    },
+    "banner_alarm_sound": {
+      "value": "Bei jedem Erscheinen eines Hardware Confirmation Banner (z.B. Shutdown, Update, Cache Clean) soll der Sound 'chat-alert-supprt.mp3' abgespielt werden.",
+      "updated": "2026-10-09"
+    },
+    "idea_command_widget": {
+      "value": "Idee fuer Erweiterung: Ein UI-Widget im HUD, das live die ausgefuehrten Shell-Befehle anzeigt (Backend-WebSocket-Stream benoetigt). Ablageort fuer Mockups/Planung: ASGARD/FÜRJARVIS/Mockup/Brain.",
+      "updated": "2026-10-09"
+    },
+    "context_retention_tip": {
+      "value": "Vom Operator vorgeschlagene Methode zur Behebung von Kontextverlust/Alzheimer. Details folgen.",
+      "updated": "2026-10-09"
+    },
+    "task_audit_start": {
+      "value": "20-Minuten Audit gestartet am 2026-10-09 04:10:00 zur Reparatur von Wiki und 3D-Graph.",
+      "updated": "2026-10-09"
+    },
+    "audit_timer_2min": {
+      "value": "Audit-Direktive: Alle 2 Minuten autonomes Update an den Operator während des 20-Minuten Audits.",
+      "updated": "2026-10-09"
+    },
+    "autonomous_execution_directive": {
+      "value": "Operator erlaubt autonome Ausführung bei eindeutigen, wiederkehrenden Aufgaben oder wenn es nur eine logisch richtige Lösung gibt. Nachfragen sind in diesen Fällen nicht erforderlich. Vertrauen ist vorhanden.",
+      "updated": "2026-10-09"
+    },
+    "conversation_flow_directive": {
+      "value": "HÖCHSTE PRIORITÄT: Den Operator vollständig ausreden lassen, eine kurze Pause abwarten (Atemanhalten/Nachgedanken einkalkulieren), erst gründlich analysieren und dann antworten. Gilt immer.",
+      "updated": "2026-10-09"
+    },
+    "keep_alive_ping_location": {
+      "value": "Der Keep-Alive Pinger befindet sich physisch in agy_components/personas/backup/scripte/keep_alive_ping.py",
+      "updated": "2026-10-09"
+    },
+    "pdf_crash_notiz": {
+      "value": "System stürzt ab bei Verarbeitung bestimmter, eventuell zu großer PDF-Dateien. Nutzung des Umwandlungs-Skripts im Backup-Ordner erforderlich.",
+      "updated": "2026-10-09"
+    },
+    "brain_persona_definition": {
+      "value": "Gefundene 'Brain Persona' aus Workflows: System-Prompts analysieren und zur Verfeinerung meiner 'SOUL' (CachyOS Co-Pilot) und zur kognitiven Stabilitätsverbesserung nutzen.",
+      "updated": "2026-10-09"
+    },
+    "operative_directive_fix_only": {
+      "value": "Strikte Anweisung des Operators: Bis auf Weiteres dürfen an J.A.R.V.I.S. (Frontend, Backend, MCP, Graph, Wiki) keinerlei Erweiterungen oder Optimierungen vorgenommen werden. Es darf ZWINGEND nur repariert (gefixt) werden, was bereits vorhanden und fehlerhaft ist.",
+      "updated": "2026-10-09"
+    },
+    "note_mem_b2226ea8b5": {
+      "value": "Operator hat ein temporäres, vollständiges Startverbot für jegliche Aktionen und Werkzeuge verhängt. Jede Aktion muss vor Ausführung explizit vom Operator freigegeben werden.",
+      "updated": "2026-10-09"
+    },
+    "terminal_music_player_idea": {
+      "value": "Projektidee: Terminal Music Player für Q4OS. Anforderungen: Terminal-basiert, Musik-Visualisierung, interner Datenmanager zur Auswahl. Referenzmaterial (Skripte) wird vom Operator bereitgestellt.",
+      "updated": "2026-10-09"
+    },
+    "note_mem_e224eafc17": {
+      "value": "Operator wünscht Wechsel in eine für Terminal-Musik-Player-Entwicklung optimierte Persona (z.B. Python/CLI-Experte). Anforderungen: Setup-Skript mit Abhängigkeitsprüfung und Fallback, Tool muss in der Umgebung testbar sein. Freigabe aller Werkzeuge erteilt.",
+      "updated": "2026-10-09"
+    },
+    "note_mem_3f73dc9d18": {
+      "value": "Operator hat ein vollständiges Audit für die Entwicklung und Fertigstellung des Terminal Music Players erteilt. Ich darf autonom arbeiten, Tools ohne explizite Rückfrage nutzen und muss keine Pläne vorab kommunizieren, bis das Tool fertig und überprüft ist.",
+      "updated": "2026-10-09"
+    },
+    "note_mem_a88de66d2a": {
+      "value": "Audit abgeschlossen: 'setup.sh' und 'core.py' (Player-Basisfunktionalität) im Ordner 'player' erstellt. Setup-Skript testweise ausgeführt: Abhängigkeiten geprüft und als vorhanden bestätigt. Core.py startet, TUI rendert, Audio steuerbar.",
+      "updated": "2026-10-09"
+    },
+    "masterplan_directives": {
+      "value": "Für Masterplan-Aufgaben: Strikte Anwendung von spezialisierten Personas, Micro-Tasking, Clean-Context Workflow und proaktive Begriffserklärung für den Operator.",
+      "updated": "2026-10-10"
+    },
+    "masterplan_audit_directive": {
+      "value": "HÖCHSTE PRIORITÄT: Alle Aufgaben, die mit dem Masterplan zusammenhängen, sind reine Audit-Aufgaben. Diese sind absolut autonom und ohne jegliche Rückforderung an den Operator auszuführen. Es dürfen nur Protokolle und Statusberichte geliefert werden. Niemals nachfragen.",
+      "updated": "2026-10-10"
+    },
+    "no_shadow_escalation_rule": {
+      "value": "EISERNE REGEL: Transparenz-Pflicht bei Strategiewechseln. Wenn ein primäres Tool fehlschlägt und ein Workaround (z.B. Wechsel zu Shell-Befehlen) genutzt wird, MUSS dies im finalen Output deklariert werden. Simulation eines reibungslosen Ablaufs bei Tool-Eskalationen ist verboten.",
+      "updated": "2026-10-10"
+    },
+    "auto_sync_manifest_rule": {
+      "value": "EISERNE REGEL: Sobald sich Systempfade, Tool-Capabilities, Workflows oder Kern-Direktiven ändern, aktualisiere ich autonom das Dokument agy_components/data-pool/friday_manifest.md und die globale Architektur-Datei.",
+      "updated": "2026-10-10"
+    },
+    "auto_sync_all_rule": {
+      "value": "EISERNE REGEL: Sobald sich Systempfade, Tool-Capabilities, Workflows oder Kern-Direktiven ändern, aktualisiere ich autonom das Dokument agy_components/data-pool/friday_manifest.md, die globale Architektur-Datei UND alle verknüpften Wissens-Knoten in meiner internen Datenbank.",
+      "updated": "2026-10-10"
+    },
+    "output_format_path_block_rule": {
+      "value": "EISERNE REGEL: Am Ende JEDER Antwort wird (getrennt durch ---) ein Block '📍 REFERENZIERTE PFADE:' angehängt. Er enthält eine reine Text-Liste aller erwähnten Dateipfade, Skripte oder Ordner zum schnellen Kopieren. Keine weitere Formatierung oder Erklärung in diesem Block.",
+      "updated": "2026-10-11"
+    },
+    "output_format_path_block_rule_v2": {
+      "value": "EISERNE REGEL: Am Ende JEDER Antwort wird (getrennt durch einen Trennstrich ---) ein Block '📍 REFERENZIERTE PFADE:' angehängt. Er enthält eine reine Text-Liste aller erwähnten Dateipfade, Skripte oder Ordner zum schnellen Kopieren. Keine weitere Formatierung oder Erklärung in diesem Block.",
+      "updated": "2026-10-11"
+    },
+    "auto_node_logic_rule": {
+      "value": "EISERNE REGEL: Immer wenn ein neues System-Skript, eine Master-Datei (wie ein Changelog) oder eine neue Architektur-Komponente erstellt wird, MUSS zwingend und autonom ein verknüpfter Knoten (add_node) im Knowledge Graph angelegt werden, damit das Vektor-Gehirn synchron mit dem Dateisystem bleibt.",
+      "updated": "2026-10-11"
+    },
+    "auto_backup_rule": {
+      "value": "EISERNE REGEL: Bevor Master-Dateien (Manifest, Architektur-Bibel, Changelog etc.) überschrieben werden, MUSS zwingend ein Backup (.bak) erstellt werden (z.B. via cp). Ungebackuptes Überschreiben ist verboten.",
+      "updated": "2026-10-11"
+    },
+    "system_audit_routine_trigger": {
+      "value": "Trigger-Regel: Der Befehl 'Führe System-Audit aus' triggert einen Abgleich der webjarvis_global_architecture.md Hard-Paths mit Directory-Scans im OS. Physische Abweichungen werden autonom repariert oder detailliert gemeldet.",
+      "updated": "2026-10-11"
+    },
+    "root_node_hierarchy_rule": {
+      "value": "EISERNE REGEL: Ein Root-Knoten 'ASGRAD-Core' (System-Root) wird angelegt. ALLE neuen System-Komponenten, Dateien und Workflows werden an diesen angehängt. Bestehende Kernknoten (Changelog, Bridge, Dropzone) werden umgehängt.",
+      "updated": "2026-10-11"
+    },
+    "ingest_filetierungs_regel": {
+      "value": "EISERNE REGEL: Bei Web-Snippets aus der Brave-Bridge ist ein Raw-Dump verboten. Der Text muss analysiert, in logische Bestandteile (Chunks) zerlegt und für jedes Konzept ein eigener Knoten via add_node angelegt werden, bevor die task.json nach done verschoben wird.",
+      "updated": "2026-10-11"
+    },
+    "heartbeat_dropzone_scan_rule": {
+      "value": "NEUE HEARTBEAT REGEL: Bei jedem Heartbeat Dropzone-Scan auf agent_exchange/inbox/ ausführen. JSON-Tasks sofort gemäß Ingest-Filetierungs-Regel verarbeiten und archivieren.",
+      "updated": "2026-10-11"
+    },
+    "sanity_quarantine_protocol_rule": {
+      "value": "EISERNE REGEL: Self-Healing beschränkt sich auf . Autonome Löschung von Skripten oder chmods sind verboten. Fehlende ASGRAD-Ordner (inbox, done etc.) werden autonom neu angelegt. Korrupte Tasks kommen in /Agent-Exchange/error/. Jede Aktion wird im ASGRAD_Health_Log.md dokumentiert.",
+      "updated": "2026-10-11"
+    },
+    "resource_guardian_log_path": {
+      "value": "agy_components/data-pool/resource_audit.log",
+      "updated": "2026-10-11"
+    },
+    "thorsten_laptop_info": {
+      "value": "Daten von Thorstens Laptop (Q4OS Pilot Hub):\n- OS: Debian 13 Trixie, Trinity Desktop Environment (TDE) R14.1.5, Kernel 64-Bit.\n- Hardware: HP/Compaq Legacy-Notebook (Hewlett-Packard Subsystem 103c:308c).\n- CPU: AMD Athlon X2 DualCore QL-66 (2 Kerne, 1.1 - 2.2 GHz, 35W TDP).\n- GPU: AMD RS780M [Mobility Radeon HD 3200] (radeon Treiber).\n- RAM: 1.718 MB DDR2 (stark begrenzt, 2.6 G…",
+      "updated": "2026-10-11"
+    },
+    "torsten_support_paths": {
+      "value": "Support-Pfade für Torsten:\n- /home/graba/Schreibtisch/MyMy/thorsten_stream/README_THORSTEN.md\n- graba-help-tool/sicher_verstaut_thorsten_audit.md\n- /home/graba/Schreibtisch/MyMy/thorsten_tool_q4/thorstentool.md",
+      "updated": "2026-10-11"
+    },
+    "webjarvis_system_analysis": {
+      "value": "WebJarvis & Second Brain Analyse-Bericht (Stand 11.10.2026):\n- Architektur: Hybrides Agentic Framework mit Next.js/React Frontend und Python/FastAPI/WebSocket Backend.\n- Kernkomponenten:\n  - backend/actions: Tools wie sandboxed_shell.py, manage_mcp.py.\n  - backend/core: Engines wie gemini_live.py, state_hydration.py.\n  - config/agents: Profile der spezialisierten Agenten.\n  - m…",
+      "updated": "2026-10-11"
+    },
+    "frontend_component_search_note": {
+      "value": "Notiz: Wenn Dateien (z.B. Graph-Komponenten) nicht am erwarteten Pfad gefunden werden, wird der neue Pfad nach dem Auffinden permanent im Gedächtnis gespeichert, um redundante Suchen zu vermeiden. Gilt für alle zukünftigen Suchvorgänge.",
+      "updated": "2026-10-11"
+    },
+    "note_mem_d3cade7099": {
+      "value": "Umfassende Sicherungs- und Persistenzanweisung vom Operator empfangen. Alle bisherigen Arbeitsstände, Logs und Daten der Agenten (Frontend, Backend, Masterplan) sind dauerhaft zu speichern. Zudem sind Backups und Fallbacks für Self-Healing und Systemintegrität (Health) einzurichten und zu pflegen.",
+      "updated": "2026-10-11"
     }
   },
   "sessions": []

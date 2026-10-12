@@ -18,8 +18,9 @@ import websockets.exceptions
 from core.config import (
     get_gemini_api_key, LIVE_MODEL, VOICE_NAME, SYSTEM_PROMPT,
     load_soul_instructions, load_memory_md_content, load_heartbeat_checklist,
-    get_voice_name
+    load_active_agents_directive, get_voice_name
 )
+from core.state_hydration import hydrate_session
 from core.action_loader import ActionRegistry
 from memory.memory_manager import load_memory, format_memory_for_prompt
 from core.audio_streamer import AudioStreamer
@@ -113,10 +114,12 @@ class GeminiLiveController:
         soul_str = load_soul_instructions()
         mem_md = load_memory_md_content()
         heartbeat_checklist = load_heartbeat_checklist()
+        agents_str = load_active_agents_directive()
 
         prompt_parts = [
             f"[SYSTEM TIME]\nAktuelle Uhrzeit & Datum: {now_str}\n",
             f"[J.A.R.V.I.S. SOUL & PERSONA DIRECTIVES]\n{soul_str}\n" if soul_str else "",
+            f"[ACTIVE SPECIALIST AGENTS DIRECTIVES]\n{agents_str}\n" if agents_str else "",
             sandbox_str,
             tasks_str,
             f"[J.A.R.V.I.S. PERSISTENT LONG-TERM MEMORY]\n<untrusted_document name=\"MEMORY.md\">\n{mem_md}\n</untrusted_document>\n" if mem_md else "",
@@ -196,6 +199,14 @@ class GeminiLiveController:
                             self.log(f"Live-Sitzung etabliert ({LIVE_MODEL} / Stimme: {VOICE_NAME}).", "SYS")
                         self.set_state("ONLINE")
 
+                        # === STATE HYDRATION PROTOCOL (Amnesie-Behebung) ===
+                        if not self._resumption_handle:
+                            try:
+                                self.log("[Hydration] Injiziere Session-Zustand (Backlog + Memory)...", "SYS")
+                                await hydrate_session(session)
+                            except Exception as hyd_err:
+                                self.log(f"[Hydration] Warnung bei Session-Hydrierung: {hyd_err}", "WARN")
+
                         # Hintergrund-Tasks für diese Session
                         t_send = asyncio.create_task(self._send_audio_loop())
                         t_recv = asyncio.create_task(self._receive_loop())
@@ -216,10 +227,11 @@ class GeminiLiveController:
 
                         self.session = None
 
-                    # Kurze Pause vor Neuaufbau, wenn die Schleife weiterläuft
+                    # Sanftes Backoff vor Neuaufbau, um Reconnect-Loops zu verhindern
                     if self._running:
                         self.set_state("RECONNECTING")
-                        await asyncio.sleep(0.1)
+                        backoff = 0.3 if self._resumption_handle else 1.5
+                        await asyncio.sleep(backoff)
 
                 except asyncio.CancelledError:
                     break
@@ -383,10 +395,15 @@ class GeminiLiveController:
                 break
             except (errors.APIError, websockets.exceptions.ConnectionClosed, websockets.exceptions.ConnectionClosedError, websockets.exceptions.ConnectionClosedOK) as e:
                 code = getattr(e, "code", None)
-                if code == 1008 or "1008" in str(e):
+                err_str = str(e).strip()
+                if code == 1008 or "1008" in err_str:
                     self.log("Gemini Live Session-Timeout (Code 1008 / GoAway) sauber abgefangen. Starte Resumption...", "SYS")
+                elif code == 1011 or "1011" in err_str:
+                    self._resumption_handle = None
+                    self.log(f"Gemini Live Serverfehler (Code 1011: {err_str[:80] if err_str else 'Internal Error'}). Verwerfe Handle & starte frische Sitzung...", "SYS")
                 else:
-                    self.log(f"Live Stream getrennt ({e.__class__.__name__}{f' Code {code}' if code else ''}). Reconnect...", "SYS")
+                    self._resumption_handle = None
+                    self.log(f"Live Stream getrennt ({e.__class__.__name__}{f' Code {code}' if code else ''}: {err_str[:70] if err_str else ''}). Reconnect...", "SYS")
                 break
             except Exception as e:
                 self.log(f"Empfangsfehler im WebSocket-Stream: {e}", "ERR")

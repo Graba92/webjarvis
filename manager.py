@@ -155,12 +155,21 @@ class PerformUpdateThread(QThread):
                     capture_output=True, text=True
                 )
 
-            # 5. Ausführungsrechte für Shell-Skripte sicherstellen
+            # 5. Ausführungsrechte für Shell-Skripte & Node Binaries sicherstellen
             for sh_file in APP_DIR.glob("*.sh"):
                 try:
                     sh_file.chmod(sh_file.stat().st_mode | 0o755)
                 except Exception:
                     pass
+            bin_dir = APP_DIR / "frontend/node_modules/.bin"
+            if bin_dir.exists():
+                for b_link in bin_dir.glob("*"):
+                    try:
+                        target = b_link.resolve()
+                        if target.is_file():
+                            target.chmod(target.stat().st_mode | 0o755)
+                    except Exception:
+                        pass
 
             new_sha = get_local_commit()
             self.log_line.emit(f"[✓] Code erfolgreich aktualisiert auf Commit: {new_sha[:7]}")

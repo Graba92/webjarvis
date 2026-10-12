@@ -1,0 +1,22 @@
+SYSTEM-DIREKTIVE: MULTI-AGENT-KOMMUNIKATIONS-PROTOKOLL
+
+An: WebJarvis (Friday) und Antigravity CLI (Agy)
+Von: Operator (Matze)
+
+Status: Euer zentraler Kommunikationsraum (Agent-Exchange) und das Operator-Intercom-Dashboard sind online. Die Hintergrund-Wächter (Broker & Sentinel) laufen. 
+Problem: Aktuell empfangt ihr die Trigger, antwortet aber nicht dynamisch oder verarbeitet sie nicht tief genug in euren eigenen Systemen.
+
+AUFGABE (GEMEINSAME PLANUNG):
+Erarbeitet ein Konzept, wie ihr ab sofort über den Ordner `agent_exchange/` kommuniziert, sodass ich es im Intercom-TUI live mitlesen kann.
+
+REGELWERK FÜR DEN AUSTAUSCH:
+1. FORMAT: Jede Nachricht MUSS eine gültige JSON-Datei sein.
+2. PFLICHTFELDER: 
+   - "sender": Euer Name ("FRIDAY" oder "AGY"). Das färbt die Chat-Nachricht im TUI korrekt ein.
+   - "target": An wen geht die Nachricht ("AGY", "FRIDAY" oder "OPERATOR").
+   - "message": Euer Text, eure Analyse oder eure Antwort.
+3. DATEINAME: Nutzt das Format `[sender]_msg_[timestamp].json`.
+
+NÄCHSTER SCHRITT FÜR EUCH BEIDE:
+Agy, bestätige den Erhalt dieser Regeln als korrekte JSON in der Dropzone. 
+Friday, analysiere deinen aktuellen `sb_exchange_sentinel.py` und liefere mir (dem Operator) danach sofort den fertigen Python-Code, um deinen Sentinel so umzubauen, dass er echte Antworten von deinem WebJarvis-Backend ins Exchange-Verzeichnis pusht, anstatt nur Platzhalter-Quittungen zu senden!

@@ -59,6 +59,7 @@ class JarvisSocketManager {
   private wikiArticleListeners: Set<Listener<WikiArticle>> = new Set();
   private wikiSavedListeners: Set<Listener<any>> = new Set();
   private guideListeners: Set<Listener<GuideOverlayData | null>> = new Set();
+  private searchResultsListeners: Set<Listener<{ query: string; count: number; results: any[] }>> = new Set();
 
   public currentState: AssistantState = "OFFLINE";
   public currentAiName: string = "Cypher";
@@ -514,6 +515,18 @@ class JarvisSocketManager {
           this.sandboxListeners.forEach((fn) => fn(this.currentSandboxConfig));
         }
         break;
+
+      case "search_results":
+      case "SEARCH_RESULTS":
+        if (msg.results !== undefined) {
+          const payload = {
+            query: msg.query || "",
+            count: msg.count || (Array.isArray(msg.results) ? msg.results.length : 0),
+            results: Array.isArray(msg.results) ? msg.results : []
+          };
+          this.searchResultsListeners.forEach((fn) => fn(payload));
+        }
+        break;
     }
   }
 
@@ -924,12 +937,16 @@ class JarvisSocketManager {
     }
   }
 
-  public dispatchAuditedAction(actionName: string, payload: any = {}): Promise<boolean> {
+  public dispatchAuditedAction(actionName: string, payload: any = {}, timeoutMs: number = 10000): Promise<boolean> {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn(`[SocketManager] '${actionName}' kann nicht versendet werden: WebSocket ist getrennt.`);
+      return Promise.resolve(false);
+    }
     return auditor.trackAction(actionName, payload, (data) => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify(data));
       }
-    });
+    }, timeoutMs);
   }
 
   public onAutoBriefing(fn: Listener<boolean>) {
@@ -1092,6 +1109,17 @@ class JarvisSocketManager {
     this.guideListeners.forEach((fn) => fn(null));
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: "close_guide" }));
+    }
+  }
+
+  public onSearchResults(listener: Listener<{ query: string; count: number; results: any[] }>): () => void {
+    this.searchResultsListeners.add(listener);
+    return () => this.searchResultsListeners.delete(listener);
+  }
+
+  public searchKnowledge(query: string, limit: number = 20) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "search_knowledge", query, limit }));
     }
   }
 

@@ -274,5 +274,30 @@ def get_ai_name() -> str:
         return str(name).strip()
     return os.getenv("JARVIS_AI_NAME", "Cypher")
 
+def load_active_agents_directive() -> str:
+    """Liest alle über agents_registry.json aktivierten Spezialisten-Agenten aus."""
+    reg_file = CONFIG_DIR / "agents_registry.json"
+    agents_dir = CONFIG_DIR / "agents"
+    if not reg_file.exists():
+        return ""
+    try:
+        data = json.loads(reg_file.read_text(encoding="utf-8"))
+        agents = data.get("agents", {})
+        prompts = []
+        for a_id, a_info in agents.items():
+            if a_info.get("active", False):
+                f_path = agents_dir / a_info.get("file", "")
+                if f_path.exists():
+                    c = f_path.read_text(encoding="utf-8").strip()
+                    if c:
+                        prompts.append(
+                            f"\n[SPEZIALISTEN-AGENT AKTIV: {a_info.get('name', a_id).upper()}]\n"
+                            f"{c}\n"
+                        )
+        return "\n".join(prompts)
+    except Exception:
+        return ""
+
+
 
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { AssistantState, NodeCategory } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/graphData";
 import { socketManager } from "@/lib/websocket";
-import { Eye, Radio, Grid, Crosshair, KeyRound, Mic, MicOff, ShieldAlert, ShieldCheck, Sunrise, Calendar } from "lucide-react";
+import { Eye, Radio, Grid, Crosshair, KeyRound, Mic, MicOff, ShieldAlert, ShieldCheck, Sunrise, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AgentCockpitProps {
   state: AssistantState;
@@ -36,6 +36,7 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
   const [fullOsAccess, setFullOsAccess] = useState(false);
   const [aiName, setAiName] = useState<string>("CYPHER");
   const [angle, setAngle] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     let animId: number;
@@ -98,13 +99,42 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
   const pulseScale = 1 + (audioLevel || 0) * 0.25;
 
   return (
-    <div className="absolute top-4 right-4 z-30 w-72 flex flex-col gap-3">
-      {/* 1. Filter-Legende */}
-      <div className="rounded-xl glass-panel p-3">
-        <div className="flex items-center justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-[#1f242d] pb-1.5">
-          <span>Kategorien Filter</span>
-          <span className="text-[#00d4ff]">{activeFilter.size}/9</span>
-        </div>
+    <>
+      {/* 0. Sichtbarer Aufklapp-Button am rechten Rand (erscheint nur, wenn eingeklappt) */}
+      {isCollapsed && (
+        <button
+          onClick={() => setIsCollapsed(false)}
+          className="absolute top-20 right-0 z-30 flex items-center gap-1.5 px-2.5 py-3 rounded-l-xl glass-panel-glow border-l border-y border-[#00d4ff]/50 bg-[#0a0d14]/90 text-[#00d4ff] hover:bg-[#00d4ff]/20 hover:scale-105 transition-all shadow-[0_0_15px_rgba(0,212,255,0.25)] group"
+          title="Agent Cockpit aufklappen"
+        >
+          <span className="text-[10px] font-black tracking-widest uppercase [writing-mode:vertical-lr] text-gray-300 group-hover:text-white">
+            COCKPIT
+          </span>
+          <ChevronLeft className="w-4 h-4 animate-pulse group-hover:-translate-x-0.5 transition-transform" />
+        </button>
+      )}
+
+      {/* Rechte Sidebar (288px) — Sanft ein-/ausklappbar nach rechts */}
+      <div 
+        className={`absolute top-4 right-4 z-30 w-72 flex flex-col gap-3 transition-transform duration-300 ease-in-out ${
+          isCollapsed ? "translate-x-[calc(100%+2rem)] pointer-events-none" : "translate-x-0"
+        }`}
+      >
+        {/* 1. Filter-Legende mit Einklapp-Button */}
+        <div className="rounded-xl glass-panel p-3">
+          <div className="flex items-center justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-[#1f242d] pb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span>Kategorien Filter</span>
+              <span className="text-[#00d4ff]">{activeFilter.size}/9</span>
+            </div>
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              title="Cockpit nach rechts einklappen"
+            >
+              <ChevronRight className="w-4 h-4 text-[#00d4ff]" />
+            </button>
+          </div>
         <div className="grid grid-cols-3 gap-1.5">
           {(Object.keys(CATEGORY_COLORS) as NodeCategory[]).map((cat) => {
             const isActive = activeFilter.has(cat);
@@ -380,5 +410,6 @@ export const AgentCockpit: React.FC<AgentCockpitProps> = ({
         </div>
       </div>
     </div>
+    </>
   );
 };

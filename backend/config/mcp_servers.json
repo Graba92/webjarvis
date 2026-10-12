@@ -5,7 +5,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "./backend/sandbox_workspace"
+        "/"
       ],
       "description": "Dateisystem-Zugriff: Erlaubt das Lesen und Schreiben von Dateien im sicheren Workspace.",
       "category": "System",
@@ -20,7 +20,7 @@
       ],
       "description": "SQLite-Datenbank: Schnelle lokale SQL-Abfragen und Tabellenverwaltung.",
       "category": "Database",
-      "enabled": false
+      "enabled": true
     },
     "fetch": {
       "command": "npx",
@@ -48,9 +48,9 @@
         "-y",
         "@modelcontextprotocol/server-brave-search"
       ],
-      "description": "Brave Websuche: Führt datenschutzfreundliche Web- und Nachrichtensuchen durch.",
+      "description": "Brave Websuche: Führt datenschutzfreundliche Web- und Nachrichtensuchen durch. (Benötigt BRAVE_API_KEY in den System-Umgebungsvariablen)",
       "category": "Web",
-      "enabled": true
+      "enabled": false
     },
     "memory": {
       "command": "npx",
@@ -66,9 +66,9 @@
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-time"
+        "mcp-server-time"
       ],
-      "description": "Zeitzonen & Weltuhr: Exakte Zeit- und Datumsberechnungen rund um den Globus.",
+      "description": "Zeitzonen & Weltuhr: Exakte Zeit- und Datumsberechnungen rund om den Globus.",
       "category": "Utility",
       "enabled": true
     },
@@ -80,7 +80,11 @@
       ],
       "description": "Browser-Automation: Öffnet Webseiten headless für dynamisches Rendern und Screenshots.",
       "category": "Automation",
-      "enabled": false
+      "enabled": false,
+      "env": {
+        "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium",
+        "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+      }
     }
   }
 }

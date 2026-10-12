@@ -112,7 +112,7 @@ WebJarvis ist kein einfaches Web-Chatbot-Interface, sondern ein **lokales, auton
 ## 3. DETAILLIERTE VERZEICHNIS- & MODULSTRUKTUR
 
 ```bash
-/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/
+
 ├── backend/
 │   ├── actions/                       # KI-Tools & Aktionsmodule (Auto-Discovery)
 │   │   ├── calendar_manager.py        # SQLite Termin- & Kalender-Matrix mit Wiederholungen
@@ -177,7 +177,7 @@ WebJarvis ist kein einfaches Web-Chatbot-Interface, sondern ein **lokales, auton
 ## 4. FRONTEND-ARCHITEKTUR (NEXT.JS 15 & THREE.JS WEBGL)
 
 ### 4.1 Holografischer Szenengraph & Settle-on-Equilibrium Physik
-In [`frontend/components/ApexWorld.tsx`](file:///home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/frontend/components/ApexWorld.tsx) wird das dreidimensionale Hologramm berechnet.
+In [`frontend/components/ApexWorld.tsx`](frontend/components/ApexWorld.tsx) wird das dreidimensionale Hologramm berechnet.
 - **Entkoppelter Lifecycle:** Der WebGL-Renderer und die Animationsschleife (`requestAnimationFrame`) laufen isoliert von React-Rerendern in stabilen `useRef`-Strukturen.
 - **Settle-on-Equilibrium Algorithmus:** Anstatt rechenintensive Force-Directed Physik jedes Frame auf der CPU zu berechnen ($O(N^2)$ Flaschenhals), führt WebJarvis beim Laden des Graphen eine **90-Schritt-Relaxation** mit geometrischer Abkühlung (`cooling = 0.965`) und kollisionsgeschütztem Mindestabstand durch:
   1. *Coulomb-Repulsion mit Kollisionsschutz:* Knoten stoßen sich ab ($dist < 210$), wobei Mindestabstände (75 für Hubs, 52 für Standardknoten) Text- und Label-Überlappungen in dichten Clustern verhindern.
@@ -207,13 +207,13 @@ Jeder Knoten wird durch einen spezialisierten GLSL-Shader gerendert:
 ## 5. BACKEND-ARCHITEKTUR & SERVER-CORE
 
 ### 5.1 Asyncio WebSocket RPC-Router & Event-Loop
-[`backend/server.py`](file:///home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/server.py) bildet den zentralen Kommunikationsknotenpunkt auf Port 8765:
+[`backend/server.py`](backend/server.py) bildet den zentralen Kommunikationsknotenpunkt auf Port 8765:
 - Vollständig asynchrone Bearbeitung über `websockets.serve`.
 - Thread-Pool Entlastung via `asyncio.to_thread` für synchrone Datei- und Backup-Operationen.
 - Zustandsübertragung in Echtzeit an alle verbundenen Web-Clients via `broadcast()`.
 
 ### 5.2 Gemini Multimodal Live API Voice-Engine
-[`backend/core/gemini_live.py`](file:///home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/core/gemini_live.py) implementiert das Google GenAI SDK (Multimodal Live Bidi-Streaming):
+[`backend/core/gemini_live.py`](backend/core/gemini_live.py) implementiert das Google GenAI SDK (Multimodal Live Bidi-Streaming):
 - **Duplex Audio:** Kontinuierlicher 16-kHz PCM Audio-Upstream vom Mikrofon; 24-kHz PCM Audio-Downstream direkt an PipeWire.
 - **Session-Resumption:** Automatischer Fang von WebSocket Close-Codes (z.B. Code `1008` / GoAway-Timeout) mit transparenter Sitzungswiederaufnahme ohne Systemneustart.
 - **Voice Commands:** Autonome Spracherkennung für Befehle wie *„Jarvis neustart“* (Tool-Reload), *„Jarvis stop“* (Audio-Unterbrechung) und *„Jarvis stumm“* (Paranoia-Mute).
@@ -228,14 +228,14 @@ Gemini Live reagiert empfindlich auf ungültige OpenAPI-Datentypen in Tool-Defin
 ## 6. DATA-LAYER & SINGLE-WRITER ENGINES
 
 ### 6.1 Task Backlog Engine (`backlog.md` Single-Writer)
-[`backend/core/task_manager.py`](file:///home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/core/task_manager.py) verwaltet Aufgaben nach dem SPS-Prinzip:
+[`backend/core/task_manager.py`](backend/core/task_manager.py) verwaltet Aufgaben nach dem SPS-Prinzip:
 - **Speicherort:** `backend/backlog.md` als reines, lesbares Markdown.
 - **Thread-Sicherheit:** Mutationen werden durch `threading.RLock()` serialisiert.
 - **Atomarität:** Speichern erfolgt immer in `backlog.md.tmp` gefolgt von `os.replace`.
 - **Anti-Echo Wächter:** Ein periodischer Wächter prüft den SHA-256 Hash der Datei. Externe Änderungen (z.B. Bearbeiten in Neovim) werden sofort erfasst und ins Frontend gepusht; interne Schreibzugriffe erzeugen keine Echo-Loops.
 
 ### 6.2 Karpathy Knowledge Vault & [[Wiki-Links]]
-[`backend/actions/wiki_manager.py`](file:///home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/actions/wiki_manager.py) implementiert das adaptierte Karpathy-Wissensmuster:
+[`backend/actions/wiki_manager.py`](backend/actions/wiki_manager.py) implementiert das adaptierte Karpathy-Wissensmuster:
 - **Isolierter Wiki-Ordner:** `backend/knowledge_base/wiki/*.md`.
 - **Immutability-Garantie:** Rohe Benutzereingaben in `backend/knowledge_base/raw/` werden niemals überschrieben.
 - **Zero-Data-Loss Konflikt-Erkennung:** Stellt die KI einen inhaltlichen Widerspruch fest, überschreibt sie keine Daten, sondern injiziert einen standardisierten Warnblock:
@@ -256,13 +256,13 @@ Gemini Live reagiert empfindlich auf ungültige OpenAPI-Datentypen in Tool-Defin
 ## 7. SICHERHEITS- & SANDBOX-ARCHITEKTUR
 
 ### 7.1 Bubblewrap (`bwrap`) OS-Isolation & Hierarchie-Guards
-[`backend/core/sandbox.py`](file:///home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/core/sandbox.py) kapselt Shell- und Dateibefehle:
+[`backend/core/sandbox.py`](backend/core/sandbox.py) kapselt Shell- und Dateibefehle:
 - **Sandbox-Root:** `~/.local/share/webjarvis/backend/sandbox_workspace` (oder explizit freigegebene Verzeichnisse).
 - **Prozessisolation:** Aufruf mit `--die-with-parent`, `--new-session`, `--unshare-all`, `--ro-bind /usr /usr`.
 - **Path-Traversal Schutz:** Pfade mit `../` oder auflösbare Symlinks außerhalb der Whitelist werden hart blockiert (`PermissionError: Zugriffsverweigerung`).
 
 ### 7.2 Hardware Confirmation Gate (Human-in-the-Loop)
-Destruktive Systemoperationen (Dateilöschungen, Paketinstallationen, System-Neustarts) werden vor der Ausführung in einer Pending-Queue angehalten. Das Frontend blendet ein priorisiertes Bestätigungsbanner ([`ConfirmBanner.tsx`](file:///home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/frontend/components/ConfirmBanner.tsx)) ein. Die Aktion wird erst nach manuellem Klick des Benutzers freigegeben.
+Destruktive Systemoperationen (Dateilöschungen, Paketinstallationen, System-Neustarts) werden vor der Ausführung in einer Pending-Queue angehalten. Das Frontend blendet ein priorisiertes Bestätigungsbanner ([`ConfirmBanner.tsx`](frontend/components/ConfirmBanner.tsx)) ein. Die Aktion wird erst nach manuellem Klick des Benutzers freigegeben.
 
 ### 7.3 Dynamische AI System-Prompt Synchronisation
 Gemini wird in Echtzeit über seine Sicherheitsbeschränkungen informiert:
