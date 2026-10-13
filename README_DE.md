@@ -12,16 +12,15 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-Graba92%2Fwebjarvis-blue?logo=github)](https://github.com/Graba92/webjarvis)
 [![OS](https://img.shields.io/badge/OS-CachyOS%20%7C%20Arch%20Linux%20%7C%20Generic-blue?logo=archlinux)](https://cachyos.org)
-[![UDS IPC](https://img.shields.io/badge/UDS%20IPC-2.042%20Req%2Fs%20(Zero--Lock)-success)](backend/ipc/uds_ipc_engine.py)
-[![Storage Matrix](https://img.shields.io/badge/Speicher-L1%20tmpfs%20%7C%20L2%20WAL%20%7C%20L3%20LanceDB-orange)](#-3-tier-speicher-hierarchie-hdd-gehärtet)
-[![Safety Gate](https://img.shields.io/badge/Gate-Hardware%20Bestätigung%20%5By%2Fn%5D-red)](#-god-mode-tui-cockpit--hardware-bestätigungs-gate)
-[![Knowledge Graph](https://img.shields.io/badge/Wissensgraph-193%20Knoten%20%7C%20250%20Kanten-brightgreen)](backend/knowledge_base/graph_nodes.json)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-yellow?logo=python)](https://python.org)
 [![Next.js](https://img.shields.io/badge/Next.js-15%20(App%20Router)-black?logo=next.js)](https://nextjs.org)
 [![Three.js](https://img.shields.io/badge/3D%20WebGL-Three.js-cyan?logo=threedotjs)](https://threejs.org)
-[![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-green.svg)](LICENSE)
+[![Gemini Live](https://img.shields.io/badge/Gemini-Live%20API-brightgreen?logo=google)](https://aistudio.google.com)
+[![PipeWire](https://img.shields.io/badge/Audio-PipeWire%20Dedicated%20Sink-blue)](https://pipewire.org)
+[![MCP](https://img.shields.io/badge/Protocol-MCP%20JSON--RPC%202.0-purple)](#-mcp-ökosystem-model-context-protocol)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **J.A.R.V.I.S. (Codename: Cypher v2.1)** ist ein autonomes, modulares und multimodales Desktop-KI-Betriebssystem und Multi-Agenten-Kollektiv für CachyOS und Arch Linux. Aufgebaut auf einer kompromisslosen **Triumvirat-Architektur** (Operator als menschlicher Souverän mit alleinigem Zone-RED-Monopol, AGY als operative Systemleitung, Friday als kognitives Second Brain und Gemini CLI als taktischer Routine-Executor), bietet es Sub-Millisekunden UDS-IPC (2.042 Req/s unter realer mechanischer HDD-Last verifiziert), eine 3-Tier Speicher-Hierarchie (L1 tmpfs Ringpuffer, L2 SQLite WAL mit Decorrelated Jitter Backoff, L3 LanceDB Batcher), ein 6-Panel God-Mode TUI Cockpit mit Hardware `[y/n]` Bestätigungs-Gate, ein 193-Knoten 3D-WebGL-Wissensuniversum (Three.js & Next.js 15) sowie eine hermetische Bubblewrap-Sandbox.
+> **J.A.R.V.I.S. (Codename: Cypher)** ist ein autonomes, modulares und multimodales Desktop-KI-Betriebssystem für CachyOS und Arch Linux. Es kombiniert bidirektionales Audio-Streaming mit extrem niedriger Latenz via Gemini Live (WebSockets), dediziertes PipeWire-Audio-Routing, dynamische KI-Identitätsverwaltung, eine relationale Kalender-Engine mit Konversations-Slot-Filling, deterministisches Action-Auditing mit Backend-Empfangsbestätigungen, resilienten WebSocket-Reconnection-Backoff, ein physisches Hardware-Bestätigungs-Gate, konsistente `VACUUM INTO` Live-SQLite-Backups, eine hermetische Bubblewrap-Sandbox und ein futuristisches 3D-WebGL-Hologramm-HUD (Three.js & Next.js 15).
 
 ---
 

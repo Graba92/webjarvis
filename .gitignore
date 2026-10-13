@@ -91,22 +91,3 @@ lerna-debug.log*
 .DS_Store
 Thumbs.db
 .directory
-
-# ── Multi-Agent & Agy-Components Sanitization (Zero-Leak) ────────────────────
-MASTER_INDEX.db
-*.db
-*.db-wal
-*.db-shm
-ASGRAD_Health_Log.md
-!ASGRAD_Health_Log.md.example
-*.xbel*
-struktur_report.txt
-agent_exchange/dropzone/*.json
-agent_exchange/*.json
-!agent_exchange/dropzone/inbox/.gitkeep
-!agent_exchange/dropzone/done/.gitkeep
-!agent_exchange/dropzone/error/.gitkeep
-!agent_exchange/dropzone/payloads/.gitkeep
-agent_exchange/logs/*.log
-agent_exchange/*.log
-!agent_exchange/logs/.gitkeep

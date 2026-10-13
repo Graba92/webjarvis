@@ -96,8 +96,6 @@ export interface MCPServerConfig {
   category?: string;
   enabled: boolean;
   env?: Record<string, string>;
-  error?: string;
-  warning?: string;
 }
 
 export type MCPServerMap = Record<string, MCPServerConfig>;

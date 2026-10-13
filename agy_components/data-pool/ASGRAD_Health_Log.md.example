@@ -1,8 +1,0 @@
-# ASGRAD Health Log (Template / Example)
-
-Dieses Logbuch verzeichnet automatische Reparaturen, Sandbox-Events und Quarantäne-Zustände.
-Wird bei Erstausführung automatisch vom System generiert.
-
-## Init
-- Status: Initialisiert
-- Engine: SPS / Zero-Data-Loss Wächter

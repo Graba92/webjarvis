@@ -234,15 +234,15 @@ export const SkillsModal: React.FC<SkillsModalProps> = ({ isOpen, onClose }) => 
                         )}
                         <span
                           className={`flex items-center gap-1 text-[10px] font-bold ${
-                            isEnabled ? "text-[#00ff88]" : server.error ? "text-red-400" : "text-gray-500"
+                            isEnabled ? "text-[#00ff88]" : "text-gray-500"
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              isEnabled ? "bg-[#00ff88] animate-pulse" : server.error ? "bg-red-500" : server.warning ? "bg-yellow-400" : "bg-gray-600"
+                              isEnabled ? "bg-[#00ff88] animate-pulse" : "bg-gray-600"
                             }`}
                           />
-                          {isEnabled ? "AKTIV" : server.error ? "FEHLER" : server.warning ? "WARNUNG" : "INAKTIV"}
+                          {isEnabled ? "AKTIV" : "INAKTIV"}
                         </span>
                       </div>
                       <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">

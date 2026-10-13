@@ -5,7 +5,6 @@ Verbindet das Python Gemini Live Backend direkt mit dem Next.js 15 / Three.js Fr
 
 from __future__ import annotations
 import asyncio
-import os
 import json
 import base64
 import sys
@@ -33,7 +32,6 @@ class TelemetryThrottler:
 
 # Sicherstellen, dass das backend-Verzeichnis im sys.path liegt
 BACKEND_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BACKEND_DIR.parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
@@ -41,7 +39,7 @@ import websockets
 from core.config import (
     WS_HOST, WS_PORT, AUDIO_SAMPLE_RATE_INPUT, AUDIO_SAMPLE_RATE_OUTPUT,
     USER_NAME, save_gemini_api_key, is_api_key_configured, get_masked_api_key, get_gemini_api_key,
-    get_personality_dict, format_soul_md, get_ai_name, get_voice_name, save_voice_name, load_soul_instructions
+    get_personality_dict, format_soul_md, get_ai_name, get_voice_name, save_voice_name
 )
 from core.sandbox import (
     get_allowed_paths, is_full_os_access, set_full_os_access,
@@ -56,195 +54,12 @@ import subprocess
 import shutil
 from actions.system_monitor import get_system_telemetry
 from memory.memory_manager import all_entries_for_ui
-from core.state_hydration import hydrate_session
 from actions.graph_manager import (
     get_full_graph_data, find_node_by_id, add_node_internal, delete_node_internal
 )
 from actions.open_app import open_app
 from actions.calendar_manager import get_events_list, add_event_entry, delete_event_entry
 from core.task_manager import get_task_manager
-try:
-    from fastapi import FastAPI
-    from pydantic import BaseModel
-    FASTAPI_AVAILABLE = True
-except ImportError:
-    FASTAPI_AVAILABLE = False
-    FastAPI = None
-    BaseModel = object
-from google import genai
-from google.genai import types
-
-if FASTAPI_AVAILABLE:
-    app = FastAPI(title="WebJarvis Backend API", version="1.0.0")
-
-    class ChatRequest(BaseModel):
-        message: str
-        agent: str = "friday"
-
-    @app.post("/api/chat")
-    async def chat_endpoint(request: ChatRequest):
-        try:
-            api_key = get_gemini_api_key()
-            if not api_key:
-                return {"response": f"Fallback (Kein API-Key konfiguriert): {request.message}"}
-            
-            client = genai.Client(api_key=api_key)
-            soul = load_soul_instructions()
-            system_instruction = soul if soul else "Du bist Friday, der autonome KI-Copilot von Matze."
-
-            # Real-time RAG Grounding aus MASTER_INDEX.db
-            db_context = ""
-            try:
-                from memory.master_index_init import resolve_db_path, init_db
-                import sqlite3
-                db_file = resolve_db_path()
-                if not db_file.exists() or db_file.stat().st_size == 0:
-                    init_db(db_file)
-                with sqlite3.connect(str(db_file), timeout=3.0) as conn:
-                    cur = conn.cursor()
-                    cur.execute("SELECT count(*) FROM knowledge_units")
-                    total_units = cur.fetchone()[0]
-                    
-                    # Suche nach signifikanten Wörtern aus der Anfrage
-                    stopwords = {"und", "der", "die", "das", "ein", "eine", "den", "dem", "des", "fuer", "für", "mit", "von", "aus", "auf", "in", "im", "ist", "sind", "bitte", "nenne", "zeige", "suche", "treffer", "friday", "nach", "gibt"}
-                    query_words = [w.strip("?,.:!\"'()[]") for w in request.message.split() if len(w.strip("?,.:!\"'()[]")) >= 3]
-                    # Bereinigung: Nur alphanumerische Begriffe
-                    relevant_words = [w.replace(".", "").replace("-", "").strip() for w in query_words if w.lower() not in stopwords and len(w.strip()) >= 3]
-                    # Wenn gezielte Suchbegriffe wie Cypher vorkommen, priorisieren wir sie nach vorne
-                    relevant_words.sort(key=lambda x: 0 if "cypher" in x.lower() else 1)
-                    matched_items = []
-                    for w in relevant_words[:12]:
-                        if not w:
-                            continue
-                        try:
-                            cur.execute("SELECT filename, path, content_preview FROM knowledge_units_fts WHERE knowledge_units_fts MATCH ? LIMIT 5", (f"{w}*",))
-                            for r in cur.fetchall():
-                                if r not in matched_items:
-                                    matched_items.append(r)
-                        except Exception:
-                            cur.execute("SELECT filename, path, content_preview FROM knowledge_units WHERE filename LIKE ? OR content_preview LIKE ? LIMIT 5", (f"%{w}%", f"%{w}%"))
-                            for r in cur.fetchall():
-                                if r not in matched_items:
-                                    matched_items.append(r)
-                    
-                    if matched_items:
-                        db_context = f"\n\n[VERIFIZIERTER LIVE-ZUSTAND AUS MASTER_INDEX.db (Gesamt: {total_units} Wissenseinheiten)]:\n"
-                        for item in matched_items[:12]:
-                            db_context += f"- {item[0]} (Pfad: {item[1]}):\n  Vorschau: {item[2][:160]}...\n"
-                    else:
-                        db_context = f"\n\n[STATUS MASTER_INDEX.db]: Datenbank online und intakt mit exakt {total_units} Wissenseinheiten.\n"
-            except Exception as db_err:
-                db_context = f"\n\n[STATUS MASTER_INDEX.db Hinweis]: {db_err}\n"
-
-            full_instructions = f"{system_instruction}\n{db_context}"
-            
-            # Verwende direkt verifiziertes gemini-3.5-flash
-            models_to_try = [
-                os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"),
-                "gemini-3.5-flash-lite",
-                "gemini-3.8-flash"
-            ]
-            response_text = ""
-            last_err = None
-            for m in models_to_try:
-                try:
-                    res = await asyncio.to_thread(
-                        client.models.generate_content,
-                        model=m,
-                        contents=request.message,
-                        config=types.GenerateContentConfig(system_instruction=full_instructions)
-                    )
-                    if res and res.text:
-                        response_text = res.text.strip()
-                        break
-                except Exception as model_err:
-                    last_err = model_err
-                    continue
-
-            if not response_text:
-                if last_err:
-                    return {"response": f"SYSTEM-ERROR: WebJarvis LLM Fehler: {last_err}"}
-                response_text = "Keine Antwort generiert."
-            return {"response": response_text}
-        except Exception as e:
-            return {"response": f"SYSTEM-ERROR: WebJarvis LLM Fehler: {e}"}
-
-    @app.get("/health")
-    async def health_check():
-        return {"status": "ok", "service": "webjarvis", "timestamp": int(time.time())}
-
-    @app.get("/api/search")
-    async def search_endpoint(q: str = "", limit: int = 20):
-        try:
-            from memory.master_index_init import resolve_db_path, init_db
-            import sqlite3
-            db = resolve_db_path()
-            if not db.exists() or db.stat().st_size == 0:
-                init_db(db)
-            with sqlite3.connect(str(db), timeout=5.0) as conn:
-                cur = conn.cursor()
-                try:
-                    cur.execute("SELECT filename, path, content_preview FROM knowledge_units_fts WHERE knowledge_units_fts MATCH ? LIMIT ?", (q, limit))
-                    rows = cur.fetchall()
-                except Exception:
-                    cur.execute("SELECT filename, path, content_preview FROM knowledge_units WHERE filename LIKE ? OR content_preview LIKE ? LIMIT ?", (f"%{q}%", f"%{q}%", limit))
-                    rows = cur.fetchall()
-                return {"results": [{"filename": r[0], "path": r[1], "preview": r[2]} for r in rows]}
-        except Exception as e:
-            return {"error": str(e), "results": []}
-
-    class BraveClipRequest(BaseModel):
-        text: str
-        url: str = ""
-        title: str = ""
-
-    @app.post("/api/brave_clip")
-    async def brave_clip_endpoint(request: BraveClipRequest):
-        try:
-            from memory.master_index_init import resolve_db_path, init_db
-            import sqlite3
-            ts = int(time.time())
-            clip_title = request.title or f"Browser-Clip-{ts}"
-            rel_path = f"clips/brave_{ts}.md"
-            full_path = PROJECT_ROOT / "agy_components" / "data-pool" / rel_path
-            full_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            content = f"# {clip_title}\n\nQuelle: {request.url}\nZeit: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n{request.text}\n"
-            full_path.write_text(content, encoding="utf-8")
-
-            # In MASTER_INDEX.db & FTS5 einpflegen
-            db_file = resolve_db_path()
-            with sqlite3.connect(str(db_file), timeout=5.0) as conn:
-                cur = conn.cursor()
-                cur.execute(
-                    "INSERT OR REPLACE INTO knowledge_units (path, filename, content_preview, last_modified, tags) VALUES (?, ?, ?, ?, ?)",
-                    (rel_path, full_path.name, content[:300], time.time(), "brave-clip,web-import")
-                )
-                try:
-                    cur.execute(
-                        "INSERT INTO knowledge_units_fts (filename, path, content_preview) VALUES (?, ?, ?)",
-                        (full_path.name, rel_path, content[:300])
-                    )
-                except Exception:
-                    pass
-                conn.commit()
-
-            # In Dropzone schreiben
-            dropzone = PROJECT_ROOT / "agent_exchange"
-            dropzone.mkdir(parents=True, exist_ok=True)
-            msg_payload = {
-                "sender": "BRAVE_EXTENSION",
-                "target": "ALL_AGENTS",
-                "message": f"Neuer Web-Clip gespeichert: {clip_title} ({rel_path})\n{request.text[:200]}...",
-                "timestamp": ts
-            }
-            (dropzone / f"brave_clip_{ts}.json").write_text(json.dumps(msg_payload, indent=2), encoding="utf-8")
-
-            return {"status": "ok", "saved_path": rel_path, "units_updated": True}
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
-else:
-    app = None
 
 CONNECTED_CLIENTS: set[websockets.WebSocketServerProtocol] = set()
 MAIN_LOOP: Optional[asyncio.AbstractEventLoop] = None
@@ -400,7 +215,7 @@ class JarvisServer:
         while True:
             try:
                 if CONNECTED_CLIENTS:
-                    telemetry = await asyncio.to_thread(get_system_telemetry)
+                    telemetry = get_system_telemetry()
                     broadcast({
                         "type": "telemetry",
                         "data": telemetry,
@@ -474,16 +289,6 @@ class JarvisServer:
                 }
             }
         }))
-
-        # === ZWINGENDE REPARATUR FUER AMNESIE ===
-        # Injiziere Zustand (Backlog, Memory etc.) in die Gemini Live Session,
-        # sobald das Frontend verbunden ist und bevor der Nutzer interagiert.
-        try:
-            if hasattr(self, "gemini") and self.gemini and getattr(self.gemini, "session", None):
-                self.log("[Hydration] Injiziere Session-Zustand (Backlog + Memory) via Frontend-Connect...", "SYS")
-                asyncio.create_task(hydrate_session(self.gemini))
-        except Exception as hyd_err:
-            self.log(f"[Hydration] Warnung bei Client-Connect-Hydrierung: {hyd_err}", "WARN")
 
         try:
             async for raw_message in websocket:
@@ -882,8 +687,7 @@ class JarvisServer:
                             result = {"count": len(events)}
 
                         elif action_name in ("CALENDAR_MANUAL_CREATE", "add_calendar_event"):
-                            ev = await asyncio.to_thread(
-                                add_event_entry,
+                            ev = add_event_entry(
                                 title=str(payload.get("title", "")).strip(),
                                 start_time=str(payload.get("start_time", "")).strip(),
                                 end_time=str(payload.get("end_time", "")).strip(),
@@ -898,7 +702,7 @@ class JarvisServer:
 
                         elif action_name in ("CALENDAR_DELETE", "delete_calendar_event"):
                             eid = payload.get("event_id")
-                            ok = await asyncio.to_thread(delete_event_entry, eid)
+                            ok = delete_event_entry(eid)
                             status = "PROCESSED" if ok else "FAILED"
                             result = {"deleted": ok, "id": eid}
 
@@ -1055,28 +859,6 @@ class JarvisServer:
                         })
                     except Exception as e:
                         self.log(f"Fehler beim Speichern der Persona: {e}", "ERR")
-
-                elif msg_type in ("get_agents", "list_agents"):
-                    from actions.agent_manager import _load_registry
-                    reg = _load_registry()
-                    await websocket.send(json.dumps({
-                        "type": "agents_list_data",
-                        "registry": reg
-                    }))
-
-                elif msg_type == "toggle_agent":
-                    from actions.agent_manager import manage_agents, _load_registry
-                    a_id = str(data.get("agent_id", "")).strip()
-                    is_active = bool(data.get("active", False))
-                    res = manage_agents(action="toggle", id=a_id, enabled=is_active, ws_broadcast=broadcast)
-                    self.log(res, "SYS")
-                    if hasattr(self.controller, "reload_personality"):
-                        self.controller.reload_personality()
-                    broadcast({
-                        "type": "agents_list_data",
-                        "registry": _load_registry(),
-                        "message": res
-                    })
 
                 elif msg_type == "export_brain":
                     from core.backup_manager import export_brain, list_available_backups
@@ -1253,43 +1035,6 @@ class JarvisServer:
                         if ok:
                             self.controller.reload_personality()
 
-                elif msg_type == "search_knowledge":
-                    query = str(data.get("query", "")).strip()
-                    limit = int(data.get("limit", 20))
-                    results = []
-                    try:
-                        from memory.master_index_init import resolve_db_path, init_db
-                        import sqlite3
-                        db = resolve_db_path()
-                        if not db.exists() or db.stat().st_size == 0:
-                            init_db(db)
-                        with sqlite3.connect(str(db), timeout=5.0) as conn:
-                            cur = conn.cursor()
-                            try:
-                                cur.execute("SELECT filename, path, content_preview FROM knowledge_units_fts WHERE knowledge_units_fts MATCH ? LIMIT ?", (query, limit))
-                                rows = cur.fetchall()
-                            except Exception:
-                                cur.execute("SELECT filename, path, content_preview FROM knowledge_units WHERE filename LIKE ? OR content_preview LIKE ? LIMIT ?", (f"%{query}%", f"%{query}%", limit))
-                                rows = cur.fetchall()
-                            results = [{"filename": r[0], "path": r[1], "preview": r[2]} for r in rows]
-                    except Exception as e:
-                        self.log(f"Knowledge Search Fehler: {e}", "ERR")
-
-                    resp_data = {
-                        "type": "knowledge_search_results",
-                        "query": query,
-                        "data": results,
-                        "count": len(results),
-                        "results": results
-                    }
-                    await websocket.send(json.dumps(resp_data))
-                    broadcast({
-                        "type": "search_results",
-                        "query": query,
-                        "count": len(results),
-                        "results": results
-                    })
-
                 elif msg_type == "show_guide":
                     from actions.guide_overlay import show_interactive_guide
                     g_id = data.get("guide_id", "interactive_tutorial")
@@ -1344,12 +1089,7 @@ class JarvisServer:
         confirm_gate.set_event_loop(loop)
         # Audio-Streams für CachyOS starten
         self.audio.start_input()
-        # Auto-Init / Auto-Healing für MASTER_INDEX.db
-        try:
-            from memory.master_index_init import init_db
-            init_db()
-        except Exception as e:
-            self._log(f"MASTER_INDEX Auto-Init Notiz: {e}")
+        self.audio.start_output()
 
         # WebSocket-Server starten
         self._log(f"Starte WebSocket Server auf ws://{WS_HOST}:{WS_PORT}")
@@ -1373,8 +1113,8 @@ class JarvisServer:
 if __name__ == "__main__":
     if not is_api_key_configured() and sys.stdin.isatty():
         get_gemini_api_key(prompt_if_missing=True)
-    server_instance = JarvisServer()
+    app = JarvisServer()
     try:
-        asyncio.run(server_instance.start())
+        asyncio.run(app.start())
     except KeyboardInterrupt:
         print("\n[JarvisServer] Heruntergefahren.")

@@ -156,9 +156,6 @@ setup_node_deps() {
 make_executables() {
     echo -e "\n${CYAN}[*] Setze Ausführungsrechte auf Starter- & Kontrollskripte...${RESET}"
     chmod +x "$SCRIPT_DIR"/*.sh "$SCRIPT_DIR"/*.py 2>/dev/null || true
-    if [ -d "$FRONTEND_DIR/node_modules/.bin" ]; then
-        find "$FRONTEND_DIR/node_modules/.bin" -type l -exec sh -c 'for link; do target=$(readlink -f "$link"); [ -f "$target" ] && [ ! -x "$target" ] && chmod +x "$target"; done' _ {} + 2>/dev/null || true
-    fi
     echo -e "  ${GREEN}✓${RESET} Berechtigungen gesetzt."
 }
 
@@ -171,24 +168,12 @@ sync_to_permanent_os_install() {
             rsync -a \
                 --exclude='frontend/.next' \
                 --exclude='data/logs' \
-                --exclude='.env' \
-                --exclude='backend/.env' \
-                --exclude='backend/memory/lancedb_data' \
-                --exclude='backend/memory/long_term.json' \
-                --exclude='backend/MEMORY.md' \
-                --exclude='backend/backups' \
-                --exclude='*.db' \
-                --exclude='MASTER_INDEX.db' \
-                --exclude='ASGRAD_Health_Log.md' \
                 "$SCRIPT_DIR/" "$PERM_INSTALL_DIR/"
         else
-            cp -rn "$SCRIPT_DIR/"* "$PERM_INSTALL_DIR/" 2>/dev/null || true
-            cp -rn "$SCRIPT_DIR/".* "$PERM_INSTALL_DIR/" 2>/dev/null || true
+            cp -r "$SCRIPT_DIR/"* "$PERM_INSTALL_DIR/" 2>/dev/null || true
+            cp -r "$SCRIPT_DIR/".* "$PERM_INSTALL_DIR/" 2>/dev/null || true
         fi
         chmod +x "$PERM_INSTALL_DIR"/*.sh "$PERM_INSTALL_DIR"/*.py 2>/dev/null || true
-        if [ -d "$PERM_INSTALL_DIR/frontend/node_modules/.bin" ]; then
-            find "$PERM_INSTALL_DIR/frontend/node_modules/.bin" -type l -exec sh -c 'for link; do target=$(readlink -f "$link"); [ -f "$target" ] && [ ! -x "$target" ] && chmod +x "$target"; done' _ {} + 2>/dev/null || true
-        fi
         echo -e "  ${GREEN}✓${RESET} WebJarvis OS-Dateistruktur synchronisiert."
     fi
 }

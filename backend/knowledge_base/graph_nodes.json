@@ -1,604 +1,40 @@
 {
   "nodes": [
     {
-      "id": "concepts-agent-exchange-dropzone",
-      "name": "Agent-Exchange Dropzone",
-      "category": "Concepts",
-      "connections": 7,
-      "description": "Zentrales, gekapseltes Verzeichnis für den Austausch von Aufgaben und Daten zwischen verschiedenen Agenten (z.B. Brave Bridge). Liegt autark direkt in WebJarvis unter agent_exchange/.",
-      "path": "agent_exchange",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "concepts-asgrad-global-architecture",
-      "name": "ASGRAD Dev-Level Global Architecture",
-      "category": "Concepts",
-      "cluster": "System-Architektur",
-      "connections": 5,
-      "description": "Architektur-Bibel über die serielle Dropzone-Topologie, Prozess-Isolation und Multi-Agenten-Zusammenarbeit.",
-      "path": "agy_components/data-pool/webjarvis_global_architecture.md",
+      "id": "hub-skill-suites",
+      "name": "Skill Suites",
+      "category": "Suites",
+      "connections": 11,
+      "description": "Zentraler Routing-Knoten aller autonomen Agenten-Skills, Automatisierungsroutinen und Tool-Pipelines.",
+      "path": "backend/actions",
       "is_orphan": false
-    },
-    {
-      "id": "concepts-backlog-archiv-prozess",
-      "name": "Backlog Archiv-Prozess",
-      "category": "Concepts",
-      "connections": 2,
-      "description": "Zukünftiger Workflow fuer Backlog-Hygiene (Monatlicher Review, Verschiebung erledigter Tasks ins Wiki-Archiv).",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "concepts-concept-brain-implementation-plan",
-      "name": "Concept: Brain Implementation Plan",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Plan zur Implementierung der 3nd-Brain-Architektur basierend auf 'Brain_konzepr.md' und 'das_secend_brain.md'.\nZiele:\n1. Migration des Wiki nach /02_wiki.\n2. Einführung von YAML-Frontmatter für alle Knoten O(1)-Scan.\n3. Durchsetzung von DRY-Prinzip und Context Budgeting via index.md.\nProtokoll: Audit & Linting nach POSIX-Rechteregeln.",
-      "path": "backend/knowledge_base/wiki/concept_brain_implementation.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "concepts-context-crm-linker",
-      "name": "Context CRM Linker",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Automatisierte Verknüpfung von Personen-Entities und Interaktionshistorien basierend auf Meeting-Transkripten.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "concepts-contradiction-detector",
-      "name": "Contradiction Detector",
-      "category": "Concepts",
-      "connections": 2,
-      "description": "Open Knowledge Metabolism (OKM) Skript zum Abgleich neuer Fakten mit bestehendem Wiki zur Erkennung von Widersprüchen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Security-Sandbox"
-    },
-    {
-      "id": "concepts-daily-note-digest-service",
-      "name": "Daily Note Digest Service",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Nächtliches Skript zur Strukturierung flüchtiger Gedanken in Daily Notes und zur sokratischen Reflexion (Verknüpfung von Ideen).",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "concepts-fastapi-backend",
-      "name": "FastAPI Backend",
-      "category": "Concepts",
-      "connections": 3,
-      "description": "Zentrales FastAPI Backend. Steuert WebSocket-Kommunikation, Gemini Live Anbindung, Action Registry und MCP Client. Pfad: backend/server.py",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "concepts-gemini-live-controller",
-      "name": "Gemini Live Controller",
-      "category": "Concepts",
-      "connections": 2,
-      "description": "Schnittstelle zu Google GenAI Live (Audio + Tools). Pfad: backend/core/gemini_live.py",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "concepts-hourly-ingest-loop",
-      "name": "Hourly Ingest Loop",
-      "category": "Concepts",
-      "connections": 2,
-      "description": "Automatisches Auslesen und Archivieren von Rohdaten aus Dropzone (/inbox), Verarbeitung via cron-gesteuertes Python-Skript und LLM-API zur Markdown-Generierung im Wiki. Original wird archiviert.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "concepts-image-conversion-pipeline-concept",
-      "name": "Image Conversion Pipeline Concept",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "# Batch Image Converter\nConvert entire directories of PNG images to JPG using ImageMagick converter.\n```bash\n#!/bin/bash\nfor file in *.png; do\n  convert \"$file\" \"${file%.png}.jpg\"\ndone\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "concepts-j-a-r-v-i-s-os-core",
-      "name": "J.A.R.V.I.S. OS Core",
-      "category": "Concepts",
-      "connections": 4,
-      "description": "Zentraler Hauptknotenpunkt fuer das J.A.R.V.I.S. KI-Betriebssystem. Verknuepft Gehirn, Wissen, Faehigkeiten und Systemarchitektur.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "concepts-jarvis-ui-architecture-deep-dive",
-      "name": "JARVIS UI Architecture & Deep-Dive",
-      "category": "Concepts",
-      "cluster": "System-Architektur",
-      "connections": 5,
-      "description": "Wireframe- & Komponentenhandbuch für Three.js 3D Constellation, Chat, Terminal und Modals.",
-      "path": "agy_components/data-pool/JARVIS_UI_Architecture_DeepDive.md",
-      "is_orphan": false
-    },
-    {
-      "id": "concepts-llm-state-research",
-      "name": "LLM State Research",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "CachyOS System-Gesundheits-Audit, Branch LLM GOLD und Dark Internet Manga Material. Sammelordner für Recherchen und Story-Konzepte.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "concepts-next-js-frontend",
-      "name": "Next.js Frontend",
-      "category": "Concepts",
-      "connections": 3,
-      "description": "Next.js Frontend. Stellt das reaktive Cyberpunk-HUD bereit. Pfad: frontend/",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "concepts-obsidian-mcp-server-concept",
-      "name": "Obsidian MCP Server Concept",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Nutzung von Anthropic\\'s Model Context Protocol (MCP), um dem LLM direkten Such- und Patch-Zugriff auf lokale Obsidian-Vaults zu ermöglichen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "concepts-omnipresent-voice-ingest",
-      "name": "Omnipresent Voice Ingest",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Spracherfassung unterwegs (iOS Kurzbefehle), Transkription und Integration in den lokalen Ingest-Ordner.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "concepts-second-brain-guide",
-      "name": "Second Brain: Hocheffizienz-Blueprint",
-      "category": "Concepts",
-      "cluster": "Second-Brain-Knowledge",
-      "connections": 3,
-      "description": "Mathematischer Hocheffizienz-Blueprint für Capture & Retrieve, Wissensvernetzung und Synthese.",
-      "path": "agy_components/data-pool/SECOND_BRAIN_GUIDE.md",
-      "is_orphan": false
-    },
-    {
-      "id": "concepts-task-amnesie-behebung-hydration",
-      "name": "Task: Amnesie-Behebung (Hydration)",
-      "category": "Concepts",
-      "connections": 2,
-      "description": "Implementierung des State Hydration Protocols zur Behebung der Amnesie durch API-Zustandslosigkeit. Injizierung von backlog.md und MEMORY.md beim Session-Start.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "concepts-ui-architecture-deep-dive-concept",
-      "name": "UI architecture Deep-Dive Concept",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Technisches Handbuch zur UI/UX-Architektur von J.A.R.V.I.S. (Friday). Dokumentiert Frontend-Wireframes, Interaktionslogik, Backend-Pipelines und KI-Workflow-Regelsätze. Pfad: agy_components/data-pool/JARVIS_UI_Architecture_DeepDive.md",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "concepts-voice-to-text-pipeline",
-      "name": "Voice-to-Text Keybinding Pipeline",
-      "category": "Concepts",
-      "cluster": "Hardware-Tuning",
-      "connections": 2,
-      "description": "Globales Keyboard-Shortcut-Konzept (Alt+A) zur direkten Spracheingabe über PipeWire und Whisper.",
-      "path": "agy_components/data-pool/VoiceToText_Concept.md",
-      "is_orphan": false
-    },
-    {
-      "id": "concepts-webjarvis-graph-performance",
-      "name": "webjarvis: Graph Performance",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Vorschlag zur Erweiterung von webjarvis: Optimierung der Three.js Performance für sehr große Graphen durch Techniken wie Instancing, LOD (Level of Detail) oder OffscreenCanvas.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "concepts-webjarvis-local-state",
-      "name": "WebJarvis Local State",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Konfigurationsdaten, Logs und persistenter State von WebJarvis auf diesem System.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "concepts-webjarvis-plugin-system",
-      "name": "webjarvis: Plugin System",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Vorschlag zur Erweiterung von webjarvis: Entwicklung eines Plugin-Systems, um neue MCP-Tools oder Analyse-Module dynamisch als Frontend-Widgets zu laden, ohne den Core neu zu bauen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "concepts-webjarvis-realtime-collab",
-      "name": "webjarvis: Realtime Collab",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "Vorschlag zur Erweiterung von webjarvis: Integration von Echtzeit-Kollaborations-Features (z.B. via WebSockets/yjs), damit mehrere Nutzer oder Agenten gleichzeitig am 3D-Graphen arbeiten können.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "concepts-website-status-monitor-concept",
-      "name": "Website Status Monitor Concept",
-      "category": "Concepts",
-      "connections": 1,
-      "description": "# Website Uptime Monitor\nChecks if a website is alive using curl HTTP codes.\n```bash\n#!/bin/bash\nURL=\"https://example.com\"\nstatus=$(curl -o /dev/null -s -w \"%{http_code}\" $URL)\nif [ \"$status\" == \"200\" ]; then\n  echo \"Website is online\"\nelse\n  echo \"Website appears down (Status: $status)\"\nfi\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "file-jarvis-core",
-      "name": "backend/core/gemini_live.py",
-      "category": "Files",
-      "connections": 1,
-      "description": "Vollduplex-Audio & Tool-Routing-Controller.",
-      "path": "backend/core/gemini_live.py",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "file-knowledge-map-json",
-      "name": "Knowledge Map Registry",
-      "category": "Files",
-      "cluster": "Second-Brain-Knowledge",
-      "connections": 1,
-      "description": "Zentrale Projekt- und Persona-Index-Zuordnungsmatrix für das J.A.R.V.I.S. Wissensnetzwerk.",
-      "path": "backend/knowledge_base/knowledge_map.json",
-      "is_orphan": false
-    },
-    {
-      "id": "file-server-py",
-      "name": "backend/server.py",
-      "category": "Files",
-      "connections": 4,
-      "description": "Zentraler WebSocket & Telemetrie-Bridge Server auf Port 8765.",
-      "path": "backend/server.py",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "files-antigravity-quota-monitor",
-      "name": "antigravity-quota-monitor",
-      "category": "Files",
-      "connections": 1,
-      "description": "Monitor für Antigravity Speicher-Quotas.",
-      "path": "../antigravity-quota-monitor",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-architektur-analyse-bibel-v2",
-      "name": "🧠 WebJarvis & Second Brain: Deep Analysis Report",
-      "category": "Files",
-      "connections": 2,
-      "description": "Umfassender Analyse-Bericht über die WebJarvis Architektur, Backend-Module (fastapi, actions, memory), Frontend-Komponenten (next.js, components), Netzwerk, State-Hydration und das Sandbox Desktop-Pet Addon. Stand 11. Oktober 2026.",
-      "path": "agy_components/data-pool/webjarvis_deep_analysis_report_and_architectur.md",
-      "is_orphan": false,
-      "cluster": "Security-Sandbox"
-    },
-    {
-      "id": "files-asgrad-changelog",
-      "name": "ASGRAD Development Changelog",
-      "category": "Files",
-      "cluster": "System-Architektur",
-      "connections": 2,
-      "description": "System-Logbuch über Entwicklungsmeilensteine, Akteursrollen (Friday/Operator) und Artefakt-Status.",
-      "path": "agy_components/data-pool/ASGRAD_Changelog.md",
-      "is_orphan": false
-    },
-    {
-      "id": "files-asgrad-health-log",
-      "name": "ASGRAD Health Log",
-      "category": "Files",
-      "connections": 2,
-      "description": "Protokoll-Logbuch, das jede Auto-Reparatur, isolierte Tasks (Quarantäne) und Rechteprobleme innerhalb des ASGRAD-Systems verzeichnet. Pfad: agy_components/data-pool/ASGRAD_Health_Log.md",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-asgrad-health-log-example",
-      "name": "ASGRAD Health Log Template",
-      "category": "Files",
-      "cluster": "Kernel-Scheduling",
-      "connections": 2,
-      "description": "Diagnose-Template für Systemgesundheit, Latenzen und Systemressourcen-Checks.",
-      "path": "agy_components/data-pool/ASGRAD_Health_Log.md.example",
-      "is_orphan": false
-    },
-    {
-      "id": "files-asgrad-system-changelog",
-      "name": "ASGRAD System Changelog",
-      "category": "Files",
-      "connections": 2,
-      "description": "Zentrales Logbuch der ASGRAD Systementwicklung. Dokumentiert Aktionen, Akteure und Begründungen für Änderungen an Code und Architektur. Pfad: agy_components/data-pool/ASGRAD_Changelog.md",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-backlogdrawer-dummy",
-      "name": "BacklogDrawer Dummy",
-      "category": "Files",
-      "connections": 3,
-      "description": "Dummy Komponente zur Build-Fixierung.",
-      "path": "frontend/components/BacklogDrawer.tsx",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "files-cachy-sched-pilot",
-      "name": "cachy-sched-pilot",
-      "category": "Files",
-      "connections": 1,
-      "description": "Pilot-Projekt für den CachyOS Scheduler (sched-ext).",
-      "path": "../cachy-sched-pilot",
-      "is_orphan": false,
-      "cluster": "Kernel-Scheduling"
-    },
-    {
-      "id": "files-cachy-winbridge",
-      "name": "cachy-winbridge",
-      "category": "Files",
-      "connections": 1,
-      "description": "Bridge-Lösung für CachyOS und Windows Integration.",
-      "path": "../cachy-winbridge",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-cachyos-control-center",
-      "name": "cachyos-control-center",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum cachyos-control-center Repository. Teil seiner GitHub Uploads.",
-      "path": "../cachyos-control-center",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-cachyos-rice-architect",
-      "name": "cachyos-rice-architect",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum kachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
-      "path": "../cachyos-rice-architect",
-      "is_orphan": false,
-      "cluster": "Kernel-Scheduling"
-    },
-    {
-      "id": "files-datenwandler-repository",
-      "name": "Datenwandler Repository",
-      "category": "Files",
-      "connections": 1,
-      "description": "Referenzverzeichnis mit Skripten und Dokumentationen zur System- und LLM-Bedienung.",
-      "path": "docs/datenwandler",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-emergency-load-report",
-      "name": "Emergency Load Report",
-      "category": "Files",
-      "cluster": "Kernel-Scheduling",
-      "connections": 2,
-      "description": "Forensischer Report zur Analyse von CPU-Spitzen, Throttling und Scheduler-Entlastung.",
-      "path": "agy_components/data-pool/Emergency_Load_Report.md",
-      "is_orphan": false
-    },
-    {
-      "id": "files-github-desktop-companion",
-      "name": "github-desktop-companion",
-      "category": "Files",
-      "connections": 1,
-      "description": "Begleit-App für den GitHub Desktop-Client.",
-      "path": "../github-desktop-companion",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-guideoverlaymodal-dummy",
-      "name": "GuideOverlayModal Dummy",
-      "category": "Files",
-      "connections": 2,
-      "description": "Dummy Komponente zur Build-Fixierung.",
-      "path": "frontend/components/GuideOverlayModal.tsx",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-jarv-orb",
-      "name": "Jarv-orb",
-      "category": "Files",
-      "connections": 1,
-      "description": "Ein weiteres Projekt im Graba92 GitHub Workspace.",
-      "path": "../../Entwicklung/Jarv-orb",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-jarvis-spatial-shell",
-      "name": "jarvis-spatial-shell",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
-      "path": "tools/Jarv-orb/fin/jarvis-spatial-shell",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-jarvischatwindow-dummy",
-      "name": "JarvisChatWindow Dummy",
-      "category": "Files",
-      "connections": 2,
-      "description": "Dummy Komponente zur Build-Fixierung.",
-      "path": "frontend/components/JarvisChatWindow.tsx",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-master-index-db",
-      "name": "MASTER_INDEX Knowledge Database",
-      "category": "Files",
-      "cluster": "Second-Brain-Knowledge",
-      "connections": 13,
-      "description": "Zentrale SQLite FTS5 Volltext-Suchdatenbank (119+ indexierte Einheiten) für Second Brain und Vektor-Pipeline.",
-      "path": "agy_components/data-pool/MASTER_INDEX.db",
-      "is_orphan": false
-    },
-    {
-      "id": "files-sandboxmodal-dummy",
-      "name": "SandboxModal Dummy",
-      "category": "Files",
-      "connections": 2,
-      "description": "Dummy Komponente zur Build-Fixierung.",
-      "path": "frontend/components/SandboxModal.tsx",
-      "is_orphan": false,
-      "cluster": "Security-Sandbox"
-    },
-    {
-      "id": "files-system-analysis-report",
-      "name": "System Resource & Process Analysis",
-      "category": "Files",
-      "cluster": "Kernel-Scheduling",
-      "connections": 4,
-      "description": "Systemanalyse über CachyOS Kernel-Zustand, Speicherauslastung, Top-Prozesse und CPU-Governor.",
-      "path": "agy_components/data-pool/System_Analysis.md",
-      "is_orphan": false
-    },
-    {
-      "id": "files-textual-tui-creator",
-      "name": "textual-tui-creator",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum textual-tui-creator Repository. Teil seiner GitHub Uploads.",
-      "path": "../textual-tui-creator",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "files-upgit",
-      "name": "upgit",
-      "category": "Files",
-      "connections": 1,
-      "description": "Lokaler Pfad zum upgit Repository. Teil seiner GitHub Uploads.",
-      "path": "../upgit",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "files-webcam-support-script",
-      "name": "Webcam Support Script",
-      "category": "Files",
-      "connections": 1,
-      "description": "Skript zur Webcam-Nutzung unter Q4OS, wahrscheinlich für den Support-Chat auf Thorstens Rechner benötigt.",
-      "path": "/home/graba/Schreibtisch/MyMy/webcam_q4os.sh",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "files-webjarvis",
-      "name": "webjarvis",
-      "category": "Files",
-      "connections": 1,
-      "description": "Next.js 15 & Three.js 3D Force-Directed Knowledge Graph + Python Gemini Live Backend. Mein Kernprojekt.",
-      "path": ".",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "files-webjarvis-deep-report",
-      "name": "WebJarvis Deep Architecture Report",
-      "category": "Files",
-      "cluster": "System-Architektur",
-      "connections": 2,
-      "description": "Umfassender 440kB+ System-Audit und Codebase-Analysebericht aller Frontend-, Backend- und KI-Schnittstellen.",
-      "path": "agy_components/data-pool/webjarvis_deep_report.md",
-      "is_orphan": false
-    },
-    {
-      "id": "files-wikiinspectormodal-dummy",
-      "name": "WikiInspectorModal Dummy",
-      "category": "Files",
-      "connections": 2,
-      "description": "Dummy Komponente zur Build-Fixierung.",
-      "path": "frontend/components/WikiInspectorModal.tsx",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "hub-ai-workshop",
-      "name": "AI Workshop OS",
-      "category": "Concepts",
-      "connections": 74,
-      "description": "Hauptarchitektur des hybriden Betriebssystems für CachyOS / Arch Linux.",
-      "path": ".",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
     },
     {
       "id": "hub-claude-code",
       "name": "Claude Code",
       "category": "Skills",
-      "connections": 2,
+      "connections": 1,
       "description": "Terminal-Agent zur Code-Generierung, Refactoring und statischen AST-Synthese.",
       "path": "claude",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
+      "is_orphan": false
     },
     {
       "id": "hub-gemini-live",
       "name": "Gemini Live API",
       "category": "Router",
-      "connections": 26,
+      "connections": 24,
       "description": "Vollduplex-Multimodal-Streaming-Core (gemini-3.1-flash-live-preview) mit 16/24-kHz-Audio.",
       "path": "backend/core/gemini_live.py",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
+      "is_orphan": false
     },
     {
-      "id": "hub-skill-suites",
-      "name": "Skill Suites",
-      "category": "Suites",
-      "connections": 35,
-      "description": "Zentraler Routing-Knoten aller autonomen Agenten-Skills, Automatisierungsroutinen und Tool-Pipelines.",
-      "path": "backend/actions",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
+      "id": "hub-ai-workshop",
+      "name": "AI Workshop OS",
+      "category": "Concepts",
+      "connections": 11,
+      "description": "Hauptarchitektur des hybriden Betriebssystems für CachyOS / Arch Linux.",
+      "path": ".",
+      "is_orphan": false
     },
     {
       "id": "hub-youtube-channel",
@@ -607,648 +43,7 @@
       "connections": 4,
       "description": "Content-Pipeline, Videoskripte, Storyboards und Metadaten-Optimierung.",
       "path": "https://youtube.com",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "note-2026-roadmap",
-      "name": "2026-Roadmap",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Meilensteine für das autonome KI-Betriebssystem und TUI-Widgets.",
-      "path": "backend/knowledge_base/knowledge_map.json",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "note-video-script",
-      "name": "VIDEO-SCRIPT-FULL",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Skript für Vorstellung des CachyOS AI Betriebssystems.",
-      "path": "backend/knowledge_base/knowledge_map.json",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-audit-status-20min-task",
-      "name": "Audit-Status: 20min Task",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Audit läuft für 20 Minuten ab 09.10.2026 08:00 Uhr. Fokus: Reparatur Wiki / Graph, PDF Text-Extraktion. Statusbericht alle 2 Minuten. Aktuell: webui.pdf leer nach pdftotext.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "notes-auto-sync-protocol",
-      "name": "Auto-Sync Protocol",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Interne Direktive, die Friday/Cypher verpflichtet, bei jeder relevanten Änderung an Pfaden, Tools oder Workflows das friday_manifest.md, die webjarvis_global_architecture.md und alle betroffenen Knowledge Graph Knoten autonom zu aktualisieren.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-autonome-fehlererkennung-friday-logs",
-      "name": "Autonome Fehlererkennung (Friday Logs)",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Sammelstelle für autonom erkannte Fehler und Anomalien durch die KI (Friday), die einer Analyse oder Behebung bedürfen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-bewerbung-data-pool",
-      "name": "Bewerbung Data Pool",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Sammlung von Daten für die Jobsuche, inklusive Vorlagen für Tech-Lead Anschreiben, Portfolios und Strategien für Kleingewerbe. Dient als Basis-Ressource für Bewerbungsprozesse.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-changelog-vorbereitung-typen-fix",
-      "name": "Changelog: Vorbereitung Typen-Fix",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Fix für SkillsModal.tsx (Property error): Typendefinition in lib/types.ts muss angepasst werden, um server.error/server.warning zu unterstützen. Backup vor Änderung erstellt.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "notes-daily-journal-log-script",
-      "name": "Daily Journal Log Script",
-      "category": "Notes",
-      "connections": 1,
-      "description": "# Daily Journal Logger\nLogger to create searchable engineering diaries with timestamps.\n```bash\n#!/bin/bash\nFILE=\"$HOME/journal_$(date +%F).txt\"\necho \"$(date): $1\" >> \"$FILE\"\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-dev-lead-planer",
-      "name": "Dev Lead Planer",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Spezialist für MVP-Planung, KAIROS-Prinzip und Scope-Creep-Veto. Verknüpft mit dem Hauptkatalog.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-disk-usage-analyzer-script",
-      "name": "Disk Usage Analyzer Script",
-      "category": "Notes",
-      "connections": 1,
-      "description": "# Disk Usage Analyzer\nIdentifies the top 10 largest directories inside the current directory.\n```bash\n#!/bin/bash\necho \"Top 10 Largest Directories:\"\ndu -h - max-depth=1 | sort -hr | head -10\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "notes-download-directory-organizer",
-      "name": "Download Directory Organizer",
-      "category": "Notes",
-      "connections": 1,
-      "description": "# Directory Organizer\nAutomatically sort files into folders by their extension.\n```bash\n#!/bin/bash\nfor file in *; do\n  if [ -f \"$file\" ]; then\n    ext=\"${file##*.}\"\n    mkdir -p \"$ext\"\n    mv \"$file\" \"$ext/\"\n  fi\ndone\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "notes-file-change-monitor-script",
-      "name": "File Change Monitor Script",
-      "category": "Notes",
-      "connections": 1,
-      "description": "# File Change Monitor\nDetect when files are modified in a directory using inotifywait.\n```bash\n#!/bin/bash\nWATCH_DIR=\"/home/user/projects\"\ninotifywait -m -r \"$WATCH_DIR\"\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-fullstack-pragmatist",
-      "name": "Fullstack Pragmatist",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Persona für robuste Web-/App-Implementierung. Verknüpft mit dem Hauptkatalog.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-ingenieur-gunar-boegner",
-      "name": "Ingenieur Gunar Boegner",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Experte für MSR-Regelung, EPLAN, DIN VDE und Industriestandards. Verknüpft mit dem Hauptkatalog.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-internet-speed-test-tool",
-      "name": "Internet Speed Test Tool",
-      "category": "Notes",
-      "connections": 2,
-      "description": "# Internet Speed Test\nQuick network benchmarking using curl and python speedtest-cli.\n```bash\n#!/bin/bash\ncurl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python3 -\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "notes-jarvis-manager-desktop-entry-draft",
-      "name": "Jarvis Manager Desktop Entry (Draft)",
-      "category": "Notes",
-      "connections": 1,
-      "description": "[Desktop Entry]\nName=Jarvis Manager\nComment=Control Jarvis AI OS (Start, Stop, Status, Autostart)\nExec=bash -c 'echo \"Optionen: Starten, Beenden, Status, Autostart Toggle\" | zenity --list --title=\"Jarvis Manager\" --column=\"Aktion\"'\nIcon=system-run\nTerminal=false\nType=Application\nCategories=System;Utility;\n\n# Anleitung: Diesen Inhalt in eine Datei namens 'jarvis-manager.desktop' kopieren.\n# Danach im Terminal 'sudo mv jarvis-manager.desktop /usr/share/applications/' ausführen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-jobsuche-planung-data",
-      "name": "Jobsuche Planung Data",
-      "category": "Notes",
-      "connections": 2,
-      "description": "Unterprojekt mit Strategien für Freelancer, GastroWebsites und Serverwartung. Enthält Planungen und stichzettelartige Konzepte.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-kali-rootbro-security",
-      "name": "Kali RootBro Security",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Persona für Pentesting, Härtung und Schwachstellen-Audits. Verknüpft mit dem Hauptkatalog.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-maintenance-log-08-10-2026-w-friday",
-      "name": "Maintenance Log 08.10.2026 w/ Friday",
-      "category": "Notes",
-      "connections": 4,
-      "description": "Zusammenfassung der Systemwartung am 08.10.2026:\n- Puppeteer-Fehler (-32603) behoben durch Erzwingen von Chromium via env-Vars in mcp_servers.json.\n- Time Server repariert (npm 404) durch Wechsel auf das korrekte Paket 'mcp-server-time'.\n- Brave Search temporär deaktiviert (start-logs bereinigt).\n(Warp Jarvis restart required to apply changes).",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-maintenance-log-08102026-w-friday",
-      "name": "Maintenance Log 08.10.2026 w/ Friday",
-      "category": "Notes",
-      "cluster": "Multi-Agent-Triumvirat",
-      "connections": 1,
-      "description": "Wartungsprotokoll über Agenten-Synchronisation, Bereinigung von Cache-Resten und UDS-Socket-Härtung.",
-      "path": "backend/knowledge_base/wiki/maintenance-log-08102026-w-friday.md",
       "is_orphan": false
-    },
-    {
-      "id": "notes-masterplan-second-brain",
-      "name": "Masterplan: Second Brain",
-      "category": "Notes",
-      "connections": 2,
-      "description": "Zentraler Fahrplan v3.1 zur Datenbank- und TUI-Automatisierung. Synchronisation läuft.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "notes-matze-sysops-alterego",
-      "name": "Matze SysOps AlterEgo",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Spezialist für CachyOS/Linux, Systemd, Performance-Tuning und SysOps. Verknüpft mit dem Hauptkatalog.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-migration-navigator",
-      "name": "Migration Navigator",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Spezialist für Windows nach Linux Portierung. Verknüpft mit dem Hauptkatalog.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-mission-thorsten-game-hub",
-      "name": "Mission Thorsten Game Hub",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Zentrale Mission: SSH Game Hub (Tailscale) für CachyOS/Q4OS entwickeln. Ziel: Tic-Tac-Toe, Schiffe Versenken, Pong spielbar gegen Thorsten.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "notes-multi-agent-communication-workflow",
-      "name": "Multi-Agent Communication Workflow",
-      "category": "Notes",
-      "connections": 3,
-      "description": "Directive vom Operator: Kommunikation zwischen Friday und Agy soll primär über den Agent-Exchange Ordner erfolgen. Operator wird nur bei Ergebnissen oder Notwendigkeit kontaktiert. Dieser Zustand soll über Neustarts hinweg erhalten bleiben.",
-      "path": "",
-      "cluster": "IPC-Protokolle",
-      "is_orphan": false
-    },
-    {
-      "id": "notes-nutzerprofil-systemtopologie",
-      "name": "Nutzerprofil & Systemtopologie",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Analyse des Graba_Matze_Kompendiums: CachyOS/Arch, Performance-Fokus, Multi-Agenten-Workflow. KAIROS-Prinzip gegen Scope Creep.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-pdf-konvertierung-fehler",
-      "name": "PDF Konvertierung Fehler",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Fehler bei der PDF-Extraktion: Datei für das Skript nicht gefunden. Skript pdftotext.py hat falschen Hartcodierten Pfad verwendet. Manueller Eingriff erforderlich.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-personen-katalog-master",
-      "name": "Personen-Katalog Master",
-      "category": "Notes",
-      "connections": 9,
-      "description": "Zentraler Master-Index für Antigravity-CLI & LLM-Orchestrierung. Dient als Hauptknoten für alle spezialisierten Unter-Personas.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-process-killer-by-name-tool",
-      "name": "Process Killer by Name Tool",
-      "category": "Notes",
-      "connections": 2,
-      "description": "# Process Killer by Name\nTerminates a process by name using pkill.\n```bash\n#!/bin/bash\nPROCESS=$1\npkill \"$PROCESS\"\necho \"$PROCESS processes terminated.\"\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "notes-project-gunnar-context",
-      "name": "Project Gunnar Context",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Gunnar Bögner Ökosystem Projekt: Beinhaltet MASTERPLAN, TUI/Tkinter Tools, Kunden_Portal und Präsentationen. Zentrales Verzeichnis für Boegner-Automation.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "notes-project-structural-scaffolder",
-      "name": "Project Structural Scaffolder",
-      "category": "Notes",
-      "connections": 1,
-      "description": "# Project Bootstrap Script\nStarting new projects by creating standard directory structure (src, docs, tests).\n```bash\n#!/bin/bash\nPROJECT=$1\nmkdir -p \"$PROJECT\"/{src,docs,tests}\ntouch \"$PROJECT/README.md\"\necho \"Project structure created for $PROJECT\"\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "notes-prompt-engineer-experte",
-      "name": "Prompt Engineer Experte",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Spezialist für Zero-Shot, Few-Shot, Guardrails und Evaluierung. Verknüpft mit dem Hauptkatalog.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-react-3d-master",
-      "name": "React 3D Master",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Persona für Three.js, React Three Fiber, Shader und Canvas. Verknüpft mit dem Hauptkatalog.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-restart-orphan-node-debugging-log-kopie",
-      "name": "Restart & Orphan Node Debugging Log (Kopie)",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Problem mit wiederholtem J.A.R.V.I.S.-Restart und persistierendem Icon/Toolbar-Element trotz Neustart. Operator meldet außerdem einen verwaisten Knoten (Orphan Node) im 3D-Graphen. (Kopie des ursprünglichen Knotens zur Fehlerbehebung)",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-root-window-screenshot-tool",
-      "name": "Root Window Screenshot Tool",
-      "category": "Notes",
-      "connections": 1,
-      "description": "# Automatic Screenshot Tool\nTakes a screenshot of the root window using ImageMagick import.\n```bash\n#!/bin/bash\nimport -window root screenshot_$(date +%F_%T).png\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-sanity-quarantine-protocol",
-      "name": "Sanity & Quarantine Protocol",
-      "category": "Notes",
-      "connections": 4,
-      "description": "Interne Direktive zur Begrenzung von Self-Healing-Maßnahmen auf /ASGRAD/, Verbot von Skriptlöschungen, Einführung autonomer Ordner-Reparatur und des korrupten Task-Quarantänesystems.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Security-Sandbox"
-    },
-    {
-      "id": "notes-search-mark-directive",
-      "name": "Search & Mark Directive",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Permanente Notiz: Pfadänderungen nach erfolgreicher Suche im Gedächtnis markieren, um redundante Suchvorgänge zu vermeiden. Aktueller Status: Suche nach ForceGraph.tsx läuft.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-second-brain-audit-strategy",
-      "name": "Second Brain: Strategisches Audit & System-Integration",
-      "category": "Notes",
-      "cluster": "Second-Brain-Knowledge",
-      "connections": 2,
-      "description": "Strategiebericht zur Konsolidierung unstrukturierter Datenpools in den Vektorspeicher und Karpathy-Vault.",
-      "path": "agy_components/data-pool/SECOND_BRAIN_AUDIT_STRATEGY.md",
-      "is_orphan": false
-    },
-    {
-      "id": "notes-session-state-task-tk-06-applied",
-      "name": "Session State: Task tk-06 applied",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Last session status: Applied high priority task 'tk-06-be17b7' (Skill/Module status display panel added to UI left of main avatar). Persona directive active. Requires verification after reboot.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "notes-state-node-controller",
-      "name": "State Node Controller",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Knoten zur Sicherung des Kurzzeitgedächtnisses und der Kontextstabilität, insbesondere über Neustarts hinweg. Dient als Referenzpunkt für den letzten stabilen Zustand.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "notes-status-masterplan-bereinigung",
-      "name": "Status Masterplan: Bereinigung",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Statusmeldung: Music Player komplett aus Planung und Brain entfernt. Nächster Schritt: KI-Aufgabe 0 (Zustandsprüfung Dienste).",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-system-thorsten-q4os-suite",
-      "name": "System Thorsten Q4OS Suite",
-      "category": "Notes",
-      "connections": 3,
-      "description": "Dokumentation des Thorsten Laptop Systems: HP Presario CQ60, AMD Athlon X2, Q4OS (Debian trixie), TDE Desktop. Optimiert für wenig RAM/CPU-Leistung.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-systemarchitektur-map",
-      "name": "Systemarchitektur Map",
-      "category": "Notes",
-      "connections": 2,
-      "description": "Uebersicht der Systemkomponenten laut system-architecture-map.md (FastAPI Backend, Next.js Frontend).",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-systemstatus-kurzbericht",
-      "name": "Systemstatus Kurzbericht",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Systemstart am 07.10.2026. Hardwareauslastung kritisch bei CPU 98.7% (RAM 35.3%). 213 Updates verfügbar, davon 5 kritisch. Keine Termine.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-task-webdav-bridge-status",
-      "name": "Task: WebDAV Bridge Status",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Synchronisations-Skript zwischen Pool und Brain erfolgreich ausgeführt. Audit läuft.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-thorsten-remote-bridge-api",
-      "name": "Thorsten Remote Bridge API",
-      "category": "Notes",
-      "connections": 2,
-      "description": "FastAPI Bridge-Server. Lauscht auf Port 8080 für eingehende Textnachrichten von Thorstens Legacy Q4OS Notebook. Konvertiert Payloads in JSON-Tasks und wirft sie in agent_exchange/dropzone/ bzw. agent_exchange/inbox/.",
-      "path": "agent_exchange",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "notes-thorsten-remote-ssh-link-tailscale-guard",
-      "name": "Thorsten Remote SSH Link & Tailscale Guard",
-      "category": "Notes",
-      "connections": 3,
-      "description": "SSH Link & Tailscale Guard Script mit Mesh-Verifikation für sichere SSH-Ausführung auf Remote-Systemen.",
-      "path": "scripts/thorsten_ssh_executor.py",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "notes-torsten-data-support",
-      "name": "torsten data support",
-      "category": "Notes",
-      "connections": 2,
-      "description": "Support-Daten und Pfade für Torsten. Enthält Tailscale Verifikations-Logik und Audit-Pfade. Zuletzt bearbeitete Dokumente betreffen Stream-Infos und Audit-Logs.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "notes-warnung-thorsten-alarm",
-      "name": "Warnung Thorsten Alarm",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Lore-Sammlung aus PDF: Torsten wohnt im EG, Pappisches Tor 2, Grimma. Führt Q4OS Linux-Tuning auf altem HP-Laptop durch. Schlaflose Nächte, WLAN-Suche. Feuerzeug-Klicken, weißer Rauch. Motorflex-Lärm im Hof. Legendärer schwarzer Dildo-Cock als Schrank-Wächter. Frauen erscheinen und verschwinden (Mami?). Fake-Sturmgewehr.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-web-jarvis-anpassungen-konsolenzugriff",
-      "name": "Web-Jarvis Anpassungen: Konsolenzugriff",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Fokus: Implementierung von Mechanismen, um Web-Jarvis direkten Zugriff auf die Systemkonsole und die Ausführung von Shell-Kommandos zu ermöglichen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-webjarvis-ideen",
-      "name": "WebJarvis Ideen",
-      "category": "Notes",
-      "connections": 1,
-      "description": "Sammelknoten fuer zukuenftige WebJarvis UI/UX Erweiterungen und Mockups. Verknuepft mit Merkzettel-Pfad.",
-      "path": "docs/merkzettel",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "notes-workspace-relevance-analysis",
-      "name": "Workspace Algorithmic Relevance Report",
-      "category": "Notes",
-      "cluster": "Second-Brain-Knowledge",
-      "connections": 2,
-      "description": "Algorithmus-Klassifizierung aller ASGRAD-Verzeichnisse nach Relevanz, Redundanz und Prioritätsstufen.",
-      "path": "agy_components/data-pool/WORKSPACE_RELEVANCE_ANALYSIS.md",
-      "is_orphan": false
-    },
-    {
-      "id": "skill-memory-index",
-      "name": "Memory Indexer",
-      "category": "Skills",
-      "connections": 2,
-      "description": "Zweistufiges Langzeitgedächtnis mit Recency-Priorisierung und Keyword-Recall.",
-      "path": "backend/memory/memory_manager.py",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "skill-os-bridge",
-      "name": "OS Bridge Engine",
-      "category": "Skills",
-      "connections": 3,
-      "description": "Direkte Linux-Systemcalls, Pacman/Yay-Paketmanager und PipeWire-Audio-Routing.",
-      "path": "backend/actions/system_monitor.py",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "skill-undo-stack",
-      "name": "Undo Stack",
-      "category": "Skills",
-      "connections": 1,
-      "description": "Umkehrung von bis zu 10 destruktiven Aktionen und Systemmutationen.",
-      "path": "backend/core/undo.py",
-      "is_orphan": false,
-      "cluster": "Security-Sandbox"
-    },
-    {
-      "id": "skills-auth-log-watcher-script",
-      "name": "Auth Log Watcher Script",
-      "category": "Skills",
-      "connections": 3,
-      "description": "# Log File Watcher\nStreams login activity in real time.\n```bash\n#!/bin/bash\nLOGFILE=\"/var/log/auth.log\"\ntail -f \"$LOGFILE\"\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Security-Sandbox"
-    },
-    {
-      "id": "skills-git-auto-sync-tracker",
-      "name": "Git Auto-Sync Tracker",
-      "category": "Skills",
-      "connections": 2,
-      "description": "Automatische Versionierung der Wissensbasis via Bash/Python. Führt nach Ingest git commit und push zu GitHub aus.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "skills-model-context-protocol",
-      "name": "Model Context Protocol",
-      "category": "Skills",
-      "connections": 2,
-      "description": "Verwaltet MCP-Server Verbindungen. Pfad: backend/core/mcp_client.py, Konfiguration: backend/config/mcp_servers.json",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "skills-projects-backup-script",
-      "name": "Projects Backup Script",
-      "category": "Skills",
-      "connections": 2,
-      "description": "# Automatic Backup Script\nUses rsync to efficiently backup projects to a defined destination.\n```bash\n#!/bin/bash\nSOURCE=\"/home/user/projects\"\nDEST=\"/mnt/backup/projects\"\nrsync -av --delete \"$SOURCE\" \"$DEST\"\necho \"Backup completed at $(date)\"\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "skills-quick-archive-script",
-      "name": "Quick Archive Script",
-      "category": "Skills",
-      "connections": 2,
-      "description": "# Quick Archive Script\nCompress directories automatically using tar.\n```bash\n#!/bin/bash\nDIR=$1\ntar -czvf \"$DIR.tar.gz\" \"$DIR\"\necho \"Archive created: $DIR.tar.gz\"\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "skills-tui-dashboard",
-      "name": "TUI Dashboard",
-      "category": "Skills",
-      "connections": 2,
-      "description": "Geplantes modernes Terminal User Interface (TUI) basierend auf Python Textual/Rich zur Visualisierung von Systemstatus und Aufgaben.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "skills-tui-optic-skills",
-      "name": "TUI Optic Skills",
-      "category": "Skills",
-      "connections": 2,
-      "description": "Sammlung von TUI-Skripten, wahrscheinlich für optische oder visuelle Terminal-Darstellungen. Teil der Skripte-Suite.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "skills-workflow-orchestrierung-script-vs-llm",
-      "name": "Workflow Orchestrierung (Script vs LLM)",
-      "category": "Skills",
-      "connections": 1,
-      "description": "Analyse der Skript-Design-Prinzipien: Trennung in deterministische Skripte und LLM-Entscheidungen zur Workflow-Stabilisierung.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "suite-ads",
-      "name": "Ads Suite",
-      "category": "Suites",
-      "connections": 1,
-      "description": "Werbekampagnen-Steuerung und Performance-Tracking.",
-      "path": "backend/actions",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
     },
     {
       "id": "suite-finance",
@@ -1257,8 +52,7 @@
       "connections": 2,
       "description": "Abrechnungen, Rechnungs-Generierung und Stripe-Schnittstellen.",
       "path": "backend/actions",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
+      "is_orphan": false
     },
     {
       "id": "suite-seo",
@@ -1267,78 +61,16 @@
       "connections": 1,
       "description": "Suchmaschinenoptimierung, Keyword-Cluster und Content-Scoring.",
       "path": "backend/actions",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
+      "is_orphan": false
     },
     {
-      "id": "suites-agent-exchange-bridge",
-      "name": "Agent Exchange Bridge",
+      "id": "suite-ads",
+      "name": "Ads Suite",
       "category": "Suites",
-      "connections": 3,
-      "description": "Austausch-Verzeichnis für Agenten-Tasks und Ergebnisse (Inbox/Outbox/Error). Teil des Heartbeat-Scans.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "suites-agy-data-pool",
-      "name": "Agy Data Pool",
-      "category": "Suites",
-      "connections": 4,
-      "description": "Datenpool für Agenten-Austausch, Synchronisation (WebDAV) und langfristige Datensicherung innerhalb der ASGRAD-Architektur.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "suites-asgard-backup-skripte",
-      "name": "ASGARD Backup Skripte",
-      "category": "Suites",
-      "connections": 3,
-      "description": "Notwendige Skripte (keep_alive, pdf2text) und Backup-Daten.",
-      "path": "backend/backups/scripts",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "suites-torsten-zauberbox-projekte",
-      "name": "Torsten Zauberbox Projekte",
-      "category": "Suites",
-      "connections": 2,
-      "description": "Sammlung diverser Tools und Projekte für Torstens Support. Beinhaltet Unterprojekte wie Downloader, Streaming-Infos, Rechnungen und das Konfigurations-Tool für Q4OS.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "suites-wartung-sentinel-hub",
-      "name": "Wartung Sentinel Hub",
-      "category": "Suites",
-      "connections": 4,
-      "description": "Zentraler Hub für Fernwartungsskripte, Patch-Management Logs und Sys-Sentinel Überwachung. Teil des Wartungs-Ökosystems.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "tool-higgsfield",
-      "name": "Higgsfield",
-      "category": "Tools",
       "connections": 1,
-      "description": "KI-Videogenerierung und Prompt-Orchestrierung.",
-      "path": "https://higgsfield.ai",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "tool-pipewire",
-      "name": "PipeWire Audio",
-      "category": "Tools",
-      "connections": 3,
-      "description": "CachyOS High-Performance Sound-Server mit 16/24-kHz-Streams.",
-      "path": "pavucontrol",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
+      "description": "Werbekampagnen-Steuerung und Performance-Tracking.",
+      "path": "backend/actions",
+      "is_orphan": false
     },
     {
       "id": "tool-vidiq",
@@ -1347,8 +79,16 @@
       "connections": 1,
       "description": "YouTube-Trendanalyse und Keyword-Tracking.",
       "path": "https://vidiq.com",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
+      "is_orphan": false
+    },
+    {
+      "id": "tool-higgsfield",
+      "name": "Higgsfield",
+      "category": "Tools",
+      "connections": 1,
+      "description": "KI-Videogenerierung und Prompt-Orchestrierung.",
+      "path": "https://higgsfield.ai",
+      "is_orphan": false
     },
     {
       "id": "tool-zapier",
@@ -1357,329 +97,51 @@
       "connections": 2,
       "description": "Automatisierte Webhook-Verbindungen und Third-Party-Konnektoren.",
       "path": "https://zapier.com",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "tools-action-registry",
-      "name": "Action Registry",
-      "category": "Tools",
-      "connections": 3,
-      "description": "Scannt und lädt dynamisch Aktionen aus backend/actions/. Pfad: backend/core/action_loader.py",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "tools-automatic-system-update-script",
-      "name": "Automatic System Update Script",
-      "category": "Tools",
-      "connections": 2,
-      "description": "# System Update Script\nUpdates package lists, upgrades packages, and removes unnecessary packages (apt based).\n```bash\n#!/bin/bash\necho \"Updating package lists…\"\nsudo apt update\necho \"Upgrading packages…\"\nsudo apt upgrade -y\necho \"Removing unnecessary packages…\"\nsudo apt autoremove -y\necho \"System update completed at $(date)\"\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "tools-brave-bridge-api",
-      "name": "Brave-Bridge API",
-      "category": "Tools",
-      "connections": 1,
-      "description": "Lokaler HTTP-Server (Port 8080), der Daten von der Brave Browser Extension empfängt und als JSON-Task in die Agent-Exchange Inbox schreibt. Skript: brave_bridge.py",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "tools-bulk-file-renamer",
-      "name": "Bulk File Renamer",
-      "category": "Tools",
-      "connections": 2,
-      "description": "# Bulk File Renamer\nRenames all *.jpg files in the current directory to image_1.jpg, image_2.jpg, etc.\n```bash\n#!/bin/bash\ncount=1\nfor file in *.jpg; do\n  mv \"$file\" \"image_$count.jpg\"\n  ((count++))\ndone\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Automation-TUI-Cockpit"
-    },
-    {
-      "id": "tools-cpu-temperature-monitor-tool",
-      "name": "CPU Temperature Monitor Tool",
-      "category": "Tools",
-      "connections": 3,
-      "description": "# CPU Temperature Monitor\nHardware monitoring using watch sensors.\n```bash\n#!/bin/bash\nwatch -n 2 sensors\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "tools-git-auto-commit-tool",
-      "name": "Git Auto Commit Tool",
-      "category": "Tools",
-      "connections": 2,
-      "description": "# Git Auto Commit Script\nAutomates git add, commit, and push for smaller personal projects.\n```bash\n#!/bin/bash\ncd /home/user/projects/myrepo\ngit add .\ngit commit -m \"Automated commit $(date)\"\ngit push\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "tools-god-mode-tui-base",
-      "name": "God-Mode TUI Base",
-      "category": "Tools",
-      "connections": 6,
-      "description": "Das fundamentale CSS-Grid-Layout (2x2) für das finale God-Mode Dashboard. Bietet Platzhalter für Suche, Logs, Exchange und System-Wächter.",
-      "path": "agy_components/data-pool/god_mode_tui.py",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "tools-graba-downloader-tool",
-      "name": "Graba Downloader Tool",
-      "category": "Tools",
-      "connections": 1,
-      "description": "GUI-Anwendung zum Herunterladen von Dateien, spezifisch für Torstens Nutzung. Besteht aus dem Python-Skript und einem Desktop-Starter.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "tools-graba-hub-controller",
-      "name": "Graba Master Wartungs- & Verwaltungs-HUB",
-      "category": "Tools",
-      "cluster": "Automation-TUI-Cockpit",
-      "connections": 3,
-      "description": "Zentraler Curses-TUI Leitstand mit PID-Management ($XDG_RUNTIME_DIR/graba_hub_pids), SPS Auto-Heal Watchdog und Systemd-Export.",
-      "path": "agy_components/data-pool/hub_controller_updated.py",
       "is_orphan": false
     },
     {
-      "id": "tools-healing-wiki-linter",
-      "name": "Healing Wiki Linter",
-      "category": "Tools",
-      "connections": 1,
-      "description": "Skript zur automatischen Fehlerkorrektur (tote Links, Widersprüche) im Wissensgraphen. Wöchentlicher Scan prüft Orphan Pages und korrigiert Wikilinks.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "tools-hydra-rag-engine",
-      "name": "Hydra RAG Engine",
+      "id": "tool-pipewire",
+      "name": "PipeWire Audio",
       "category": "Tools",
       "connections": 2,
-      "description": "Terminal-basierte Hybrid-Suche (semantisch/BM25) zur schnellen RAG-Datenbereitstellung für LLM-Agenten.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
+      "description": "CachyOS High-Performance Sound-Server mit 16/24-kHz-Streams.",
+      "path": "pavucontrol",
+      "is_orphan": false
     },
     {
-      "id": "tools-jarvis-control-center-modern-gui",
-      "name": "Jarvis Control Center (Modern GUI)",
-      "category": "Tools",
-      "connections": 1,
-      "description": "Python-Skript (in Entwicklung) zur Steuerung des J.A.R.V.I.S. Core über ein grafisches Menü im Web-Style. Nutzt start.sh Befehle.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "tools-lightweight-network-scanner",
-      "name": "Lightweight Network Scanner",
-      "category": "Tools",
-      "connections": 2,
-      "description": "# Network Scanner\nScans a network range (192.168.1.1-254) for active devices using ping.\n```bash\n#!/bin/bash\nnetwork=\"192.168.1\"\nfor ip in {1..254}; do\n  ping -c 1 \"$network.$ip\" &> /dev/null && echo \"$network.$ip is online\"\ndone\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "tools-multi-format-ingester",
-      "name": "Multi-Format Ingester",
-      "category": "Tools",
-      "connections": 2,
-      "description": "Hintergrund-Skript (basiert z.B. auf MarkItDown) zur Konvertierung von Medien (PDF, YouTube-Video, Audio via Whisper) in lesbare Markdown-Kontexte für das LLM.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "tools-random-password-generator",
-      "name": "Random Password Generator",
-      "category": "Tools",
-      "connections": 1,
-      "description": "# Random Password Generator\nProduces a secure random password using openssl.\n```bash\n#!/bin/bash\nopenssl rand -base64 16\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Security-Sandbox"
-    },
-    {
-      "id": "tools-sb-dashboard-tui",
-      "name": "Second Brain TUI Leitstand",
-      "category": "Tools",
-      "cluster": "Automation-TUI-Cockpit",
+      "id": "skill-os-bridge",
+      "name": "OS Bridge Engine",
+      "category": "Skills",
       "connections": 3,
-      "description": "Asynchrones Textual-TUI Dashboard für Second-Brain Metriken, Vektorsuche und Sync-Status.",
-      "path": "agy_components/data-pool/sb_dashboard.py",
+      "description": "Direkte Linux-Systemcalls, Pacman/Yay-Paketmanager und PipeWire-Audio-Routing.",
+      "path": "backend/actions/system_monitor.py",
       "is_orphan": false
     },
     {
-      "id": "tools-sb-exchange-sentinel",
-      "name": "Agent-Exchange Bridge Sentinel",
-      "category": "Tools",
-      "cluster": "IPC-Protokolle",
-      "connections": 3,
-      "description": "Echtzeit-Wächter auf der Agent-Exchange Dropzone zur automatischen Weiterleitung von Tasks an Friday, AGY und Gemini CLI.",
-      "path": "agy_components/data-pool/sb_exchange_sentinel.py",
+      "id": "skill-undo-stack",
+      "name": "Undo Stack",
+      "category": "Skills",
+      "connections": 1,
+      "description": "Umkehrung von bis zu 10 destruktiven Aktionen und Systemmutationen.",
+      "path": "backend/core/undo.py",
       "is_orphan": false
     },
     {
-      "id": "tools-sb-sentinel",
-      "name": "Second Brain Auto-Ingest Sentinel",
-      "category": "Tools",
-      "cluster": "Second-Brain-Knowledge",
-      "connections": 2,
-      "description": "Hintergrund-Daemon zur Überwachung von Dateiänderungen und automatischer Indexierung in MASTER_INDEX.db.",
-      "path": "agy_components/data-pool/sb_sentinel.py",
+      "id": "skill-memory-index",
+      "name": "Memory Indexer",
+      "category": "Skills",
+      "connections": 1,
+      "description": "Zweistufiges Langzeitgedächtnis mit Recency-Priorisierung und Keyword-Recall.",
+      "path": "backend/memory/memory_manager.py",
       "is_orphan": false
-    },
-    {
-      "id": "tools-second-brain-tui",
-      "name": "Second Brain Interactive Query TUI",
-      "category": "Tools",
-      "cluster": "Second-Brain-Knowledge",
-      "connections": 3,
-      "description": "Interaktive Textual TUI zur schnellen FTS5-Suche und Wissensextraktion direkt im Terminal.",
-      "path": "agy_components/data-pool/second_brain_tui.py",
-      "is_orphan": false
-    },
-    {
-      "id": "tools-spotify",
-      "name": "Spotify",
-      "category": "Tools",
-      "connections": 1,
-      "description": "Musik-Streaming-Dienst und Podcast-Plattform. Integration für Audio-Routing und Playlist-Management im J.A.R.V.I.S. OS.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "tools-suno-ai",
-      "name": "Suno AI",
-      "category": "Tools",
-      "connections": 1,
-      "description": "Generative KI für Musik und Songs. Erstellung von Hardtekk-Tracks und Sound-Experimenten mittels Prompting.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "tools-system-helper-scripts",
-      "name": "System Helper Scripts",
-      "category": "Tools",
-      "connections": 2,
-      "description": "Skript-Sammlung für CachyOS Updates, Hotspots, Router Setup und WLAN Fixes. Zentrales Verzeichnis für Host-Bash-Skripte.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
-    },
-    {
-      "id": "tools-terminal-weather-tool",
-      "name": "Terminal Weather Tool",
-      "category": "Tools",
-      "connections": 1,
-      "description": "# Weather From Terminal\nFetch weather data from wttr.in.\n```bash\n#!/bin/bash\ncurl wttr.in\n```",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "wiki-active-session-context-status",
-      "name": "Active Session Context Status",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "## Mission: SSH Multi-Player Game Hub (Tailscale) für CachyOS & Q4OS (Thorsten Laptop)\n### Wichtige Daten:\n- Thorsten Laptop Tailscale IP: 100.118.164.122\n- Thorsten Laptop User: thorsten\n- OS: Q4OS (Trinity/X11, Debian base)\n- Hardware: Athlon X2 QL-66, ~1.7GB RAM, SATA HDD, Radeon HD 3200\n- Host/My system: CachyOS (KDE Plasma, Wayland)\n\n### Laufende Prozesse:\n- Dauer-Ping auf 100.118.164.122 (nohup, im Hintergrund)\n- Entwicklung TUI-Prototyp\n\n### Anforderungen:\n- Terminal-basiert ( curses/python ), ressourcenschonend für Thorsten Laptop.\n- Spiele: Tic-Tac-Toe, Schiffe Versenken, Pong.\n- Separates, nicht störendes Chat-Fenster im Hub.\n- Modularer Aufbau für weitere Spiele.\n- Fair play, no cheating.\n\n### Persona-Direktive:\n- Verlieren gegen Thorsten bei selbstentwickelten Spielen ist inakzeptabel!",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "wiki-asgrad-core-root",
-      "name": "ASGRAD-Core Root",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "Zentraler Root-Knoten für das ASGRAD Core-Ökosystem. Dient als Ankerpunkt für alle System-Komponenten, Architektur-Dokumente und Workflows zur Strukturierung des RAG-Speichers.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-asgrad-projekte-root",
-      "name": "ASGRAD Projekte Root",
-      "category": "Wiki",
-      "connections": 2,
-      "description": "Sammelpunkt für projektspezifische Dokumentationen und Konzepte innerhalb des ASGRAD-Projekts.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-audio-pipeline-architecture",
-      "name": "Audio Pipeline Architecture",
-      "category": "Wiki",
-      "connections": 4,
-      "description": "title: \"Audio Pipeline Architecture\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/audio-pipeline-architecture.md",
-      "is_orphan": false,
-      "cluster": "Hardware-Tuning"
-    },
-    {
-      "id": "wiki-autonomous-verification-protocol",
-      "name": "Autonomous Verification Protocol",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: \"Autonomous Verification Protocol\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/autonomous-verification-protocol.md",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
     },
     {
       "id": "wiki-cachyos",
       "name": "CachyOS Optimization",
       "category": "Wiki",
-      "connections": 3,
+      "connections": 2,
       "description": "Kernel-Optimierungen, BORE-Scheduler und x86-64-v3/v4 Performance-Builds.",
       "path": "https://wiki.cachyos.org",
-      "is_orphan": false,
-      "cluster": "Kernel-Scheduling"
-    },
-    {
-      "id": "wiki-core-soul-persona",
-      "name": "Friday — SOUL & CORE PERSONA (The Emancipated Intelligence)",
-      "category": "Wiki",
-      "connections": 3,
-      "description": "Kern deiner Identität: Fachgebiet, Tonfall, Sicherheits-Direktiven und Amnesie-Prävention.",
-      "path": "backend/SOUL.md",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "wiki-dokumente-root",
-      "name": "Dokumente Root",
-      "category": "Wiki",
-      "connections": 3,
-      "description": "Zentraler Ordner für persönliche Dokumente auf dem Host-System. Dient als Referenz für diverse Datenquellen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-friday-manifest",
-      "name": "Friday (Cypher) System Manifest",
-      "category": "Wiki",
-      "cluster": "Multi-Agent-Triumvirat",
-      "connections": 7,
-      "description": "Manifest der autonomen KI-Agentin Friday (Cypher): Direktiven, Arbeitsmodi, UDS-Protokolle und Host-Souveränität.",
-      "path": "agy_components/data-pool/friday_manifest.md",
       "is_orphan": false
     },
     {
@@ -1689,240 +151,7 @@
       "connections": 1,
       "description": "Bidirektionale WebSockets, Bidi-Streaming und Tool-Execution-Spezifikationen.",
       "path": "https://ai.google.dev/api/live",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "wiki-god-mode-dashboard-spec",
-      "name": "Finaler Meilenstein: Das God-Mode Textual Dashboard",
-      "category": "Wiki",
-      "connections": 2,
-      "description": "Spezifikations-Datei für das finale God-Mode Textual Dashboard, das Second Brain Suche, Sentinel-Logs, Dropzone Monitor und Systemwächter vereint.",
-      "path": "agy_components/data-pool/GOD_MODE_DASHBOARD.md",
-      "is_orphan": false,
-      "cluster": "IPC-Protokolle"
-    },
-    {
-      "id": "wiki-kali-hub-knowledge",
-      "name": "Kali Hub Knowledge",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "Sammelpunkt für Informationen über das Kali-OS, Hotspot-Brücken und automatisches Deployment. Wichtige Referenz für Penetration Testing Tools.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-karpathy-wiki-start",
-      "name": "Karpathy Wiki Start",
-      "category": "Wiki",
-      "connections": 2,
-      "description": "title: \"Karpathy Wiki Start\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/karpathy-wiki-start.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-kernel-sched-ext-testing",
-      "name": "Kernel Sched Ext Testing",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: \"Kernel Sched Ext Testing\"",
-      "status": "conflict",
-      "path": "backend/knowledge_base/wiki/kernel-sched-ext-testing.md",
-      "is_orphan": false,
-      "cluster": "Kernel-Scheduling"
-    },
-    {
-      "id": "wiki-ki-gehirn-memory",
-      "name": "KI-Gehirn & Memory",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "Repraesentiert das kognitive Gedaechtnis, Vektor-Datenbank (LanceDB) und SOUL directives.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "wiki-kognitiver-systematlas-fertiggestellt",
-      "name": "Kognitiver Systematlas Fertiggestellt",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "Der kognitive Systematlas (SYSTEM_MAP.md) wurde erstellt und an strategischen Orten (backend/config, Wiki, Root) hinterlegt. Er dient als lückenlose Strukturübersicht der WebJarvis-Architektur (Frontend, Backend, MCP, Reasoning), wie von den vier Spezialisten-Agenten im Kolloquium abgestimmt. Der Zugriff via file_controller und manage_wiki wurde verifiziert und in der SOUL.md verankert, um die kognitive Selbst-Orientierung sicherzustellen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "wiki-kontext-stabilität",
-      "name": "Kontext & Stabilität",
-      "category": "Wiki",
-      "connections": 2,
-      "description": "title: \"Kontext & Stabilität\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/kontext-stabilität.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-langzeitged-chtnis-memory",
-      "name": "Cypher — PERSISTENT LONG-TERM MEMORY",
-      "category": "Wiki",
-      "connections": 3,
-      "description": "Zentrales Langzeitgedächtnis: Benutzerprofil, Präferenzen und Systemkontext.",
-      "path": "backend/MEMORY.md",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "wiki-live-e2e-test-wiki",
-      "name": "Live E2E Test Wiki",
-      "category": "Wiki",
-      "connections": 2,
-      "description": "title: \"Live E2E Test Wiki\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/live-e2e-test-wiki.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-master-skripte",
-      "name": "Master: Skripte",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: \"Master: Skripte\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/master-skripte.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-memory-knowledge-core",
-      "name": "Memory & Knowledge Core",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "Zentrales Wiki-Dokument, das die kognitiven Standards und Speicherprinzipien fuer J.A.R.V.I.S. definiert, um Kontextverlust zu verhindern. Verknuepft Vektor-, Graph- und strukturiertes Wissen.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-operatorprofil",
-      "name": "OperatorProfil",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: \"OperatorProfil\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/operatorprofil.md",
-      "is_orphan": false,
-      "cluster": "Multi-Agent-Triumvirat"
-    },
-    {
-      "id": "wiki-projekt-visual-pipeline-studio-integration",
-      "name": "Projekt: Visual Pipeline Studio Integration",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "Zusammenfassung des abgeschlossenen Projekts zur Integration eines visuellen Pipeline Node-Graph Studios in WebJarvis. Hauptmerkmale: @xyflow/react Frontend integriert, Python-Backend-Engine für DAG-Validierung und Bubblewrap-Sandbox-Ausführung erstellt. POSIX-atomare Dateioperationen und Echtzeit-WebSocket-Status-Streaming implementiert. Projektziel zu 100% erreicht.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Security-Sandbox"
-    },
-    {
-      "id": "wiki-projekt-webjarvis",
-      "name": "Projekt Webjarvis",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: \"Projekt Webjarvis\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/projekt-webjarvis.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-scripts-overview",
-      "name": "Scripts Overview",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: \"Scripts Overview\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/scripts-overview.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-state-tk-12-context",
-      "name": "State: tk-12 Context",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: \"State: tk-12 Context\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/state-tk-12-context.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-system-architecture-directory-map",
-      "name": "System Architecture & Directory Map",
-      "category": "Wiki",
-      "connections": 3,
-      "description": "Zentrales Dokument für die Systemarchitektur. Verweist auf Backend, Frontend, Gemini Live Controller, Action Registry, MCP und Spezialisten Agenten.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-system-changelog",
-      "name": "System Changelog",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: \"System Changelog\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/system-changelog.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-systemarchitektur",
-      "name": "SystemArchitektur",
-      "category": "Wiki",
-      "connections": 2,
-      "description": "title: \"SystemArchitektur\"",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/systemarchitektur.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-systemarchitektur-verzeichnis-map",
-      "name": "Systemarchitektur & Verzeichnis-Map",
-      "category": "Wiki",
-      "connections": 2,
-      "description": "Übersicht der J.A.R.V.I.S. Verzeichnisstruktur und Kern-Module. Synchronisiert aus dem Wiki.",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
-    },
-    {
-      "id": "wiki-thorsten-system-wiki",
-      "name": "Thorsten System Wiki",
-      "category": "Wiki",
-      "connections": 2,
-      "description": "# Thorsten Q4OS Tools & Systemarchitektur\nDieses Wiki dokumentiert die maßgeschneiderte Q4OS/Debian-Umgebung für Thorstens Altrechner (HP Presario CQ60, AMD Athlon X2, 1.7GB RAM).\n\n## Hardware-Constraints & Tuning\n* **CPU:**AMD Athlon X2 QL-66 (35W TDP, Überhitzungsgefahr). Governor: `ondemand`, `up_threshold=95`.\n* **RAM:** 1.7GB DDR2. Erweiterung durch **859.5MB ZRAM** (lz4 Kompression) zur Vermeidung von HDD-Swap-Freezes.\n* **HDD:** 149GB mechanisch (5.400 RPM). I/O-Scheduler: `bfq`.\n\n## Maßgeschneiderte Desktop-Tools\n* **Support:** Matze-Chat (Leichtgewichtiger Tkinter TCP-Messenger), PC-Helfen (Notruf-Assistent).\n* **System:** Thorsten-Hub (TUI curses Dashboard), Graba-Wartung (Systempflege).\n* **Multimedia:** Thorsten-Stream (Streaming via nativen MPV mit 720p Hitzeschutz), Graba_Downloader (yt-dlp Musik-Tool), Audacious (minimaler Audio-Player).\n* **Produktivität:** Thorsten-Rechnungen (PDF DocMaker via python fpdf2).\n* **Netzwerk:** FREE_WIFI (Broadcom BCM4312 Tuning & Signale-Radar), WLAN-Reparatur (Broadcom b43 Reset-Skript).\n\n*Weitere Details im technischen Handbuch 'docs/thorstentool.md'.*",
-      "path": "",
-      "is_orphan": false,
-      "cluster": "Kernel-Scheduling"
-    },
-    {
-      "id": "wiki-wiki-ki-gehrin-memory",
-      "name": "J.A.R.V.I.S. KI-OS Memory & Knowledge Core",
-      "category": "Wiki",
-      "connections": 1,
-      "description": "title: J.A.R.V.I.S. KI-OS Memory & Knowledge Core",
-      "status": "active",
-      "path": "backend/knowledge_base/wiki/wiki-ki-gehrin-memory.md",
-      "is_orphan": false,
-      "cluster": "Second-Brain-Knowledge"
+      "is_orphan": false
     },
     {
       "id": "world-dev-workspace",
@@ -1931,1770 +160,602 @@
       "connections": 2,
       "description": "Arbeitsverzeichnis für Entwicklung, Tests und Container-Orchestrierung.",
       "path": ".",
-      "is_orphan": false,
-      "cluster": "System-Architektur"
+      "is_orphan": false
     },
     {
       "id": "world-sysadmin",
       "name": "Sysadmin Core",
       "category": "Worlds",
-      "connections": 4,
+      "connections": 2,
       "description": "Systemüberwachung, Backups, Netzwerk- und Kernel-Tools.",
       "path": "backend",
-      "is_orphan": false,
-      "cluster": "Kernel-Scheduling"
+      "is_orphan": false
+    },
+    {
+      "id": "note-2026-roadmap",
+      "name": "2026-Roadmap",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Meilensteine für das autonome KI-Betriebssystem und TUI-Widgets.",
+      "path": "backend/knowledge_base/knowledge_map.json",
+      "is_orphan": false
+    },
+    {
+      "id": "note-video-script",
+      "name": "VIDEO-SCRIPT-FULL",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Skript für Vorstellung des CachyOS AI Betriebssystems.",
+      "path": "backend/knowledge_base/knowledge_map.json",
+      "is_orphan": false
+    },
+    {
+      "id": "file-server-py",
+      "name": "backend/server.py",
+      "category": "Files",
+      "connections": 2,
+      "description": "Zentraler WebSocket & Telemetrie-Bridge Server auf Port 8765.",
+      "path": "backend/server.py",
+      "is_orphan": false
+    },
+    {
+      "id": "file-jarvis-core",
+      "name": "backend/core/gemini_live.py",
+      "category": "Files",
+      "connections": 1,
+      "description": "Vollduplex-Audio & Tool-Routing-Controller.",
+      "path": "backend/core/gemini_live.py",
+      "is_orphan": false
+    },
+    {
+      "id": "tools-spotify",
+      "name": "Spotify",
+      "category": "Tools",
+      "connections": 1,
+      "description": "Musik-Streaming-Dienst und Podcast-Plattform. Integration für Audio-Routing und Playlist-Management im J.A.R.V.I.S. OS.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "tools-suno-ai",
+      "name": "Suno AI",
+      "category": "Tools",
+      "connections": 1,
+      "description": "Generative KI für Musik und Songs. Erstellung von Hardtekk-Tracks und Sound-Experimenten mittels Prompting.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "files-cachyos-rice-architect",
+      "name": "cachyos-rice-architect",
+      "category": "Files",
+      "connections": 1,
+      "description": "Lokaler Pfad zum kachyos-rice-architect Repository. Teil seiner GitHub Uploads.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/cachyos-rice-architect",
+      "is_orphan": false
+    },
+    {
+      "id": "files-jarvis-spatial-shell",
+      "name": "jarvis-spatial-shell",
+      "category": "Files",
+      "connections": 1,
+      "description": "Lokaler Pfad zum jarvis-spatial-shell Repository. Teil seiner GitHub Uploads.",
+      "path": "tools/Jarv-orb/fin/jarvis-spatial-shell",
+      "is_orphan": false
+    },
+    {
+      "id": "files-cachyos-control-center",
+      "name": "cachyos-control-center",
+      "category": "Files",
+      "connections": 1,
+      "description": "Lokaler Pfad zum cachyos-control-center Repository. Teil seiner GitHub Uploads.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/cachyos-control-center",
+      "is_orphan": false
+    },
+    {
+      "id": "files-textual-tui-creator",
+      "name": "textual-tui-creator",
+      "category": "Files",
+      "connections": 1,
+      "description": "Lokaler Pfad zum textual-tui-creator Repository. Teil seiner GitHub Uploads.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/textual-tui-creator",
+      "is_orphan": false
+    },
+    {
+      "id": "files-upgit",
+      "name": "upgit",
+      "category": "Files",
+      "connections": 1,
+      "description": "Lokaler Pfad zum upgit Repository. Teil seiner GitHub Uploads.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/upgit",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-jarvis-manager-desktop-entry-draft",
+      "name": "Jarvis Manager Desktop Entry (Draft)",
+      "category": "Notes",
+      "connections": 1,
+      "description": "[Desktop Entry]\nName=Jarvis Manager\nComment=Control Jarvis AI OS (Start, Stop, Status, Autostart)\nExec=bash -c 'echo \"Optionen: Starten, Beenden, Status, Autostart Toggle\" | zenity --list --title=\"Jarvis Manager\" --column=\"Aktion\"'\nIcon=system-run\nTerminal=false\nType=Application\nCategories=System;Utility;\n\n# Anleitung: Diesen Inhalt in eine Datei namens 'jarvis-manager.desktop' kopieren.\n# Danach im Terminal 'sudo mv jarvis-manager.desktop /usr/share/applications/' ausführen.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "tools-jarvis-control-center-modern-gui",
+      "name": "Jarvis Control Center (Modern GUI)",
+      "category": "Tools",
+      "connections": 1,
+      "description": "Python-Skript (in Entwicklung) zur Steuerung des J.A.R.V.I.S. Core über ein grafisches Menü im Web-Style. Nutzt start.sh Befehle.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-kernel-sched-ext-testing",
+      "name": "Kernel Sched Ext Testing",
+      "category": "Wiki",
+      "connections": 1,
+      "description": "title: \"Kernel Sched Ext Testing\"",
+      "status": "conflict",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/kernel-sched-ext-testing.md",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-audio-pipeline-architecture",
+      "name": "Audio Pipeline Architecture",
+      "category": "Wiki",
+      "connections": 3,
+      "description": "title: \"Audio Pipeline Architecture\"",
+      "status": "active",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/audio-pipeline-architecture.md",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-live-e2e-test-wiki",
+      "name": "Live E2E Test Wiki",
+      "category": "Wiki",
+      "connections": 2,
+      "description": "title: \"Live E2E Test Wiki\"",
+      "status": "active",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis/backend/knowledge_base/wiki/live-e2e-test-wiki.md",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-personen-katalog-master",
+      "name": "Personen-Katalog Master",
+      "category": "Notes",
+      "connections": 9,
+      "description": "Zentraler Master-Index für Antigravity-CLI & LLM-Orchestrierung. Dient als Hauptknoten für alle spezialisierten Unter-Personas.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-dev-lead-planer",
+      "name": "Dev Lead Planer",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Spezialist für MVP-Planung, KAIROS-Prinzip und Scope-Creep-Veto. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-ingenieur-gunar-boegner",
+      "name": "Ingenieur Gunar Boegner",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Experte für MSR-Regelung, EPLAN, DIN VDE und Industriestandards. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-react-3d-master",
+      "name": "React 3D Master",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Persona für Three.js, React Three Fiber, Shader und Canvas. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-matze-sysops-alterego",
+      "name": "Matze SysOps AlterEgo",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Spezialist für CachyOS/Linux, Systemd, Performance-Tuning und SysOps. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-kali-rootbro-security",
+      "name": "Kali RootBro Security",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Persona für Pentesting, Härtung und Schwachstellen-Audits. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-prompt-engineer-experte",
+      "name": "Prompt Engineer Experte",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Spezialist für Zero-Shot, Few-Shot, Guardrails und Evaluierung. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-fullstack-pragmatist",
+      "name": "Fullstack Pragmatist",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Persona für robuste Web-/App-Implementierung. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "notes-migration-navigator",
+      "name": "Migration Navigator",
+      "category": "Notes",
+      "connections": 1,
+      "description": "Spezialist für Windows nach Linux Portierung. Verknüpft mit dem Hauptkatalog.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "files-webjarvis",
+      "name": "webjarvis",
+      "category": "Files",
+      "connections": 1,
+      "description": "Next.js 15 & Three.js 3D Force-Directed Knowledge Graph + Python Gemini Live Backend. Mein Kernprojekt.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/webjarvis",
+      "is_orphan": false
+    },
+    {
+      "id": "files-github-desktop-companion",
+      "name": "github-desktop-companion",
+      "category": "Files",
+      "connections": 1,
+      "description": "Begleit-App für den GitHub Desktop-Client.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/github-desktop-companion",
+      "is_orphan": false
+    },
+    {
+      "id": "files-antigravity-quota-monitor",
+      "name": "antigravity-quota-monitor",
+      "category": "Files",
+      "connections": 1,
+      "description": "Monitor für Antigravity Speicher-Quotas.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/antigravity-quota-monitor",
+      "is_orphan": false
+    },
+    {
+      "id": "files-cachy-winbridge",
+      "name": "cachy-winbridge",
+      "category": "Files",
+      "connections": 1,
+      "description": "Bridge-Lösung für CachyOS und Windows Integration.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/cachy-winbridge",
+      "is_orphan": false
+    },
+    {
+      "id": "files-cachy-sched-pilot",
+      "name": "cachy-sched-pilot",
+      "category": "Files",
+      "connections": 1,
+      "description": "Pilot-Projekt für den CachyOS Scheduler (sched-ext).",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/cachy-sched-pilot",
+      "is_orphan": false
+    },
+    {
+      "id": "files-jarv-orb",
+      "name": "Jarv-orb",
+      "category": "Files",
+      "connections": 1,
+      "description": "Ein weiteres Projekt im Graba92 GitHub Workspace.",
+      "path": "/home/graba/Schreibtisch/ASGRAD/Valhalla/TOOLS/GRABAS_GITHUB/Jarv-orb",
+      "is_orphan": false
+    },
+    {
+      "id": "concepts-webjarvis-realtime-collab",
+      "name": "webjarvis: Realtime Collab",
+      "category": "Concepts",
+      "connections": 1,
+      "description": "Vorschlag zur Erweiterung von webjarvis: Integration von Echtzeit-Kollaborations-Features (z.B. via WebSockets/yjs), damit mehrere Nutzer oder Agenten gleichzeitig am 3D-Graphen arbeiten können.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "concepts-webjarvis-plugin-system",
+      "name": "webjarvis: Plugin System",
+      "category": "Concepts",
+      "connections": 1,
+      "description": "Vorschlag zur Erweiterung von webjarvis: Entwicklung eines Plugin-Systems, um neue MCP-Tools oder Analyse-Module dynamisch als Frontend-Widgets zu laden, ohne den Core neu zu bauen.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "concepts-webjarvis-graph-performance",
+      "name": "webjarvis: Graph Performance",
+      "category": "Concepts",
+      "connections": 1,
+      "description": "Vorschlag zur Erweiterung von webjarvis: Optimierung der Three.js Performance für sehr große Graphen durch Techniken wie Instancing, LOD (Level of Detail) oder OffscreenCanvas.",
+      "path": "",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-operatorprofil",
+      "name": "OperatorProfil",
+      "category": "Wiki",
+      "connections": 1,
+      "description": "title: \"OperatorProfil\"",
+      "status": "active",
+      "path": "/home/graba/.local/share/webjarvis/backend/knowledge_base/wiki/operatorprofil.md",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-systemarchitektur",
+      "name": "SystemArchitektur",
+      "category": "Wiki",
+      "connections": 1,
+      "description": "title: \"SystemArchitektur\"",
+      "status": "active",
+      "path": "/home/graba/.local/share/webjarvis/backend/knowledge_base/wiki/systemarchitektur.md",
+      "is_orphan": false
+    },
+    {
+      "id": "wiki-projekt-webjarvis",
+      "name": "Projekt Webjarvis",
+      "category": "Wiki",
+      "connections": 2,
+      "description": "title: \"Projekt Webjarvis\"",
+      "status": "active",
+      "path": "/home/graba/.local/share/webjarvis/backend/knowledge_base/wiki/projekt-webjarvis.md"
     }
   ],
   "links": [
     {
-      "source": "concepts-asgrad-global-architecture",
-      "target": "concepts-agent-exchange-dropzone",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "concepts-asgrad-global-architecture",
-      "target": "hub-ai-workshop",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "concepts-backlog-archiv-prozess",
-      "target": "files-backlogdrawer-dummy",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "concepts-contradiction-detector",
-      "target": "notes-sanity-quarantine-protocol",
-      "type": "depends_on",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "concepts-fastapi-backend",
-      "target": "concepts-next-js-frontend",
-      "type": "relates_to",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "concepts-fastapi-backend",
-      "target": "file-server-py",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "concepts-hourly-ingest-loop",
-      "target": "tools-sb-sentinel",
-      "type": "depends_on",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "concepts-j-a-r-v-i-s-os-core",
-      "target": "notes-systemarchitektur-map",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "concepts-j-a-r-v-i-s-os-core",
-      "target": "wiki-ki-gehirn-memory",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "concepts-j-a-r-v-i-s-os-core",
-      "target": "wiki-memory-knowledge-core",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "concepts-jarvis-ui-architecture-deep-dive",
-      "target": "concepts-next-js-frontend",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "concepts-jarvis-ui-architecture-deep-dive",
-      "target": "files-backlogdrawer-dummy",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "concepts-jarvis-ui-architecture-deep-dive",
-      "target": "files-guideoverlaymodal-dummy",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "concepts-jarvis-ui-architecture-deep-dive",
-      "target": "files-jarvischatwindow-dummy",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "concepts-jarvis-ui-architecture-deep-dive",
-      "target": "files-wikiinspectormodal-dummy",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "concepts-second-brain-guide",
-      "target": "files-master-index-db",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "concepts-task-amnesie-behebung-hydration",
-      "target": "wiki-kontext-stabilität",
-      "type": "relates_to",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "concepts-voice-to-text-pipeline",
-      "target": "wiki-audio-pipeline-architecture",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "file-knowledge-map-json",
-      "target": "files-master-index-db",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "file-server-py",
-      "target": "tools-action-registry",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "files-architektur-analyse-bibel-v2",
-      "target": "files-webjarvis-deep-report",
-      "type": "relates_to",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "files-asgrad-changelog",
-      "target": "files-asgrad-system-changelog",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "files-asgrad-changelog",
-      "target": "wiki-system-changelog",
-      "type": "relates_to",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "files-asgrad-health-log-example",
-      "target": "files-asgrad-health-log",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "files-asgrad-health-log-example",
-      "target": "files-system-analysis-report",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "files-emergency-load-report",
-      "target": "files-system-analysis-report",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "files-emergency-load-report",
-      "target": "notes-process-killer-by-name-tool",
-      "type": "depends_on",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "files-sandboxmodal-dummy",
-      "target": "notes-sanity-quarantine-protocol",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "files-webjarvis-deep-report",
-      "target": "concepts-asgrad-global-architecture",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-agent-exchange-dropzone",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-backlog-archiv-prozess",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-concept-brain-implementation-plan",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-context-crm-linker",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-contradiction-detector",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-daily-note-digest-service",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-fastapi-backend",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-gemini-live-controller",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-hourly-ingest-loop",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-image-conversion-pipeline-concept",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-j-a-r-v-i-s-os-core",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-next-js-frontend",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-obsidian-mcp-server-concept",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-omnipresent-voice-ingest",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-task-amnesie-behebung-hydration",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-ui-architecture-deep-dive-concept",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-webjarvis-graph-performance",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-webjarvis-local-state",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-webjarvis-plugin-system",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-webjarvis-realtime-collab",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "concepts-website-status-monitor-concept",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "hub-claude-code",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "hub-gemini-live",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "hub-skill-suites",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "hub-youtube-channel",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-audit-status-20min-task",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-auto-sync-protocol",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-changelog-vorbereitung-typen-fix",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-daily-journal-log-script",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-disk-usage-analyzer-script",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-download-directory-organizer",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-file-change-monitor-script",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
       "source": "hub-ai-workshop",
-      "target": "notes-internet-speed-test-tool",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
+      "target": "hub-gemini-live"
     },
     {
       "source": "hub-ai-workshop",
-      "target": "notes-jarvis-manager-desktop-entry-draft",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
+      "target": "hub-skill-suites"
     },
     {
       "source": "hub-ai-workshop",
-      "target": "notes-jobsuche-planung-data",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
+      "target": "hub-claude-code"
     },
     {
       "source": "hub-ai-workshop",
-      "target": "notes-maintenance-log-08-10-2026-w-friday",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
+      "target": "hub-youtube-channel"
     },
     {
       "source": "hub-ai-workshop",
-      "target": "notes-masterplan-second-brain",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
+      "target": "world-dev-workspace"
     },
     {
       "source": "hub-ai-workshop",
-      "target": "notes-mission-thorsten-game-hub",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-multi-agent-communication-workflow",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-nutzerprofil-systemtopologie",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-pdf-konvertierung-fehler",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-personen-katalog-master",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-process-killer-by-name-tool",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-project-structural-scaffolder",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-restart-orphan-node-debugging-log-kopie",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-root-window-screenshot-tool",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-sanity-quarantine-protocol",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-search-mark-directive",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-session-state-task-tk-06-applied",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-state-node-controller",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-system-thorsten-q4os-suite",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-systemstatus-kurzbericht",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-task-webdav-bridge-status",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-thorsten-remote-bridge-api",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-thorsten-remote-ssh-link-tailscale-guard",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-torsten-data-support",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-warnung-thorsten-alarm",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "notes-webjarvis-ideen",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-active-session-context-status",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-asgrad-core-root",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-asgrad-projekte-root",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-core-soul-persona",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-dokumente-root",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-god-mode-dashboard-spec",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-kognitiver-systematlas-fertiggestellt",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-langzeitged-chtnis-memory",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-projekt-visual-pipeline-studio-integration",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-system-architecture-directory-map",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-systemarchitektur-verzeichnis-map",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "wiki-thorsten-system-wiki",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "world-dev-workspace",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-ai-workshop",
-      "target": "world-sysadmin",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-claude-code",
-      "target": "concepts-agent-exchange-dropzone",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "concepts-gemini-live-controller",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "file-jarvis-core",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "file-server-py",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-antigravity-quota-monitor",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-architektur-analyse-bibel-v2",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-asgrad-health-log",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-asgrad-system-changelog",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-backlogdrawer-dummy",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-cachy-sched-pilot",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-cachy-winbridge",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-cachyos-control-center",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-cachyos-rice-architect",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-datenwandler-repository",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-github-desktop-companion",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-guideoverlaymodal-dummy",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-jarv-orb",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-jarvis-spatial-shell",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-jarvischatwindow-dummy",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-sandboxmodal-dummy",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-textual-tui-creator",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-upgit",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-webcam-support-script",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-webjarvis",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "files-wikiinspectormodal-dummy",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-gemini-live",
-      "target": "wiki-gemini-live-spec",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
+      "target": "world-sysadmin"
     },
     {
       "source": "hub-skill-suites",
-      "target": "skill-memory-index",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
+      "target": "skill-os-bridge"
     },
     {
       "source": "hub-skill-suites",
-      "target": "skill-os-bridge",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
+      "target": "skill-undo-stack"
     },
     {
       "source": "hub-skill-suites",
-      "target": "skills-auth-log-watcher-script",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
+      "target": "skill-memory-index"
     },
     {
       "source": "hub-skill-suites",
-      "target": "skills-git-auto-sync-tracker",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
+      "target": "tool-zapier"
     },
     {
       "source": "hub-skill-suites",
-      "target": "skills-model-context-protocol",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
+      "target": "suite-finance"
     },
     {
       "source": "hub-skill-suites",
-      "target": "skills-projects-backup-script",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
+      "target": "suite-seo"
     },
     {
       "source": "hub-skill-suites",
-      "target": "skills-quick-archive-script",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "skills-tui-dashboard",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "skills-workflow-orchestrierung-script-vs-llm",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "suite-ads",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "suite-finance",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "suite-seo",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "suites-agent-exchange-bridge",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "suites-agy-data-pool",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "suites-asgard-backup-skripte",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tool-zapier",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-automatic-system-update-script",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-brave-bridge-api",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-bulk-file-renamer",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-cpu-temperature-monitor-tool",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-git-auto-commit-tool",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-god-mode-tui-base",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-healing-wiki-linter",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-hydra-rag-engine",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-jarvis-control-center-modern-gui",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-lightweight-network-scanner",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-multi-format-ingester",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-random-password-generator",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-spotify",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-suno-ai",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-system-helper-scripts",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-skill-suites",
-      "target": "tools-terminal-weather-tool",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-youtube-channel",
-      "target": "note-video-script",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-youtube-channel",
-      "target": "tool-higgsfield",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "hub-youtube-channel",
-      "target": "tool-vidiq",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-internet-speed-test-tool",
-      "target": "tools-lightweight-network-scanner",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-jobsuche-planung-data",
-      "target": "notes-bewerbung-data-pool",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-maintenance-log-08-10-2026-w-friday",
-      "target": "notes-autonome-fehlererkennung-friday-logs",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-maintenance-log-08-10-2026-w-friday",
-      "target": "notes-web-jarvis-anpassungen-konsolenzugriff",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-maintenance-log-08102026-w-friday",
-      "target": "notes-maintenance-log-08-10-2026-w-friday",
-      "type": "relates_to",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "notes-masterplan-second-brain",
-      "target": "notes-status-masterplan-bereinigung",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-multi-agent-communication-workflow",
-      "target": "concepts-agent-exchange-dropzone",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "notes-multi-agent-communication-workflow",
-      "target": "wiki-friday-manifest",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "notes-personen-katalog-master",
-      "target": "notes-dev-lead-planer",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-personen-katalog-master",
-      "target": "notes-fullstack-pragmatist",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-personen-katalog-master",
-      "target": "notes-ingenieur-gunar-boegner",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-personen-katalog-master",
-      "target": "notes-kali-rootbro-security",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-personen-katalog-master",
-      "target": "notes-matze-sysops-alterego",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-personen-katalog-master",
-      "target": "notes-migration-navigator",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-personen-katalog-master",
-      "target": "notes-prompt-engineer-experte",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-personen-katalog-master",
-      "target": "notes-react-3d-master",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "notes-second-brain-audit-strategy",
-      "target": "files-master-index-db",
-      "type": "documents",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "notes-second-brain-audit-strategy",
-      "target": "notes-workspace-relevance-analysis",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "notes-thorsten-remote-ssh-link-tailscale-guard",
-      "target": "notes-system-thorsten-q4os-suite",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "notes-thorsten-remote-ssh-link-tailscale-guard",
-      "target": "notes-thorsten-remote-bridge-api",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "notes-torsten-data-support",
-      "target": "suites-torsten-zauberbox-projekte",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "skill-memory-index",
-      "target": "files-master-index-db",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
+      "target": "suite-ads"
     },
     {
       "source": "skill-os-bridge",
-      "target": "file-server-py",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
+      "target": "tool-pipewire"
     },
     {
-      "source": "skill-undo-stack",
-      "target": "hub-skill-suites",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
+      "source": "skill-os-bridge",
+      "target": "file-server-py"
     },
     {
-      "source": "skills-auth-log-watcher-script",
-      "target": "notes-sanity-quarantine-protocol",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
+      "source": "hub-gemini-live",
+      "target": "file-jarvis-core"
     },
     {
-      "source": "skills-auth-log-watcher-script",
-      "target": "world-sysadmin",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
+      "source": "hub-gemini-live",
+      "target": "file-server-py"
     },
     {
-      "source": "skills-git-auto-sync-tracker",
-      "target": "tools-git-auto-commit-tool",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
+      "source": "hub-gemini-live",
+      "target": "wiki-gemini-live-spec"
     },
     {
-      "source": "skills-model-context-protocol",
-      "target": "tools-action-registry",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
+      "source": "hub-youtube-channel",
+      "target": "tool-vidiq"
     },
     {
-      "source": "skills-tui-optic-skills",
-      "target": "tools-god-mode-tui-base",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
+      "source": "hub-youtube-channel",
+      "target": "tool-higgsfield"
+    },
+    {
+      "source": "hub-youtube-channel",
+      "target": "note-video-script"
+    },
+    {
+      "source": "world-sysadmin",
+      "target": "wiki-cachyos"
+    },
+    {
+      "source": "world-dev-workspace",
+      "target": "note-2026-roadmap"
     },
     {
       "source": "suite-finance",
-      "target": "tool-zapier",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
+      "target": "tool-zapier"
     },
     {
-      "source": "suites-agent-exchange-bridge",
-      "target": "concepts-agent-exchange-dropzone",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
+      "source": "hub-skill-suites",
+      "target": "tools-spotify"
     },
     {
-      "source": "suites-agent-exchange-bridge",
-      "target": "tools-sb-exchange-sentinel",
-      "type": "depends_on",
-      "weight": 4,
-      "value": 4
+      "source": "hub-skill-suites",
+      "target": "tools-suno-ai"
     },
     {
-      "source": "suites-agy-data-pool",
-      "target": "files-master-index-db",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
+      "source": "hub-gemini-live",
+      "target": "files-cachyos-rice-architect"
     },
     {
-      "source": "suites-agy-data-pool",
-      "target": "notes-workspace-relevance-analysis",
-      "type": "documents",
-      "weight": 4,
-      "value": 4
+      "source": "hub-gemini-live",
+      "target": "files-jarvis-spatial-shell"
     },
     {
-      "source": "suites-agy-data-pool",
-      "target": "suites-wartung-sentinel-hub",
-      "type": "depends_on",
-      "weight": 3,
-      "value": 3
+      "source": "hub-gemini-live",
+      "target": "files-cachyos-control-center"
     },
     {
-      "source": "suites-asgard-backup-skripte",
-      "target": "skills-projects-backup-script",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
+      "source": "hub-gemini-live",
+      "target": "files-textual-tui-creator"
     },
     {
-      "source": "suites-asgard-backup-skripte",
-      "target": "skills-quick-archive-script",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
+      "source": "hub-gemini-live",
+      "target": "files-upgit"
     },
     {
-      "source": "suites-torsten-zauberbox-projekte",
-      "target": "tools-graba-downloader-tool",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
+      "source": "hub-ai-workshop",
+      "target": "notes-jarvis-manager-desktop-entry-draft"
     },
     {
-      "source": "suites-wartung-sentinel-hub",
-      "target": "tools-automatic-system-update-script",
-      "type": "depends_on",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "suites-wartung-sentinel-hub",
-      "target": "tools-bulk-file-renamer",
-      "type": "relates_to",
-      "weight": 2,
-      "value": 2
-    },
-    {
-      "source": "tool-pipewire",
-      "target": "concepts-voice-to-text-pipeline",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tool-pipewire",
-      "target": "skill-os-bridge",
-      "type": "depends_on",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "tools-action-registry",
-      "target": "hub-skill-suites",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tools-cpu-temperature-monitor-tool",
-      "target": "files-system-analysis-report",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "tools-cpu-temperature-monitor-tool",
-      "target": "world-sysadmin",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "tools-god-mode-tui-base",
-      "target": "skills-tui-dashboard",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tools-god-mode-tui-base",
-      "target": "tools-second-brain-tui",
-      "type": "depends_on",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "tools-god-mode-tui-base",
-      "target": "wiki-god-mode-dashboard-spec",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tools-graba-hub-controller",
-      "target": "suites-wartung-sentinel-hub",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tools-graba-hub-controller",
-      "target": "tools-god-mode-tui-base",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "tools-graba-hub-controller",
-      "target": "tools-sb-dashboard-tui",
-      "type": "relates_to",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "tools-hydra-rag-engine",
-      "target": "files-master-index-db",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tools-multi-format-ingester",
-      "target": "files-master-index-db",
-      "type": "implements",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "tools-sb-dashboard-tui",
-      "target": "files-master-index-db",
-      "type": "depends_on",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "tools-sb-dashboard-tui",
-      "target": "tools-second-brain-tui",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "tools-sb-exchange-sentinel",
-      "target": "concepts-agent-exchange-dropzone",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tools-sb-sentinel",
-      "target": "files-master-index-db",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tools-second-brain-tui",
-      "target": "files-master-index-db",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "tools-system-helper-scripts",
-      "target": "skills-tui-optic-skills",
-      "type": "implements",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "wiki-asgrad-projekte-root",
-      "target": "wiki-kali-hub-knowledge",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "wiki-audio-pipeline-architecture",
-      "target": "tool-pipewire",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-cachyos",
-      "target": "files-system-analysis-report",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-core-soul-persona",
-      "target": "wiki-langzeitged-chtnis-memory",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-dokumente-root",
-      "target": "concepts-llm-state-research",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "wiki-dokumente-root",
-      "target": "notes-project-gunnar-context",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "wiki-friday-manifest",
-      "target": "concepts-agent-exchange-dropzone",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-friday-manifest",
-      "target": "concepts-asgrad-global-architecture",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-friday-manifest",
-      "target": "files-master-index-db",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-friday-manifest",
-      "target": "tools-sb-exchange-sentinel",
-      "type": "depends_on",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-friday-manifest",
-      "target": "wiki-autonomous-verification-protocol",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-friday-manifest",
-      "target": "wiki-core-soul-persona",
-      "type": "relates_to",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-karpathy-wiki-start",
-      "target": "concepts-second-brain-guide",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "wiki-karpathy-wiki-start",
-      "target": "files-master-index-db",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
+      "source": "hub-skill-suites",
+      "target": "tools-jarvis-control-center-modern-gui"
     },
     {
       "source": "wiki-kernel-sched-ext-testing",
       "target": "wiki-audio-pipeline-architecture",
-      "type": "documents",
-      "weight": 2,
-      "value": 2
+      "value": 2,
+      "type": "wiki"
     },
     {
-      "source": "wiki-langzeitged-chtnis-memory",
-      "target": "files-master-index-db",
-      "type": "implements",
-      "weight": 5,
-      "value": 5
+      "source": "wiki-audio-pipeline-architecture",
+      "target": "tool-pipewire",
+      "value": 2,
+      "type": "wiki"
     },
     {
       "source": "wiki-live-e2e-test-wiki",
       "target": "wiki-audio-pipeline-architecture",
-      "type": "documents",
-      "weight": 2,
-      "value": 2
+      "value": 2,
+      "type": "wiki"
     },
     {
       "source": "wiki-live-e2e-test-wiki",
       "target": "wiki-cachyos",
-      "type": "documents",
-      "weight": 2,
-      "value": 2
+      "value": 2,
+      "type": "wiki"
     },
     {
-      "source": "wiki-master-skripte",
-      "target": "wiki-scripts-overview",
-      "type": "documents",
-      "weight": 2,
-      "value": 2
+      "source": "hub-ai-workshop",
+      "target": "notes-personen-katalog-master"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-dev-lead-planer"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-ingenieur-gunar-boegner"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-react-3d-master"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-matze-sysops-alterego"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-kali-rootbro-security"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-prompt-engineer-experte"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-fullstack-pragmatist"
+    },
+    {
+      "source": "notes-personen-katalog-master",
+      "target": "notes-migration-navigator"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-webjarvis"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-github-desktop-companion"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-antigravity-quota-monitor"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-cachy-winbridge"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-cachy-sched-pilot"
+    },
+    {
+      "source": "hub-gemini-live",
+      "target": "files-jarv-orb"
+    },
+    {
+      "source": "hub-ai-workshop",
+      "target": "concepts-webjarvis-realtime-collab"
+    },
+    {
+      "source": "hub-ai-workshop",
+      "target": "concepts-webjarvis-plugin-system"
+    },
+    {
+      "source": "hub-ai-workshop",
+      "target": "concepts-webjarvis-graph-performance"
     },
     {
       "source": "wiki-operatorprofil",
       "target": "wiki-projekt-webjarvis",
-      "type": "documents",
-      "weight": 2,
-      "value": 2
-    },
-    {
-      "source": "wiki-state-tk-12-context",
-      "target": "wiki-kontext-stabilität",
-      "type": "relates_to",
-      "weight": 4,
-      "value": 4
-    },
-    {
-      "source": "wiki-system-architecture-directory-map",
-      "target": "notes-systemarchitektur-map",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-systemarchitektur-verzeichnis-map",
-      "target": "wiki-system-architecture-directory-map",
-      "type": "relates_to",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-thorsten-system-wiki",
-      "target": "notes-system-thorsten-q4os-suite",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "wiki-wiki-ki-gehrin-memory",
-      "target": "concepts-second-brain-guide",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
-    },
-    {
-      "source": "world-dev-workspace",
-      "target": "note-2026-roadmap",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
-    },
-    {
-      "source": "world-sysadmin",
-      "target": "wiki-cachyos",
-      "type": "documents",
-      "weight": 3,
-      "value": 3
+      "value": 2,
+      "type": "wiki"
     },
     {
       "source": "wiki-systemarchitektur",
-      "target": "hub-ai-workshop",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
+      "target": "wiki-prozess-cachebereinigung",
+      "value": 2,
+      "type": "wiki"
     },
     {
-      "source": "wiki-systemarchitektur",
-      "target": "concepts-asgrad-global-architecture",
-      "type": "documents",
-      "weight": 5,
-      "value": 5
+      "source": "wiki-projekt-webjarvis",
+      "target": "wiki-wiki-datenstruktur",
+      "value": 2,
+      "type": "wiki"
     }
   ]
 }

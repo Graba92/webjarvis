@@ -7,67 +7,42 @@ export interface EventVerification {
   success: boolean;
 }
 
-interface PendingAction {
-  resolve: (success: boolean) => void;
-  actionName: string;
-  timer: NodeJS.Timeout;
-  createdAt: number;
-}
-
 class ActionAuditor {
-  private pendingActions = new Map<string, PendingAction>();
+  private pendingActions = new Map<string, (receipt: any) => void>();
 
-  public trackAction(
-    actionName: string,
-    payload: any,
-    wsSend: (data: any) => void,
-    timeoutMs: number = 10000
-  ): Promise<boolean> {
-    const correlationId = `${actionName}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-
+  public trackAction(actionName: string, payload: any, wsSend: (data: any) => void): Promise<boolean> {
+    const correlationId = `${actionName}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    
     return new Promise((resolve) => {
-      const timer = setTimeout(() => {
+      const timeout = setTimeout(() => {
         if (this.pendingActions.has(correlationId)) {
-          console.warn(`⚠️ [AUDIT TIMEOUT] Backend-Quittierung für '${actionName}' verzögert (> ${timeoutMs}ms, ID: ${correlationId}). Live-Sync übernimmt.`);
+          console.error(`🚨 [AUDIT FAILED] Keine Antwort vom Backend für: ${actionName} (ID: ${correlationId})`);
           this.pendingActions.delete(correlationId);
           resolve(false);
         }
-      }, timeoutMs);
+      }, 3000); // 3 Sekunden Timeout
 
-      this.pendingActions.set(correlationId, {
-        resolve,
-        actionName,
-        timer,
-        createdAt: Date.now()
+      this.pendingActions.set(correlationId, (receipt) => {
+        clearTimeout(timeout);
+        console.log(`✅ [AUDIT SUCCESS] ${actionName} erfolgreich registriert:`, receipt);
+        resolve(true);
       });
 
       // Event mit Correlation-ID rausschicken
-      try {
-        wsSend({
-          type: "ACTION_DISPATCH",
-          correlationId,
-          action: actionName,
-          payload
-        });
-      } catch (err) {
-        clearTimeout(timer);
-        this.pendingActions.delete(correlationId);
-        console.warn(`⚠️ [AUDIT DISPATCH ERROR] Senden von '${actionName}' fehlgeschlagen:`, err);
-        resolve(false);
-      }
+      wsSend({
+        type: "ACTION_DISPATCH",
+        correlationId,
+        action: actionName,
+        payload
+      });
     });
   }
 
   public handleBackendAck(data: { correlationId: string; status: string; result?: any }) {
     if (this.pendingActions.has(data.correlationId)) {
-      const pending = this.pendingActions.get(data.correlationId)!;
-      clearTimeout(pending.timer);
+      const callback = this.pendingActions.get(data.correlationId);
+      if (callback) callback(data);
       this.pendingActions.delete(data.correlationId);
-      const isSuccess = data.status === "PROCESSED" || data.status === "OK" || data.status === "SUCCESS";
-      console.log(`✅ [AUDIT SUCCESS] ${pending.actionName} quittiert (${data.status}):`, data.result);
-      pending.resolve(isSuccess);
-    } else {
-      console.log(`ℹ️ [AUDIT LATE ACK] Nachträgliche Quittierung für ID: ${data.correlationId} empfangen.`);
     }
   }
 }

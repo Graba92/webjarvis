@@ -3,9 +3,7 @@
 import React, { useState } from "react";
 import { GraphData, GraphNode, NodeCategory } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/graphData";
-import { Search, Maximize2, Crosshair, Layers, Sliders, Info, BookOpen, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
-import { SkillMatrixDropdown } from "@/components/SkillMatrixDropdown";
-import { socketManager } from "@/lib/websocket";
+import { Search, Maximize2, Crosshair, Layers, Sliders, Info, BookOpen } from "lucide-react";
 
 interface ApexOverviewPanelProps {
   data: GraphData;
@@ -41,8 +39,6 @@ export const ApexOverviewPanel: React.FC<ApexOverviewPanelProps> = ({
   onOpenInspector,
 }) => {
   const [showPhysics, setShowPhysics] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isTopToolbarCollapsed, setIsTopToolbarCollapsed] = useState(false);
 
   // Top 8 Hubs nach Vernetzungsgrad sortiert
   const topHubs = [...data.nodes]
@@ -51,38 +47,8 @@ export const ApexOverviewPanel: React.FC<ApexOverviewPanelProps> = ({
 
   return (
     <>
-      {/* 0. Sichtbarer Aufklapp-Button am linken Rand (erscheint nur, wenn eingeklappt) */}
-      {isCollapsed && (
-        <button
-          onClick={() => setIsCollapsed(false)}
-          className="absolute top-20 left-0 z-30 flex items-center gap-1.5 px-2.5 py-3 rounded-r-xl glass-panel-glow border-r border-y border-[#00d4ff]/50 bg-[#0a0d14]/90 text-[#00d4ff] hover:bg-[#00d4ff]/20 hover:scale-105 transition-all shadow-[0_0_15px_rgba(0,212,255,0.25)] group"
-          title="AI Workshop OS Panel aufklappen"
-        >
-          <ChevronRight className="w-4 h-4 animate-pulse group-hover:translate-x-0.5 transition-transform" />
-          <span className="text-[10px] font-black tracking-widest uppercase [writing-mode:vertical-lr] text-gray-300 group-hover:text-white">
-            WORKSHOP
-          </span>
-        </button>
-      )}
-
-      {/* 0.1 Sichtbarer Aufklapp-Button ganz oben mittig (erscheint nur, wenn eingeklappt) */}
-      {isTopToolbarCollapsed && (
-        <button
-          onClick={() => setIsTopToolbarCollapsed(false)}
-          className="absolute top-0 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-1.5 px-4 py-1 rounded-b-xl glass-panel-glow border-x border-b border-[#00d4ff]/50 bg-[#0a0d14]/90 text-[#00d4ff] hover:bg-[#00d4ff]/20 hover:scale-105 transition-all shadow-[0_0_15px_rgba(0,212,255,0.25)] group text-[10px] font-black uppercase tracking-widest"
-          title="Obere Toolbar aufklappen"
-        >
-          <span>TOOLBAR</span>
-          <ChevronDown className="w-3.5 h-3.5 animate-pulse group-hover:translate-y-0.5 transition-transform" />
-        </button>
-      )}
-
-      {/* 1. Obere Floating Toolbar (Zentriert) — Sanft ein-/ausklappbar nach oben */}
-      <div 
-        className={`absolute top-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-panel border border-[#1f242d] shadow-lg transition-transform duration-300 ease-in-out ${
-          isTopToolbarCollapsed ? "-translate-y-[calc(100%+2rem)] pointer-events-none" : "translate-y-0"
-        }`}
-      >
+      {/* 1. Obere Floating Toolbar (Zentriert) */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-panel border border-[#1f242d] shadow-lg">
         <button
           onClick={onFitView}
           className="flex items-center gap-1 px-3 py-1 rounded-full text-xs text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
@@ -110,50 +76,25 @@ export const ApexOverviewPanel: React.FC<ApexOverviewPanelProps> = ({
           <Layers className="w-3.5 h-3.5" />
           <span>{is2D ? "2D Mode" : "3D Space"}</span>
         </button>
-        <div className="w-[1px] h-4 bg-[#1f242d]" />
-        {/* Aufklappbare Skill & Tool Matrix mit Ampelfarben */}
-        <SkillMatrixDropdown />
-        <div className="w-[1px] h-4 bg-[#1f242d]" />
-        {/* Einklapp-Button nach oben */}
-        <button
-          onClick={() => setIsTopToolbarCollapsed(true)}
-          className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-          title="Toolbar nach oben einklappen"
-        >
-          <ChevronUp className="w-3.5 h-3.5 text-[#00d4ff]" />
-        </button>
       </div>
 
-      {/* 2. Linke Sidebar: Telemetrie & Graph Physics (280px) — Sanft ein-/ausklappbar */}
-      <div 
-        className={`absolute top-4 left-4 z-30 w-72 max-h-[calc(100vh-2rem)] flex flex-col gap-3 rounded-xl glass-panel p-4 overflow-y-auto transition-transform duration-300 ease-in-out ${
-          isCollapsed ? "-translate-x-[calc(100%+2rem)] pointer-events-none" : "translate-x-0"
-        }`}
-      >
-        {/* Header mit Einklapp-Button */}
+      {/* 2. Linke Sidebar: Telemetrie & Graph Physics (280px) */}
+      <div className="absolute top-4 left-4 z-30 w-72 max-h-[calc(100vh-2rem)] flex flex-col gap-3 rounded-xl glass-panel p-4 overflow-y-auto">
+        {/* Header */}
         <div className="border-b border-[#1f242d] pb-2.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsCollapsed(true)}
-                className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                title="Panel nach links einklappen"
-              >
-                <ChevronLeft className="w-4 h-4 text-[#00d4ff]" />
-              </button>
-              <h1 className="text-sm font-black tracking-wider text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#00d4ff] animate-ping" />
-                AI WORKSHOP OS
-              </h1>
-            </div>
+            <h1 className="text-sm font-black tracking-wider text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#00d4ff] animate-ping" />
+              AI WORKSHOP OS
+            </h1>
             <button
               onClick={() => onToggle2D(!is2D)}
               className="text-[10px] text-gray-400 hover:text-[#00d4ff] transition-colors"
             >
-              {is2D ? "→ 3D" : "← 2D"}
+              {is2D ? "→ switch to 3D" : "← back to 2D"}
             </button>
           </div>
-          <div className="text-[11px] text-gray-400 mt-0.5 ml-6">
+          <div className="text-[11px] text-gray-400 mt-0.5">
             {data.nodes.length} nodes · {data.links.length} connections
           </div>
         </div>
@@ -165,17 +106,7 @@ export const ApexOverviewPanel: React.FC<ApexOverviewPanelProps> = ({
             type="text"
             placeholder="Search the brain..."
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              if (e.target.value.trim().length > 1) {
-                socketManager.searchKnowledge(e.target.value.trim());
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && searchQuery.trim()) {
-                socketManager.searchKnowledge(searchQuery.trim());
-              }
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#080a0f]/80 border border-[#1f242d] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#00d4ff]/60 transition-colors"
           />
         </div>

@@ -57,7 +57,6 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   const [isHandsfree, setIsHandsfree] = useState(true);
   const [backupFeedback, setBackupFeedback] = useState<string | null>(null);
   const [sandboxConfig, setSandboxConfig] = useState(socketManager.currentSandboxConfig);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,56 +124,30 @@ export const BottomDock: React.FC<BottomDockProps> = ({
   const lastMessage = chatMessages[chatMessages.length - 1];
 
   return (
-    <>
-      {/* 0. Sichtbarer Aufklapp-Button ganz unten in der Mitte (erscheint nur, wenn eingeklappt) */}
-      {isCollapsed && (
-        <button
-          onClick={() => setIsCollapsed(false)}
-          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-1.5 px-4 py-1.5 rounded-t-xl glass-panel-glow border-x border-t border-[#00d4ff]/50 bg-[#0a0d14]/90 text-[#00d4ff] hover:bg-[#00d4ff]/20 hover:scale-105 transition-all shadow-[0_0_15px_rgba(0,212,255,0.25)] group text-[10px] font-black uppercase tracking-widest"
-          title="Terminal & Dock aufklappen"
-        >
-          <ChevronUp className="w-3.5 h-3.5 animate-pulse group-hover:-translate-y-0.5 transition-transform" />
-          <span>TERMINAL // DOCK</span>
-        </button>
+    <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-3xl lg:max-w-4xl px-4 flex flex-col items-center gap-2 pointer-events-auto">
+      {/* Backup Notification Toast */}
+      {backupFeedback && (
+        <div className="px-4 py-1.5 rounded-full bg-[#22c55e]/20 border border-[#22c55e]/50 text-[#22c55e] text-xs font-mono font-bold shadow-lg shadow-[#22c55e]/20 animate-fade-in flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4" />
+          <span>{backupFeedback}</span>
+        </div>
       )}
 
-      <div 
-        className={`absolute bottom-5 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-3xl lg:max-w-4xl px-4 flex flex-col items-center gap-2 pointer-events-auto transition-transform duration-300 ease-in-out ${
-          isCollapsed ? "translate-y-[calc(100%+2rem)] pointer-events-none" : "translate-y-0"
-        }`}
-      >
-        {/* Backup Notification Toast */}
-        {backupFeedback && (
-          <div className="px-4 py-1.5 rounded-full bg-[#22c55e]/20 border border-[#22c55e]/50 text-[#22c55e] text-xs font-mono font-bold shadow-lg shadow-[#22c55e]/20 animate-fade-in flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4" />
-            <span>{backupFeedback}</span>
-          </div>
-        )}
-
-        {/* 1. System Terminal / Chat Bubble */}
-        <div className="w-full">
-          <div className="relative rounded-2xl glass-panel bg-[#0d1117]/90 border border-[#1f242d] p-3 shadow-2xl transition-all">
-            <div className="flex items-center justify-between border-b border-[#1f242d]/60 pb-1.5 mb-1.5 text-[10px] text-gray-400">
-              <span className="flex items-center gap-1.5">
-                <MessageSquare className="w-3 h-3 text-[#00d4ff]" />
-                <span className="font-bold uppercase tracking-wider text-white">
-                  {lastMessage ? lastMessage.speaker : "JARVIS CORE"}
-                </span>
-                <span className="text-gray-500 font-mono" suppressHydrationWarning>
-                  {mounted && lastMessage?.ts ? `(${lastMessage.ts})` : ""}
-                </span>
+      {/* 1. System Terminal / Chat Bubble */}
+      <div className="w-full">
+        <div className="relative rounded-2xl glass-panel bg-[#0d1117]/90 border border-[#1f242d] p-3 shadow-2xl transition-all">
+          <div className="flex items-center justify-between border-b border-[#1f242d]/60 pb-1.5 mb-1.5 text-[10px] text-gray-400">
+            <span className="flex items-center gap-1.5">
+              <MessageSquare className="w-3 h-3 text-[#00d4ff]" />
+              <span className="font-bold uppercase tracking-wider text-white">
+                {lastMessage ? lastMessage.speaker : "JARVIS CORE"}
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCollapsed(true)}
-                  className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-white transition-colors"
-                  title="Dock nach unten einklappen"
-                >
-                  <ChevronDown className="w-3 h-3 text-[#00d4ff]" />
-                  <span>Minimieren</span>
-                </button>
-                {onOpenDevConsole && (
+              <span className="text-gray-500 font-mono" suppressHydrationWarning>
+                {mounted && lastMessage?.ts ? `(${lastMessage.ts})` : ""}
+              </span>
+            </span>
+            <div className="flex items-center gap-2">
+              {onOpenDevConsole && (
                 <button
                   type="button"
                   onClick={onOpenDevConsole}
@@ -454,6 +427,5 @@ export const BottomDock: React.FC<BottomDockProps> = ({
         </div>
       </div>
     </div>
-    </>
   );
 };

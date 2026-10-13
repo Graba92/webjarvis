@@ -23,8 +23,6 @@ import { BacklogDrawer } from "@/components/BacklogDrawer";
 import WikiInspectorModal from "@/components/WikiInspectorModal";
 import { GuideOverlayModal } from "@/components/GuideOverlayModal";
 import { GuideOverlayData } from "@/lib/types";
-import { ActivityProgressHUD } from "@/components/ActivityProgressHUD";
-import { SkillMatrixDropdown } from "@/components/SkillMatrixDropdown";
 import type { ApexWorldHandle } from "@/components/ApexWorld";
 
 // Dynamischer Import von Three.js ohne SSR
@@ -167,9 +165,6 @@ export default function Home() {
         onFocusNode={handleFocusNode}
         onOpenInspector={(node) => setInspectorNode(node)}
       />
-
-      {/* 2.1 Visuelle Live-Status- und Bearbeitungsfortschrittsanzeige */}
-      <ActivityProgressHUD state={assistantState} />
 
       {/* 3. Rechte Sidebar: J.A.R.V.I.S. Core, Arc Reactor, Killswitch & Sensor Matrix */}
       <AgentCockpit
