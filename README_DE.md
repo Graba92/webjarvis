@@ -120,20 +120,34 @@ Angelehnt an Andrej Karpathys persönliches Knowledge-Base-Muster pflegt J.A.R.V
 
 ---
 
-## 🌐 3D-WebGL-Hologramm-HUD & Settle-on-Equilibrium Physik
+## 🌐 3D-WebGL-Hologramm-HUD & Cognitive Force Graph Engine
 
 - **Three.js Holografische Wissenskonstellation (`ApexWorld.tsx`):**
   High-End Cyberpunk 3D-WebGL-Visualisierung mit volumetrischen Fresnel-Glow-Shadern (`pow(1.0 - dotNV, 2.3)`), strahlendem Kern, rotierenden Gyroskop-Ringen (Torus-Wireframe) für Hubs und 3D-Billboard-Text-Sprites mit HUD-Eck-Brackets.
-- **Settle-on-Equilibrium Force-Physik:**
-  Statt teure $O(N^2)$ Physikberechnungen in jedem Render-Frame auf der CPU auszuführen, nutzt WebJarvis eine **75-Iterationen Relaxations-Phase** bei der Initialisierung:
-  - *Hooke-Feder-Anziehung:* Durch `[[Wiki-Links]]` verbundene Knoten ziehen sich elastisch an.
-  - *Cluster-Gravitation & Kollisionsschutz:* Knoten streben zu ihren Kategoriesphären mit striktem Mindestabstand (75 Einheiten für Hubs, 52 für Standardknoten), um Textüberlappungen zuverlässig auszuschließen.
-  - *Einfrieren bei Gleichgewicht:* Das Layout friert ein (`settled = true`), was **garantierte 60–120 FPS** ohne Mikroruckler gewährleistet.
-- **Glasklare 3D-Billboard-Typografie & Entfernungs-LOD:**
-  - *High-Definition Canvas (1024×256):* Knackig scharfe Schrift mit Sci-Fi Eck-Brackets und solidem Glassmorphism-Pill-Hintergrund für maximalen Kontrast.
-  - *Gestaffeltes Entfernungs-LOD:* Zentrale Hubs, isolierte Orphans und Widerspruchs-Knoten sind immer lesbar beschriftet; Standardknoten blenden ihre Beschriftung automatisch bei Nah- bis Mittel-Zoom ein.
+- **Cognitive Force Graph Engine & Cluster-Physik (Upgrade 2026):**
+  - *Dynamische Abstoßung (Charge/Repel):* Große Hub-Knoten üben eine **2.2-fache Repulsion** (Reichweite bis 280 Einheiten) aus, was Master-Kategorien (Suites, Tools, Wiki) physisch trennt und Verklumpungen verhindert.
+  - *Satelliten-Trauben-Anziehung:* Kind-Knoten (Leafs) besitzen kurze, straffe Hooke-Federn (28–45 Einheiten, `stiffness = 0.12`), sodass sie wie Monde geordnet um ihren Parent-Hub kreisen, statt frei im Raum zu driften.
+  - *Semantic Zooming (Level-of-Detail):* In der Fernansicht (`cameraDist > 480`) sind nur die großen Hubs, Warnknoten (Konflikte, Orphans) und Orbit-Ringe sichtbar. Detailbeschriftungen von Leaf-Nodes blenden sich erst beim Heranzoomen (`cameraDist <= 480`) sanft ein.
+  - *Fokus-Fading (Tunnelblick-Modus):* Die Auswahl eines Knotens dimmt alle unbeteiligten Knoten auf **10% Deckkraft** (`uAlpha = 0.10`). Kreuzende Hintergrundkanten treten auf 1.5% Restglanz zurück.
+  - *Gradient-Links (Farbverläufe):* Kanten werden als kontinuierlicher Farbverlauf von der Source-Kategoriefarbe zur Target-Kategoriefarbe gerendert.
+  - *Anti-Kollisions-Pills:* Beschriftungen werden mit soliden, abgerundeten Badges (`rgba(7, 12, 24, 0.94)`) hinterlegt, sodass Kanten niemals durch den Text schneiden.
+  - *Orbit-Halos (MOCs):* Stark vernetzte Hubs besitzen äußere, gestrichelte Orbit-Ringe als intuitive visuelle Einstiegspunkte (Maps of Content).
+  - *Settle-on-Equilibrium Physik:* 90-Iterationen deterministische Simulation mit sanftem Abkühlen (`cooling = 0.965`) für **garantierte 60–120 FPS** ohne Rechenzeitverlust.
 - **Visueller Orphan-Stroboskop-Alarm:**
   Knoten mit Grad 0 (keine Verlinkungen) pulsieren im Shader in **Neon-Bernstein (`#ffaa00`)**. Eine Alarmanzeige im HUD-Dock meldet aktive Orphans; ein Klick zentriert die 3D-Kamera sofort auf den isolierten Knoten.
+
+---
+
+## ⚡ Triumvirat Multi-Agenten-Architektur & Gehärtetes UDS-IPC
+
+WebJarvis basiert auf einer resilienten Drei-Ebenen-Topologie:
+- **OPERATOR (Matze):** Oberste Direktive, Produkt-Owner, finale Abnahme.
+- **AGY (Antigravity):** System-Architekt, CachyOS/Host-Automation, Textual God-Mode TUI Cockpit, Sentinel & Core Engine Watchdog.
+- **FRIDAY (Cypher):** Kognitive Strategin, LanceDB Vektor-Gedächtnis, Gemini Live Sprachsteuerung und Anwendungs-Backend.
+- **Gehärteter Unix Domain Socket (UDS) IPC (`uds_ipc_engine.py`):**
+  - Zero-TCP-Overhead Sub-Millisekunden-Kommunikation über `/run/user/1000/friday_ipc.sock`.
+  - Selbstheilender Lifecycle: Erkennt inaktive Sockets (Stale Sockets), löscht verwaiste Dateien automatisch, bindet mit strikten `0600`-POSIX-Rechten und unlinked Sockets sauber beim Herunterfahren.
+  - Live TUI Synchronisation: `god_mode_tui.py` prüft den Socket-Zustand per Non-Blocking Handshake und zeigt verlässlichen Echtzeitstatus an.
 
 ---
 
