@@ -322,13 +322,14 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     radius: 450
   });
 
-  // O(1) Nachbarschafts-Cache bei Selektion
+  // Kognitiver Focus-Mode: Grad-1 (und direkte Kanten) Nachbarschafts-Cache
   const updateSelectedNeighbors = (node: GraphNode | null) => {
     if (!node) {
       selectedNeighborIdsRef.current.clear();
       return;
     }
     const neighbors = new Set<string>();
+    // Grad 1
     dataRef.current.links.forEach((l) => {
       const s = typeof l.source === "object" ? (l.source as any).id : l.source;
       const t = typeof l.target === "object" ? (l.target as any).id : l.target;
@@ -516,7 +517,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
     const cooling = 0.965;
 
     for (let iter = 0; iter < iterations; iter++) {
-      // 1. Abstoßung aller Knotenpaare (Coulomb-Repulsion mit Mindestabstand gegen Label-Kollision)
+      // 1. Abstoßung aller Knotenpaare (Cluster-Physik: Große Hubs stoßen extrem stark ab, Kind-Knoten schwach)
       for (let i = 0; i < internalNodes.length; i++) {
         const n1 = internalNodes[i];
         for (let j = i + 1; j < internalNodes.length; j++) {
@@ -527,11 +528,14 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
           const distSq = dx * dx + dy * dy + dz * dz + 0.01;
           const dist = Math.sqrt(distSq);
           
-          // Mindestabstand unter Berücksichtigung von Hub- und Label-Größen
-          const minDist = (n1.isHub || n2.isHub) ? 75 : 52;
-          if (dist < 210) {
-            const pushDist = Math.max(minDist, 180 - dist);
-            const force = (pushDist / dist) * 0.46 * temp;
+          // Dynamischer Repel-Faktor: Hubs (hohe Connections) trennen Master-Kategorien physisch
+          const hubWeight = (n1.isHub ? 2.2 : 0.8) * (n2.isHub ? 2.2 : 0.8);
+          const minDist = (n1.isHub || n2.isHub) ? 110 : 42;
+          const maxInfluence = (n1.isHub || n2.isHub) ? 280 : 160;
+
+          if (dist < maxInfluence) {
+            const pushDist = Math.max(minDist, maxInfluence - dist);
+            const force = (pushDist / dist) * 0.42 * hubWeight * temp;
             n1.baseX += dx * force;
             n1.baseY += dy * force;
             n1.baseZ += dz * force;
@@ -542,7 +546,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         }
       }
 
-      // 2. Kantenanziehung für verbundene Knoten (Hooke-Spring)
+      // 2. Kantenanziehung für verbundene Knoten (Hooke-Spring: Kurze, starre Links für 'Trauben'-Bildung)
       curData.links.forEach((l) => {
         const sId = typeof l.source === "object" ? (l.source as any).id : l.source;
         const tId = typeof l.target === "object" ? (l.target as any).id : l.target;
@@ -553,8 +557,14 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
           const dy = tNode.baseY - sNode.baseY;
           const dz = tNode.baseZ - sNode.baseZ;
           const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.01;
-          const springDist = l.type === "wiki" ? 48 : 64;
-          const springForce = ((dist - springDist) / dist) * 0.075 * temp;
+          
+          // Kurze, feste Bindung zu Leaf-Knoten (Trauben-Bildung statt chaotischer Verteilung)
+          const isEitherHub = sNode.isHub || tNode.isHub;
+          const isBothHub = sNode.isHub && tNode.isHub;
+          const springDist = isBothHub ? 95 : (isEitherHub ? 45 : 28);
+          const springStiffness = isBothHub ? 0.06 : 0.12; // Kindknoten kleben starr wie Satelliten an ihrem Parent
+          
+          const springForce = ((dist - springDist) / dist) * springStiffness * temp;
           sNode.baseX += dx * springForce;
           sNode.baseY += dy * springForce;
           sNode.baseZ += dz * springForce;
@@ -620,7 +630,7 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
       nucleusMesh.scale.setScalar(node.baseRadius * 0.38);
       group.add(nucleusMesh);
 
-      // C. Rotierender Holo-Gyroskop-Ring (für Hubs)
+      // C. Rotierender Holo-Gyroskop-Ring & gestrichelter Orbit-Halo (für Hubs)
       let ringMesh: THREE.Mesh | undefined;
       if (node.isHub) {
         const ringGeo = new THREE.TorusGeometry(node.baseRadius * 1.38, 0.16, 8, 48);
@@ -634,6 +644,20 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         ringMesh = new THREE.Mesh(ringGeo, ringMat);
         ringMesh.rotation.x = Math.PI / 3.2;
         group.add(ringMesh);
+
+        // Äußerer Orbit-Halo (Topologische Kennzeichnung als Einstiegspunkt / MOC)
+        const haloGeo = new THREE.RingGeometry(node.baseRadius * 1.65, node.baseRadius * 1.75, 32);
+        const haloMat = new THREE.MeshBasicMaterial({
+          color: colorObj,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.45,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending
+        });
+        const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+        haloMesh.rotation.x = Math.PI / 2;
+        group.add(haloMesh);
       }
 
       // D. 3D-Billboard Text-Sprite mit gestaffelter LOD-Darstellung
@@ -1002,21 +1026,23 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         const isNeighbor = selected ? selectedNeighborIdsRef.current.has(node.id) : true;
 
         if (!isVisible) {
-          node.shaderMat.uniforms.uAlpha.value = 0.04;
-          node.shaderMat.uniforms.uGlowIntensity.value = 0.1;
+          node.shaderMat.uniforms.uAlpha.value = 0.02;
+          node.shaderMat.uniforms.uGlowIntensity.value = 0.05;
           if (node.nucleusMesh) node.nucleusMesh.visible = false;
           if (node.ringMesh) node.ringMesh.visible = false;
           if (node.billboardSprite) node.billboardSprite.visible = false;
         } else if (selected) {
+          // Kognitiver Focus Mode: Grad 1 Nachbarn im direkten Pfad bleiben voll sichtbar, Rest tritt aggressiv zurück
           if (isSelected || isOnPath || isNeighbor) {
             node.shaderMat.uniforms.uAlpha.value = 1.0;
-            node.shaderMat.uniforms.uGlowIntensity.value = isSelected ? 2.5 : 1.8;
+            node.shaderMat.uniforms.uGlowIntensity.value = isSelected ? 2.6 : 1.9;
             if (node.nucleusMesh) node.nucleusMesh.visible = true;
             if (node.ringMesh) node.ringMesh.visible = true;
             if (node.billboardSprite) node.billboardSprite.visible = true;
           } else {
-            node.shaderMat.uniforms.uAlpha.value = 0.12;
-            node.shaderMat.uniforms.uGlowIntensity.value = 0.2;
+            // Aggressives Fading (10% Opacity) für alle nicht-fokussierten Knoten
+            node.shaderMat.uniforms.uAlpha.value = 0.10;
+            node.shaderMat.uniforms.uGlowIntensity.value = 0.12;
             if (node.nucleusMesh) node.nucleusMesh.visible = false;
             if (node.ringMesh) node.ringMesh.visible = false;
             if (node.billboardSprite) node.billboardSprite.visible = false;
@@ -1027,11 +1053,11 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
           if (node.nucleusMesh) node.nucleusMesh.visible = true;
           if (node.ringMesh) node.ringMesh.visible = true;
           if (node.billboardSprite) {
-            // Intelligentes Entfernungs-LOD (Level of Detail):
-            // Hubs, Konflikte & Orphans sind permanent sichtbar.
-            // Normale Knoten werden bei Nah- bis Mittel-Zoom eingeblendet (Radius < 650).
-            const isCritical = node.isHub || node.is_orphan || node.connections === 0 || node.status === "orphan" || node.status === "conflict";
-            node.billboardSprite.visible = isCritical || cameraDist < 650;
+            // Kognitives Semantic Zooming (Level of Detail):
+            // Rausgezoomt (cameraDist > 480): Nur große Hub-Nodes, Konflikte & Orphans sichtbar.
+            // Erst beim Reinzoomen (cameraDist <= 480) werden Leaf-Nodes eingeblendet.
+            const isHubOrAlert = node.isHub || node.is_orphan || node.connections === 0 || node.status === "orphan" || node.status === "conflict";
+            node.billboardSprite.visible = isHubOrAlert || (cameraDist <= 480);
           }
         }
       });
@@ -1079,18 +1105,37 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
               (selected.id === n2.id && filter.has(n1.category))
             );
 
-            let r = 0.0, g = 0.94, b = 1.0;
-            if (selected) {
-              if (isPathLink || isSelectedLink) {
-                r = 1.0; g = 1.0; b = 1.0;
-              } else {
-                r = 0.03; g = 0.1; b = 0.16;
-              }
-            }
+            // 1. Kanten-Farbverlauf (Gradient): Source-Farbe -> Target-Farbe
+            const cSourceHex = CATEGORY_COLORS[n1.category] || "#00f0ff";
+            const cTargetHex = CATEGORY_COLORS[n2.category] || "#2979ff";
+            const colSource = new THREE.Color(cSourceHex);
+            const colTarget = new THREE.Color(cTargetHex);
 
             for (let s = 0; s < segmentsPerCurve; s++) {
               const ptA = pts[s];
               const ptB = pts[s + 1];
+              const tSeg = s / segmentsPerCurve;
+
+              // Lerp zwischen Source und Target Farbe für echten Tiefenverlauf
+              const segCol = new THREE.Color().copy(colSource).lerp(colTarget, tSeg);
+
+              let r = segCol.r;
+              let g = segCol.g;
+              let b = segCol.b;
+
+              if (selected) {
+                if (isPathLink || isSelectedLink) {
+                  // Aktiver Datenpfad: Helles Strahlen mit Beibehaltung der Farbtönung
+                  r = Math.min(1.0, segCol.r * 1.5 + 0.3);
+                  g = Math.min(1.0, segCol.g * 1.5 + 0.3);
+                  b = Math.min(1.0, segCol.b * 1.5 + 0.3);
+                } else {
+                  // Nicht-fokussierte Hintergrundkanten: Extrem abgedimmt (0.015)
+                  r = segCol.r * 0.02;
+                  g = segCol.g * 0.02;
+                  b = segCol.b * 0.02;
+                }
+              }
 
               positions[vIdx] = ptA.x;
               positions[vIdx + 1] = ptA.y;
@@ -1290,12 +1335,18 @@ export const ApexWorld = forwardRef<ApexWorldHandle, ApexWorldProps>(({
         highlightedPathRef.current = new Set(path);
         if (onPathFound) onPathFound(path);
       } else {
-        // Normaler Klick: Fokussieren, Isolieren & Modal öffnen
+        // Normaler Klick: Fokussieren, Isolieren, sanfte Annäherung & Modal öffnen
         selectedNodeRef.current = clickedNode;
         updateSelectedNeighbors(clickedNode);
         highlightedPathRef.current.clear();
         onNodeSelect(clickedNode);
         setModalNode({ node: clickedNode, x: e.clientX, y: e.clientY });
+
+        // Kognitive Kamerafahrt: Sanfte Annäherung an den fokussierten Knoten
+        if (cameraRotationRef.current.radius > 260) {
+          cameraRotationRef.current.radius = Math.max(220, cameraRotationRef.current.radius * 0.72);
+          updateCameraPosition();
+        }
       }
     } else {
       // Klick in den leeren Raum -> Deselektieren
